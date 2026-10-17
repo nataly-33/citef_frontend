@@ -5,6 +5,11 @@ import {
   UsuariosService,
   RolItem,
 } from '../../core/services/usuarios.service';
+import {
+  PaginationComponent,
+  ModalAlertComponent,
+  TableCardComponent,
+} from '../../shared/components';
 
 interface PermisoGrupo {
   modulo: string;
@@ -19,7 +24,13 @@ interface PermisoGrupo {
 @Component({
   selector: 'app-roles',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [
+    CommonModule,
+    FormsModule,
+    PaginationComponent,
+    ModalAlertComponent,
+    TableCardComponent,
+  ],
   template: `
     <!-- HEADER -->
     <div class="page-header">
@@ -152,7 +163,7 @@ interface PermisoGrupo {
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let p of permisosFiltrados()">
+            <tr *ngFor="let p of permisosPaginados()">
               <td>
                 <span class="badge-modulo">{{ p.modulo }}</span>
               </td>
@@ -187,6 +198,15 @@ interface PermisoGrupo {
           </tbody>
         </table>
       </div>
+
+      <!-- PAGINACIÓN DE PERMISOS COMPARTIDA -->
+      <app-pagination
+        [paginaActual]="paginaActual()"
+        [totalRegistros]="permisosFiltrados().length"
+        [tamanoPagina]="tamanoPagina"
+        etiqueta="permisos"
+        (paginaCambiada)="cambiarPagina($event)"
+      ></app-pagination>
     </div>
 
     <!-- MODAL: CREAR / CONFIGURAR PERMISOS DE ROL -->
@@ -200,6 +220,12 @@ interface PermisoGrupo {
             <i class="bi bi-x-lg"></i>
           </button>
         </div>
+
+        <!-- Alerta de Error dentro del Modal Roles usando componente compartido -->
+        <app-modal-alert
+          [mensaje]="modalErrorMsg()"
+          (cerrar)="modalErrorMsg.set(null)"
+        ></app-modal-alert>
 
         <form (ngSubmit)="guardarRol()" class="modal-form">
           <div class="form-row" *ngIf="!esEdicion()">
@@ -718,6 +744,7 @@ export class RolesComponent implements OnInit {
 
   successMsg = signal<string | null>(null);
   errorMsg = signal<string | null>(null);
+  modalErrorMsg = signal<string | null>(null);
 
   constructor(private usuariosService: UsuariosService) {}
 
@@ -773,6 +800,40 @@ export class RolesComponent implements OnInit {
     return list;
   });
 
+  // Paginación de la matriz de permisos (máximo 15 registros por página)
+  paginaActual = signal<number>(1);
+  tamanoPagina = 15;
+
+  totalPaginas = computed(() => {
+    const total = this.permisosFiltrados().length;
+    return total === 0 ? 1 : Math.ceil(total / this.tamanoPagina);
+  });
+
+  permisosPaginados = computed(() => {
+    const list = this.permisosFiltrados();
+    const pag = this.paginaActual();
+    const start = (pag - 1) * this.tamanoPagina;
+    return list.slice(start, start + this.tamanoPagina);
+  });
+
+  inicioRegistro = computed(() => {
+    if (this.permisosFiltrados().length === 0) return 0;
+    return (this.paginaActual() - 1) * this.tamanoPagina + 1;
+  });
+
+  finRegistro = computed(() => {
+    return Math.min(
+      this.paginaActual() * this.tamanoPagina,
+      this.permisosFiltrados().length,
+    );
+  });
+
+  cambiarPagina(nueva: number) {
+    if (nueva >= 1 && nueva <= this.totalPaginas()) {
+      this.paginaActual.set(nueva);
+    }
+  }
+
   seleccionarRolParaVer(r: RolItem) {
     this.rolSeleccionadoParaVer.set(r);
   }
@@ -792,6 +853,7 @@ export class RolesComponent implements OnInit {
     this.esEdicion.set(false);
     this.modeloRol = { id_rol: 0, nombre: '', descrip: '' };
     this.permisosSeleccionados = [];
+    this.modalErrorMsg.set(null);
     this.mostrarModal.set(true);
   }
 
@@ -799,6 +861,7 @@ export class RolesComponent implements OnInit {
     this.esEdicion.set(true);
     this.modeloRol = { id_rol: r.id_rol, nombre: r.nombre, descrip: r.descrip };
     this.permisosSeleccionados = (r.permisos || []).map((p) => p.id_permiso);
+    this.modalErrorMsg.set(null);
     this.mostrarModal.set(true);
   }
 
@@ -840,6 +903,7 @@ export class RolesComponent implements OnInit {
 
   guardarRol() {
     this.guardando.set(true);
+    this.modalErrorMsg.set(null);
 
     if (this.esEdicion()) {
       this.usuariosService
@@ -854,7 +918,7 @@ export class RolesComponent implements OnInit {
           error: (err) => {
             this.guardando.set(false);
             const msg = err.error?.message || 'Error al actualizar permisos del rol.';
-            this.showError(Array.isArray(msg) ? msg.join(', ') : msg);
+            this.modalErrorMsg.set(Array.isArray(msg) ? msg.join(', ') : msg);
           },
         });
     } else {
@@ -874,7 +938,7 @@ export class RolesComponent implements OnInit {
           error: (err) => {
             this.guardando.set(false);
             const msg = err.error?.message || 'Error al crear el rol.';
-            this.showError(Array.isArray(msg) ? msg.join(', ') : msg);
+            this.modalErrorMsg.set(Array.isArray(msg) ? msg.join(', ') : msg);
           },
         });
     }

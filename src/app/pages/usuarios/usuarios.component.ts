@@ -9,12 +9,24 @@ import {
   ActualizarUsuarioPayload,
 } from '../../core/services/usuarios.service';
 import { AuthService } from '../../core/services/auth.service';
-import { ConfirmModalComponent } from '../../shared/components/confirm-modal/confirm-modal.component';
+import {
+  ConfirmModalComponent,
+  PaginationComponent,
+  ModalAlertComponent,
+  TableCardComponent,
+} from '../../shared/components';
 
 @Component({
   selector: 'app-usuarios',
   standalone: true,
-  imports: [CommonModule, FormsModule, ConfirmModalComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    ConfirmModalComponent,
+    PaginationComponent,
+    ModalAlertComponent,
+    TableCardComponent,
+  ],
   template: `
     <!-- HEADER -->
     <div class="page-header">
@@ -113,132 +125,108 @@ import { ConfirmModalComponent } from '../../shared/components/confirm-modal/con
       </form>
     </div>
 
-    <!-- TABLA DE USUARIOS -->
-    <div class="citef-card p-0">
-      <div class="table-responsive">
-        <table class="citef-table">
-          <thead>
-            <tr>
-              <th class="sortable text-center" style="width: 70px" (click)="ordenarPor('id_usuario')">
-                <span>ID</span>
-                <i class="bi" [class]="iconoOrden('id_usuario')"></i>
-              </th>
-              <th class="sortable" (click)="ordenarPor('nombres')">
-                <span>Nombre Completo</span>
-                <i class="bi" [class]="iconoOrden('nombres')"></i>
-              </th>
-              <th class="sortable" (click)="ordenarPor('correo_institucional')">
-                <span>Correo Electrónico</span>
-                <i class="bi" [class]="iconoOrden('correo_institucional')"></i>
-              </th>
-              <th>Teléfono</th>
-              <th>Roles</th>
-              <th class="sortable text-center" style="width: 110px" (click)="ordenarPor('activo')">
-                <span>Estado</span>
-                <i class="bi" [class]="iconoOrden('activo')"></i>
-              </th>
-              <th class="text-center" style="width: 120px">Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let u of usuariosPaginados()">
-              <td class="text-center">
-                <span class="text-muted font-monospace">#{{ u.id_usuario }}</span>
-              </td>
-              <td>
-                <strong class="user-fullname">{{ u.nombres }} {{ u.apellidos }}</strong>
-              </td>
-              <td>
-                <span class="user-email">{{ u.correo_institucional }}</span>
-              </td>
-              <td>{{ u.telefono || '—' }}</td>
-              <td>
-                <div class="roles-badges">
-                  <span *ngFor="let r of u.roles" class="badge-role">
-                    {{ r.nombre }}
-                  </span>
-                </div>
-              </td>
-              <td class="text-center">
-                <span
-                  class="citef-badge"
-                  [class.citef-badge-success]="u.activo"
-                  [class.citef-badge-danger]="!u.activo"
+    <!-- TABLA DE USUARIOS CON COMPONENTES COMPARTIDOS -->
+    <app-table-card>
+      <table class="citef-table">
+        <thead>
+          <tr>
+            <th class="sortable text-center" style="width: 70px" (click)="ordenarPor('id_usuario')">
+              <span>ID</span>
+              <i class="bi" [class]="iconoOrden('id_usuario')"></i>
+            </th>
+            <th class="sortable" (click)="ordenarPor('nombres')">
+              <span>Nombre Completo</span>
+              <i class="bi" [class]="iconoOrden('nombres')"></i>
+            </th>
+            <th class="sortable" (click)="ordenarPor('correo_institucional')">
+              <span>Correo Electrónico</span>
+              <i class="bi" [class]="iconoOrden('correo_institucional')"></i>
+            </th>
+            <th>Teléfono</th>
+            <th>Roles</th>
+            <th class="sortable text-center" style="width: 110px" (click)="ordenarPor('activo')">
+              <span>Estado</span>
+              <i class="bi" [class]="iconoOrden('activo')"></i>
+            </th>
+            <th class="text-center" style="width: 120px">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let u of usuariosPaginados()">
+            <td class="text-center">
+              <span class="text-muted font-monospace">#{{ u.id_usuario }}</span>
+            </td>
+            <td>
+              <strong class="user-fullname">{{ u.nombres }} {{ u.apellidos }}</strong>
+            </td>
+            <td>
+              <span class="user-email">{{ u.correo_institucional }}</span>
+            </td>
+            <td>{{ u.telefono || '—' }}</td>
+            <td>
+              <div class="roles-badges">
+                <span *ngFor="let r of u.roles" class="badge-role">
+                  {{ r.nombre }}
+                </span>
+              </div>
+            </td>
+            <td class="text-center">
+              <span
+                class="citef-badge"
+                [class.citef-badge-success]="u.activo"
+                [class.citef-badge-danger]="!u.activo"
+              >
+                {{ u.activo ? 'Activo' : 'Inactivo' }}
+              </span>
+            </td>
+            <td class="text-center">
+              <div class="action-buttons" *ngIf="puedeEditar()">
+                <button
+                  type="button"
+                  class="btn-icon btn-edit"
+                  title="Editar datos de usuario"
+                  (click)="abrirModalEditar(u)"
                 >
-                  {{ u.activo ? 'Activo' : 'Inactivo' }}
-                </span>
-              </td>
-              <td class="text-center">
-                <div class="action-buttons" *ngIf="puedeEditar()">
-                  <button
-                    type="button"
-                    class="btn-icon btn-edit"
-                    title="Editar datos de usuario"
-                    (click)="abrirModalEditar(u)"
-                  >
-                    <i class="bi bi-pencil"></i>
-                  </button>
+                  <i class="bi bi-pencil"></i>
+                </button>
 
-                  <button
-                    type="button"
-                    class="btn-icon btn-delete"
-                    [title]="u.activo ? 'Desactivar usuario' : 'Eliminar usuario'"
-                    (click)="abrirConfirmacionEliminar(u)"
-                  >
-                    <i class="bi bi-trash3"></i>
-                  </button>
-                </div>
-                <span *ngIf="!puedeEditar()" class="text-muted small">
-                  <i class="bi bi-lock me-1"></i>Lectura
-                </span>
-              </td>
-            </tr>
+                <button
+                  type="button"
+                  class="btn-icon btn-delete"
+                  [title]="u.activo ? 'Desactivar usuario' : 'Eliminar usuario'"
+                  (click)="abrirConfirmacionEliminar(u)"
+                >
+                  <i class="bi bi-trash3"></i>
+                </button>
+              </div>
+              <span *ngIf="!puedeEditar()" class="text-muted small">
+                <i class="bi bi-lock me-1"></i>Lectura
+              </span>
+            </td>
+          </tr>
 
-            <tr *ngIf="usuariosPaginados().length === 0">
-              <td colspan="7" class="empty-row">
-                <div class="empty-state">
-                  <i class="bi bi-inbox"></i>
-                  <p>No se encontraron usuarios</p>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+          <tr *ngIf="usuariosPaginados().length === 0">
+            <td colspan="7" class="empty-row">
+              <div class="empty-state">
+                <i class="bi bi-inbox"></i>
+                <p>No se encontraron usuarios</p>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- PAGINACIÓN COMPARTIDA -->
+      <div card-footer>
+        <app-pagination
+          [paginaActual]="paginaActual()"
+          [totalRegistros]="totalFiltrados()"
+          [tamanoPagina]="tamanoPagina"
+          etiqueta="usuarios"
+          (paginaCambiada)="cambiarPagina($event)"
+        ></app-pagination>
       </div>
-
-      <!-- BARRA DE PAGINACIÓN -->
-      <div class="pagination-bar" *ngIf="totalFiltrados() > 0">
-        <div class="pagination-info">
-          Mostrando {{ inicioRegistro() }}–{{ finRegistro() }} de {{ totalFiltrados() }} registros
-        </div>
-
-        <div class="pagination-controls">
-          <button
-            type="button"
-            class="citef-btn citef-btn-outline citef-btn-xs"
-            [disabled]="paginaActual() === 1"
-            (click)="cambiarPagina(paginaActual() - 1)"
-          >
-            <i class="bi bi-chevron-left"></i>
-            <span>Anterior</span>
-          </button>
-
-          <span class="page-indicator">
-            {{ paginaActual() }} / {{ totalPaginas() }}
-          </span>
-
-          <button
-            type="button"
-            class="citef-btn citef-btn-outline citef-btn-xs"
-            [disabled]="paginaActual() === totalPaginas()"
-            (click)="cambiarPagina(paginaActual() + 1)"
-          >
-            <span>Siguiente</span>
-            <i class="bi bi-chevron-right"></i>
-          </button>
-        </div>
-      </div>
-    </div>
+    </app-table-card>
 
     <!-- MODAL: CREAR USUARIO -->
     <div *ngIf="mostrarModalCrear()" class="modal-backdrop">
@@ -250,11 +238,11 @@ import { ConfirmModalComponent } from '../../shared/components/confirm-modal/con
           </button>
         </div>
 
-        <!-- Alerta de Error dentro del Modal -->
-        <div *ngIf="modalErrorMsg()" class="modal-alert-danger">
-          <i class="bi bi-exclamation-triangle-fill"></i>
-          <span>{{ modalErrorMsg() }}</span>
-        </div>
+        <!-- Alerta de Error dentro del Modal usando componente compartido -->
+        <app-modal-alert
+          [mensaje]="modalErrorMsg()"
+          (cerrar)="modalErrorMsg.set(null)"
+        ></app-modal-alert>
 
         <form (ngSubmit)="guardarNuevoUsuario()" class="modal-form" novalidate>
           <div class="form-row">
@@ -383,11 +371,11 @@ import { ConfirmModalComponent } from '../../shared/components/confirm-modal/con
           </button>
         </div>
 
-        <!-- Alerta de Error dentro del Modal Editar -->
-        <div *ngIf="modalEditarErrorMsg()" class="modal-alert-danger">
-          <i class="bi bi-exclamation-triangle-fill"></i>
-          <span>{{ modalEditarErrorMsg() }}</span>
-        </div>
+        <!-- Alerta de Error dentro del Modal Editar usando componente compartido -->
+        <app-modal-alert
+          [mensaje]="modalEditarErrorMsg()"
+          (cerrar)="modalEditarErrorMsg.set(null)"
+        ></app-modal-alert>
 
         <form *ngIf="usuarioAEditar" (ngSubmit)="guardarEdicionUsuario()" class="modal-form" novalidate>
           <div class="form-row">
@@ -906,7 +894,7 @@ export class UsuariosComponent implements OnInit {
 
   // Paginación
   paginaActual = signal<number>(1);
-  tamanoPagina = 10;
+  tamanoPagina = 15;
 
   // Mensajes de Alerta
   successMsg = signal<string | null>(null);
