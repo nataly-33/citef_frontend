@@ -42,6 +42,8 @@ export class AuditoriaService {
     correo?: string;
     pagina?: number;
     limite?: number;
+    ordenColumna?: string;
+    ordenDireccion?: 'asc' | 'desc';
   }): Observable<BitacoraResponse> {
     let httpParams = new HttpParams();
     if (params?.tabla) httpParams = httpParams.set('tabla', params.tabla);
@@ -49,6 +51,8 @@ export class AuditoriaService {
     if (params?.correo) httpParams = httpParams.set('correo', params.correo);
     if (params?.pagina) httpParams = httpParams.set('pagina', String(params.pagina));
     if (params?.limite) httpParams = httpParams.set('limite', String(params.limite));
+    if (params?.ordenColumna) httpParams = httpParams.set('ordenColumna', params.ordenColumna);
+    if (params?.ordenDireccion) httpParams = httpParams.set('ordenDireccion', params.ordenDireccion.toUpperCase());
 
     return this.http.get<BitacoraResponse>(this.apiUrl, { params: httpParams });
   }

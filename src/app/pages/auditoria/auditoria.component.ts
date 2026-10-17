@@ -5,11 +5,15 @@ import {
   AuditoriaService,
   BitacoraItem,
 } from '../../core/services/auditoria.service';
+import {
+  PaginationComponent,
+  TableCardComponent,
+} from '../../shared/components';
 
 @Component({
   selector: 'app-auditoria',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, PaginationComponent, TableCardComponent],
   template: `
     <div class="page-header">
       <div>
@@ -85,125 +89,102 @@ import {
       </div>
     </div>
 
-    <!-- TABLA DE EVENTOS DE AUDITORÍA -->
-    <div class="citef-card p-0">
-      <div class="citef-table-container">
-        <table class="citef-table">
-          <thead>
-            <tr>
-              <th class="sortable" (click)="ordenarPor('id_auditoria')">
-                <div class="th-content">
-                  <span>ID</span>
-                  <i class="bi" [class]="iconoOrden('id_auditoria')"></i>
-                </div>
-              </th>
-              <th class="sortable" (click)="ordenarPor('fecha_hora')">
-                <div class="th-content">
-                  <span>Fecha y Hora</span>
-                  <i class="bi" [class]="iconoOrden('fecha_hora')"></i>
-                </div>
-              </th>
-              <th>Acción Realizada</th>
-              <th>Tabla / Entidad</th>
-              <th>Registro ID</th>
-              <th>Usuario Responsable</th>
-              <th>IP Cliente</th>
-              <th class="text-end">Inspección</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let item of listaAuditoria()">
-              <td>
-                <span class="text-muted font-monospace">#{{ item.id_auditoria }}</span>
-              </td>
-              <td>
-                <div class="date-cell">
-                  <i class="bi bi-calendar-event text-muted me-1"></i>
-                  <strong>{{ item.fecha_hora | date: 'dd/MM/yyyy' }}</strong>
-                  <span class="time-sub">{{ item.fecha_hora | date: 'HH:mm:ss' }}</span>
-                </div>
-              </td>
-              <td>
-                <span
-                  class="citef-badge"
-                  [class.citef-badge-success]="item.accion === 'INSERT'"
-                  [class.citef-badge-info]="item.accion === 'LOGIN' || item.accion === 'UPDATE'"
-                  [class.citef-badge-warning]="item.accion.includes('PASSWORD') || item.accion === 'CAMBIO_ESTADO'"
-                  [class.citef-badge-danger]="item.accion === 'DELETE'"
-                >
-                  <i class="bi" [class]="iconoAccion(item.accion)"></i>
-                  {{ item.accion }}
-                </span>
-              </td>
-              <td>
-                <code class="table-name-code">{{ item.tabla_afectada }}</code>
-              </td>
-              <td>
-                <span class="badge text-bg-light border font-monospace">
-                  {{ item.id_registro_afectado }}
-                </span>
-              </td>
-              <td>
-                <div class="audit-user-cell">
-                  <i class="bi bi-person-fill text-muted me-1"></i>
-                  <span>{{ item.correo_usuario || 'Sistema / Público' }}</span>
-                </div>
-              </td>
-              <td>
-                <code class="ip-code">{{ item.ip_cliente || '127.0.0.1' }}</code>
-              </td>
-              <td class="text-end">
-                <button
-                  class="citef-btn citef-btn-outline citef-btn-xs"
-                  (click)="abrirDetalle(item)"
-                >
-                  <i class="bi bi-file-earmark-code"></i>
-                  <span>Ver JSON</span>
-                </button>
-              </td>
-            </tr>
-            <tr *ngIf="listaAuditoria().length === 0">
-              <td colspan="8" class="empty-state-cell">
-                <div class="empty-state">
-                  <i class="bi bi-clock-history"></i>
-                  <p>No se encontraron registros de auditoría para los criterios seleccionados</p>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+    <!-- TABLA DE EVENTOS DE AUDITORÍA CON COMPONENTES COMPARTIDOS -->
+    <app-table-card>
+      <table class="citef-table">
+        <thead>
+          <tr>
+            <th class="sortable text-center" style="width: 75px" (click)="ordenarPor('id_auditoria')">
+              <span>ID</span>
+              <i class="bi" [class]="iconoOrden('id_auditoria')"></i>
+            </th>
+            <th class="sortable" style="width: 170px" (click)="ordenarPor('fecha_hora')">
+              <span>Fecha y Hora</span>
+              <i class="bi" [class]="iconoOrden('fecha_hora')"></i>
+            </th>
+            <th style="width: 140px">Acción</th>
+            <th style="width: 150px">Tabla / Entidad</th>
+            <th class="text-center" style="width: 110px">Registro ID</th>
+            <th>Usuario Responsable</th>
+            <th style="width: 130px">IP Cliente</th>
+            <th class="text-center" style="width: 110px">Detalle</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of listaAuditoria()">
+            <td class="text-center">
+              <span class="text-muted font-monospace">#{{ item.id_auditoria }}</span>
+            </td>
+            <td>
+              <div class="date-cell">
+                <i class="bi bi-calendar-event text-muted me-1"></i>
+                <strong>{{ item.fecha_hora | date: 'dd/MM/yyyy' }}</strong>
+                <span class="time-sub">{{ item.fecha_hora | date: 'HH:mm:ss' }}</span>
+              </div>
+            </td>
+            <td>
+              <span
+                class="citef-badge"
+                [class.citef-badge-success]="item.accion === 'INSERT'"
+                [class.citef-badge-info]="item.accion === 'LOGIN' || item.accion === 'UPDATE'"
+                [class.citef-badge-warning]="item.accion.includes('PASSWORD') || item.accion === 'CAMBIO_ESTADO'"
+                [class.citef-badge-danger]="item.accion === 'DELETE'"
+              >
+                <i class="bi" [class]="iconoAccion(item.accion)"></i>
+                {{ item.accion }}
+              </span>
+            </td>
+            <td>
+              <code class="table-name-code">{{ item.tabla_afectada }}</code>
+            </td>
+            <td class="text-center">
+              <span class="badge text-bg-light border font-monospace">
+                {{ item.id_registro_afectado }}
+              </span>
+            </td>
+            <td>
+              <div class="audit-user-cell">
+                <i class="bi bi-person-fill text-muted me-1"></i>
+                <span>{{ item.correo_usuario || 'Sistema / Público' }}</span>
+              </div>
+            </td>
+            <td>
+              <code class="ip-code">{{ item.ip_cliente || '127.0.0.1' }}</code>
+            </td>
+            <td class="text-center">
+              <button
+                type="button"
+                class="citef-btn citef-btn-outline citef-btn-xs"
+                (click)="abrirDetalle(item)"
+                title="Ver snapshot JSON de cambios"
+              >
+                <i class="bi bi-file-earmark-code"></i>
+                <span>Ver JSON</span>
+              </button>
+            </td>
+          </tr>
+          <tr *ngIf="listaAuditoria().length === 0">
+            <td colspan="8" class="empty-state-cell">
+              <div class="empty-state">
+                <i class="bi bi-clock-history"></i>
+                <p>No se encontraron registros de auditoría para los criterios seleccionados</p>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- PAGINACIÓN COMPARTIDA -->
+      <div card-footer>
+        <app-pagination
+          [paginaActual]="paginaActual()"
+          [totalRegistros]="totalRegistros()"
+          [tamanoPagina]="tamanoPagina"
+          etiqueta="registros de auditoría"
+          (paginaCambiada)="cambiarPagina($event)"
+        ></app-pagination>
       </div>
-
-      <!-- PAGINACIÓN -->
-      <div class="pagination-bar" *ngIf="totalRegistros() > 0">
-        <div class="pagination-info">
-          Mostrando página <strong>{{ paginaActual() }}</strong> de
-          <strong>{{ totalPaginas() }}</strong> (Total: {{ totalRegistros() }} eventos)
-        </div>
-
-        <div class="pagination-controls">
-          <button
-            class="citef-btn citef-btn-outline citef-btn-xs"
-            [disabled]="paginaActual() === 1"
-            (click)="cambiarPagina(paginaActual() - 1)"
-          >
-            <i class="bi bi-chevron-left"></i>
-            <span>Anterior</span>
-          </button>
-
-          <span class="page-indicator">{{ paginaActual() }} / {{ totalPaginas() }}</span>
-
-          <button
-            class="citef-btn citef-btn-outline citef-btn-xs"
-            [disabled]="paginaActual() === totalPaginas()"
-            (click)="cambiarPagina(paginaActual() + 1)"
-          >
-            <span>Siguiente</span>
-            <i class="bi bi-chevron-right"></i>
-          </button>
-        </div>
-      </div>
-    </div>
+    </app-table-card>
 
     <!-- MODAL: INSPECCIÓN FORENSE DE CAMBIOS EN JSON -->
     <div *ngIf="itemSeleccionado()" class="modal-backdrop">
@@ -533,7 +514,7 @@ export class AuditoriaComponent implements OnInit {
   totalRegistros = signal<number>(0);
   totalPaginas = signal<number>(1);
   paginaActual = signal<number>(1);
-  tamanoPagina = 25;
+  tamanoPagina = 15;
 
   // Filtros
   filtroTabla = '';
@@ -546,6 +527,18 @@ export class AuditoriaComponent implements OnInit {
 
   // Modal Detalle
   itemSeleccionado = signal<BitacoraItem | null>(null);
+
+  inicioRegistro = computed(() => {
+    if (this.totalRegistros() === 0) return 0;
+    return (this.paginaActual() - 1) * this.tamanoPagina + 1;
+  });
+
+  finRegistro = computed(() => {
+    return Math.min(
+      this.paginaActual() * this.tamanoPagina,
+      this.totalRegistros(),
+    );
+  });
 
   constructor(private auditoriaService: AuditoriaService) {}
 
@@ -561,6 +554,8 @@ export class AuditoriaComponent implements OnInit {
         correo: this.filtroCorreo ? this.filtroCorreo.trim() : undefined,
         pagina: this.paginaActual(),
         limite: this.tamanoPagina,
+        ordenColumna: this.columnaOrden(),
+        ordenDireccion: this.direccionOrden(),
       })
       .subscribe({
         next: (res) => {
@@ -598,6 +593,7 @@ export class AuditoriaComponent implements OnInit {
       this.columnaOrden.set(columna);
       this.direccionOrden.set('desc');
     }
+    this.cargarDatos();
   }
 
   iconoOrden(columna: string): string {
