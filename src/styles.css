@@ -1,0 +1,201 @@
+@import 'bootstrap-icons/font/bootstrap-icons.css';
+@import './styles/theme-variables.css';
+
+/* Reset y estilos globales CITEF FCEE - Modern UI */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background-color: var(--citef-bg-main);
+  color: var(--citef-text-primary);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Tarjetas */
+.citef-card {
+  background: var(--citef-bg-surface);
+  border: 1px solid var(--citef-border);
+  border-radius: var(--citef-radius);
+  box-shadow: var(--citef-shadow);
+  transition: box-shadow 0.2s ease;
+}
+
+/* Botones institucionales modernos */
+.citef-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  border-radius: var(--citef-radius-sm);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+  text-decoration: none;
+}
+
+.citef-btn-primary {
+  background-color: var(--citef-primary);
+  color: var(--citef-text-inverse);
+}
+.citef-btn-primary:hover {
+  background-color: var(--citef-primary-hover);
+}
+
+.citef-btn-secondary {
+  background-color: var(--citef-secondary);
+  color: var(--citef-text-inverse);
+}
+.citef-btn-secondary:hover {
+  background-color: var(--citef-secondary-hover);
+}
+
+.citef-btn-outline {
+  background-color: transparent;
+  border-color: var(--citef-border);
+  color: var(--citef-text-secondary);
+}
+.citef-btn-outline:hover {
+  background-color: #f1f5f9;
+  color: var(--citef-text-primary);
+  border-color: #cbd5e1;
+}
+
+.citef-btn-danger-outline {
+  background-color: transparent;
+  border-color: #fca5a5;
+  color: var(--citef-danger);
+}
+.citef-btn-danger-outline:hover {
+  background-color: var(--citef-danger-bg);
+  border-color: var(--citef-danger);
+}
+
+.citef-btn-sm {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8rem;
+}
+
+.citef-btn-xs {
+  padding: 0.25rem 0.55rem;
+  font-size: 0.75rem;
+  border-radius: 4px;
+}
+
+/* Formularios e inputs */
+.citef-input, .citef-select {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  border: 1px solid var(--citef-border);
+  border-radius: var(--citef-radius-sm);
+  background-color: var(--citef-bg-surface);
+  color: var(--citef-text-primary);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.citef-input:focus, .citef-select:focus {
+  outline: none;
+  border-color: var(--citef-primary);
+  box-shadow: 0 0 0 3px rgba(0, 40, 85, 0.12);
+}
+
+/* Badges e Insignias */
+.citef-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.55rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 9999px;
+  letter-spacing: 0.02em;
+}
+
+.citef-badge-success {
+  background-color: var(--citef-success-bg);
+  color: var(--citef-success);
+  border: 1px solid #bbf7d0;
+}
+
+.citef-badge-danger {
+  background-color: var(--citef-danger-bg);
+  color: var(--citef-danger);
+  border: 1px solid #fecaca;
+}
+
+.citef-badge-info {
+  background-color: var(--citef-info-bg);
+  color: var(--citef-info);
+  border: 1px solid #bae6fd;
+}
+
+.citef-badge-warning {
+  background-color: var(--citef-warning-bg);
+  color: var(--citef-warning);
+  border: 1px solid #fde68a;
+}
+
+.citef-badge-neutral {
+  background-color: #f1f5f9;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+}
+
+/* Tablas profesionales */
+.citef-table-container {
+  overflow-x: auto;
+  border: 1px solid var(--citef-border);
+  border-radius: var(--citef-radius);
+  background: var(--citef-bg-surface);
+}
+
+.citef-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.citef-table th {
+  background-color: #f8fafc;
+  color: var(--citef-text-secondary);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--citef-border);
+  user-select: none;
+}
+
+.citef-table th.sortable {
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.citef-table th.sortable:hover {
+  background-color: #e2e8f0;
+  color: var(--citef-text-primary);
+}
+
+.citef-table td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--citef-border);
+  font-size: 0.85rem;
+  vertical-align: middle;
+}
+
+.citef-table tbody tr:hover {
+  background-color: #f8fafc;
+}
+
+.citef-table tbody tr:last-child td {
+  border-bottom: none;
+}

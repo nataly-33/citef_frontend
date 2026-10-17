@@ -1,0 +1,51 @@
+/**
+ * ============================================================================
+ * PALETA INSTITUCIONAL FCEE - UAGRM (VARIABLES DE TEMA CENTRALIZADAS)
+ * ============================================================================
+ * Modificar aquí los colores para cambiar instantáneamente la apariencia
+ * en toda la aplicación Angular.
+ */
+:root {
+  /* --- Colores Principales FCEE UAGRM --- */
+  --citef-primary: #002855;         /* Azul Institucional UAGRM / FCEE */
+  --citef-primary-hover: #073b75;   /* Azul más claro para interactividad */
+  --citef-primary-dark: #001c3d;    /* Azul oscuro / Encabezados profundos */
+
+  --citef-secondary: #a81124;       /* Rojo Carmesí Institucional UAGRM */
+  --citef-secondary-hover: #c5182f; /* Rojo activo / hover */
+  --citef-secondary-light: #fef2f2; /* Rojo tenue para fondos de alertas */
+
+  --citef-accent: #d97706;          /* Dorado / Amarillo FCEE */
+  --citef-accent-hover: #b45309;
+
+  /* --- Superficies y Fondos --- */
+  --citef-bg-main: #f8fafc;         /* Fondo general de la plataforma */
+  --citef-bg-surface: #ffffff;      /* Fondo de tarjetas, tablas y modales */
+  --citef-bg-sidebar: #001c3d;      /* Fondo del panel lateral / navegación */
+  --citef-bg-sidebar-active: #073b75;
+
+  /* --- Textos y Tipografía --- */
+  --citef-text-primary: #0f172a;    /* Texto principal de alto contraste */
+  --citef-text-secondary: #475569;  /* Texto secundario y subtítulos */
+  --citef-text-muted: #94a3b8;      /* Texto de ayuda o desactivado */
+  --citef-text-inverse: #ffffff;    /* Texto sobre fondos oscuros/azules */
+
+  /* --- Bordes y Sombras --- */
+  --citef-border: #e2e8f0;          /* Líneas divisorias y bordes de inputs */
+  --citef-border-focus: #002855;
+  --citef-radius: 8px;              /* Radio de esquinas de botones y tarjetas */
+  --citef-radius-sm: 4px;
+  --citef-radius-lg: 12px;
+  --citef-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+  --citef-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
+
+  /* --- Estados del Sistema --- */
+  --citef-success: #15803d;         /* Activo / Aprobado / Éxito */
+  --citef-success-bg: #dcfce7;
+  --citef-warning: #b45309;         /* En revisión / Advertencia */
+  --citef-warning-bg: #fef3c7;
+  --citef-danger: #b91c1c;          /* Bloqueado / Inactivo / Error */
+  --citef-danger-bg: #fee2e2;
+  --citef-info: #0369a1;            /* Informativo */
+  --citef-info-bg: #e0f2fe;
+}
