@@ -8,6 +8,7 @@ import {
   CrearUsuarioPayload,
   ActualizarUsuarioPayload,
 } from '../../core/services/usuarios.service';
+import { AuthService } from '../../core/services/auth.service';
 import { ConfirmModalComponent } from '../../shared/components/confirm-modal/confirm-modal.component';
 
 @Component({
@@ -22,7 +23,11 @@ import { ConfirmModalComponent } from '../../shared/components/confirm-modal/con
       </div>
 
       <div class="header-actions">
-        <button class="citef-btn citef-btn-primary" (click)="abrirModalCrear()">
+        <button
+          *ngIf="puedeCrear()"
+          class="citef-btn citef-btn-primary"
+          (click)="abrirModalCrear()"
+        >
           <i class="bi bi-person-plus"></i>
           <span>Nuevo Usuario</span>
         </button>
@@ -164,7 +169,7 @@ import { ConfirmModalComponent } from '../../shared/components/confirm-modal/con
                 </span>
               </td>
               <td class="text-center">
-                <div class="action-buttons">
+                <div class="action-buttons" *ngIf="puedeEditar()">
                   <button
                     type="button"
                     class="btn-icon btn-edit"
@@ -183,6 +188,9 @@ import { ConfirmModalComponent } from '../../shared/components/confirm-modal/con
                     <i class="bi bi-trash3"></i>
                   </button>
                 </div>
+                <span *ngIf="!puedeEditar()" class="text-muted small">
+                  <i class="bi bi-lock me-1"></i>Lectura
+                </span>
               </td>
             </tr>
 
@@ -242,29 +250,43 @@ import { ConfirmModalComponent } from '../../shared/components/confirm-modal/con
           </button>
         </div>
 
-        <form (ngSubmit)="guardarNuevoUsuario()" class="modal-form">
+        <!-- Alerta de Error dentro del Modal -->
+        <div *ngIf="modalErrorMsg()" class="modal-alert-danger">
+          <i class="bi bi-exclamation-triangle-fill"></i>
+          <span>{{ modalErrorMsg() }}</span>
+        </div>
+
+        <form (ngSubmit)="guardarNuevoUsuario()" class="modal-form" novalidate>
           <div class="form-row">
             <div class="form-group col-6">
               <label class="form-label">Nombres <span class="req">*</span></label>
               <input
                 type="text"
                 class="citef-input"
+                [class.input-error]="erroresNuevo.nombres"
                 [(ngModel)]="nuevoUsuario.nombres"
+                (input)="limpiarErrorNuevo('nombres')"
                 name="nombres"
                 placeholder="Ej: Juan Carlos"
-                required
               />
+              <span *ngIf="erroresNuevo.nombres" class="field-error-text">
+                <i class="bi bi-exclamation-circle me-1"></i>{{ erroresNuevo.nombres }}
+              </span>
             </div>
             <div class="form-group col-6">
               <label class="form-label">Apellidos <span class="req">*</span></label>
               <input
                 type="text"
                 class="citef-input"
+                [class.input-error]="erroresNuevo.apellidos"
                 [(ngModel)]="nuevoUsuario.apellidos"
+                (input)="limpiarErrorNuevo('apellidos')"
                 name="apellidos"
                 placeholder="Ej: Pérez Rodríguez"
-                required
               />
+              <span *ngIf="erroresNuevo.apellidos" class="field-error-text">
+                <i class="bi bi-exclamation-circle me-1"></i>{{ erroresNuevo.apellidos }}
+              </span>
             </div>
           </div>
 
@@ -274,11 +296,15 @@ import { ConfirmModalComponent } from '../../shared/components/confirm-modal/con
               <input
                 type="email"
                 class="citef-input"
+                [class.input-error]="erroresNuevo.correo"
                 [(ngModel)]="nuevoUsuario.correo_institucional"
+                (input)="limpiarErrorNuevo('correo')"
                 name="correo"
                 placeholder="usuario@gmail.com"
-                required
               />
+              <span *ngIf="erroresNuevo.correo" class="field-error-text">
+                <i class="bi bi-exclamation-circle me-1"></i>{{ erroresNuevo.correo }}
+              </span>
             </div>
             <div class="form-group col-6">
               <label class="form-label">Teléfono</label>
@@ -297,16 +323,20 @@ import { ConfirmModalComponent } from '../../shared/components/confirm-modal/con
             <input
               type="password"
               class="citef-input"
+              [class.input-error]="erroresNuevo.password"
               [(ngModel)]="nuevoUsuario.password"
+              (input)="limpiarErrorNuevo('password')"
               name="password"
               placeholder="Mínimo 6 caracteres"
-              required
             />
+            <span *ngIf="erroresNuevo.password" class="field-error-text">
+              <i class="bi bi-exclamation-circle me-1"></i>{{ erroresNuevo.password }}
+            </span>
           </div>
 
           <div class="form-group">
             <label class="form-label">Roles <span class="req">*</span></label>
-            <div class="roles-chips-container">
+            <div class="roles-chips-container" [class.container-error]="erroresNuevo.roles">
               <div
                 *ngFor="let r of listaRoles()"
                 class="role-chip"
@@ -317,6 +347,9 @@ import { ConfirmModalComponent } from '../../shared/components/confirm-modal/con
                 <span>{{ r.nombre }}</span>
               </div>
             </div>
+            <span *ngIf="erroresNuevo.roles" class="field-error-text">
+              <i class="bi bi-exclamation-circle me-1"></i>{{ erroresNuevo.roles }}
+            </span>
           </div>
 
           <div class="modal-footer">
@@ -330,7 +363,7 @@ import { ConfirmModalComponent } from '../../shared/components/confirm-modal/con
             <button
               type="submit"
               class="citef-btn citef-btn-primary"
-              [disabled]="guardando() || !nuevoUsuario.correo_institucional || !nuevoUsuario.password || nuevoUsuario.roles_ids.length === 0"
+              [disabled]="guardando()"
             >
               <i class="bi bi-check2"></i>
               <span>{{ guardando() ? 'Guardando...' : 'Crear Usuario' }}</span>
@@ -350,27 +383,43 @@ import { ConfirmModalComponent } from '../../shared/components/confirm-modal/con
           </button>
         </div>
 
-        <form *ngIf="usuarioAEditar" (ngSubmit)="guardarEdicionUsuario()" class="modal-form">
+        <!-- Alerta de Error dentro del Modal Editar -->
+        <div *ngIf="modalEditarErrorMsg()" class="modal-alert-danger">
+          <i class="bi bi-exclamation-triangle-fill"></i>
+          <span>{{ modalEditarErrorMsg() }}</span>
+        </div>
+
+        <form *ngIf="usuarioAEditar" (ngSubmit)="guardarEdicionUsuario()" class="modal-form" novalidate>
           <div class="form-row">
             <div class="form-group col-6">
               <label class="form-label">Nombres <span class="req">*</span></label>
               <input
                 type="text"
                 class="citef-input"
+                [class.input-error]="erroresEditar.nombres"
                 [(ngModel)]="usuarioAEditar.nombres"
+                (input)="limpiarErrorEditar('nombres')"
                 name="editNombres"
                 required
               />
+              <span *ngIf="erroresEditar.nombres" class="field-error-text">
+                <i class="bi bi-exclamation-circle me-1"></i>{{ erroresEditar.nombres }}
+              </span>
             </div>
             <div class="form-group col-6">
               <label class="form-label">Apellidos <span class="req">*</span></label>
               <input
                 type="text"
                 class="citef-input"
+                [class.input-error]="erroresEditar.apellidos"
                 [(ngModel)]="usuarioAEditar.apellidos"
+                (input)="limpiarErrorEditar('apellidos')"
                 name="editApellidos"
                 required
               />
+              <span *ngIf="erroresEditar.apellidos" class="field-error-text">
+                <i class="bi bi-exclamation-circle me-1"></i>{{ erroresEditar.apellidos }}
+              </span>
             </div>
           </div>
 
@@ -409,7 +458,7 @@ import { ConfirmModalComponent } from '../../shared/components/confirm-modal/con
 
           <div class="form-group">
             <label class="form-label">Roles Asignados <span class="req">*</span></label>
-            <div class="roles-chips-container">
+            <div class="roles-chips-container" [class.container-error]="erroresEditar.roles">
               <div
                 *ngFor="let r of listaRoles()"
                 class="role-chip"
@@ -420,6 +469,9 @@ import { ConfirmModalComponent } from '../../shared/components/confirm-modal/con
                 <span>{{ r.nombre }}</span>
               </div>
             </div>
+            <span *ngIf="erroresEditar.roles" class="field-error-text">
+              <i class="bi bi-exclamation-circle me-1"></i>{{ erroresEditar.roles }}
+            </span>
           </div>
 
           <div class="modal-footer">
@@ -433,7 +485,7 @@ import { ConfirmModalComponent } from '../../shared/components/confirm-modal/con
             <button
               type="submit"
               class="citef-btn citef-btn-primary"
-              [disabled]="guardando() || usuarioAEditar.roles_ids.length === 0"
+              [disabled]="guardando()"
             >
               <i class="bi bi-check2"></i>
               <span>{{ guardando() ? 'Guardando...' : 'Guardar Cambios' }}</span>
@@ -782,6 +834,48 @@ import { ConfirmModalComponent } from '../../shared/components/confirm-modal/con
         cursor: not-allowed;
       }
 
+      /* Error Styles */
+      .input-error {
+        border-color: #ef4444 !important;
+        background-color: #fef2f2 !important;
+      }
+
+      .input-error:focus {
+        border-color: #dc2626 !important;
+        box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15) !important;
+      }
+
+      .field-error-text {
+        display: flex;
+        align-items: center;
+        font-size: 0.775rem;
+        color: #dc2626;
+        margin-top: 0.35rem;
+        font-weight: 600;
+        line-height: 1.2;
+      }
+
+      .container-error {
+        border: 1px dashed #ef4444 !important;
+        padding: 0.45rem;
+        border-radius: 6px;
+        background: #fef2f2;
+      }
+
+      .modal-alert-danger {
+        display: flex;
+        align-items: center;
+        gap: 0.65rem;
+        padding: 0.75rem 1rem;
+        border-radius: var(--citef-radius-sm, 6px);
+        font-size: 0.85rem;
+        font-weight: 600;
+        background-color: #fef2f2;
+        color: #dc2626;
+        border: 1px solid #fecaca;
+        margin-bottom: 1.25rem;
+      }
+
       @media (max-width: 768px) {
         .filter-grid {
           grid-template-columns: 1fr;
@@ -818,11 +912,33 @@ export class UsuariosComponent implements OnInit {
   successMsg = signal<string | null>(null);
   errorMsg = signal<string | null>(null);
 
+  // Permisos de usuario según RBAC
+  puedeCrear = computed(() => this.authService.hasPermission('SEG_USUARIOS_CREAR'));
+  puedeEditar = computed(() => this.authService.hasPermission('SEG_USUARIOS_EDITAR'));
+
   // Modales
   mostrarModalCrear = signal<boolean>(false);
   mostrarModalEditar = signal<boolean>(false);
   mostrarModalConfirmarEliminar = signal<boolean>(false);
   guardando = signal<boolean>(false);
+
+  // Errores de validación - Modal Nuevo Usuario
+  erroresNuevo = {
+    nombres: '',
+    apellidos: '',
+    correo: '',
+    password: '',
+    roles: '',
+  };
+  modalErrorMsg = signal<string | null>(null);
+
+  // Errores de validación - Modal Editar Usuario
+  erroresEditar = {
+    nombres: '',
+    apellidos: '',
+    roles: '',
+  };
+  modalEditarErrorMsg = signal<string | null>(null);
 
   // Formulario Nuevo
   nuevoUsuario: CrearUsuarioPayload = {
@@ -848,7 +964,10 @@ export class UsuariosComponent implements OnInit {
   // Usuario para eliminar/desactivar
   usuarioAEliminar: UsuarioItem | null = null;
 
-  constructor(private usuariosService: UsuariosService) {}
+  constructor(
+    private usuariosService: UsuariosService,
+    private authService: AuthService,
+  ) {}
 
   ngOnInit(): void {
     this.cargarDatos();
@@ -973,6 +1092,93 @@ export class UsuariosComponent implements OnInit {
     }
   }
 
+  // Validación y Manejo de Errores
+  limpiarErrorNuevo(campo: keyof typeof this.erroresNuevo) {
+    this.erroresNuevo[campo] = '';
+    this.modalErrorMsg.set(null);
+  }
+
+  limpiarErrorEditar(campo: keyof typeof this.erroresEditar) {
+    this.erroresEditar[campo] = '';
+    this.modalEditarErrorMsg.set(null);
+  }
+
+  validarFormularioNuevo(): boolean {
+    this.erroresNuevo = {
+      nombres: '',
+      apellidos: '',
+      correo: '',
+      password: '',
+      roles: '',
+    };
+    let valido = true;
+
+    if (!this.nuevoUsuario.nombres || !this.nuevoUsuario.nombres.trim()) {
+      this.erroresNuevo.nombres = 'Los nombres son obligatorios.';
+      valido = false;
+    }
+
+    if (!this.nuevoUsuario.apellidos || !this.nuevoUsuario.apellidos.trim()) {
+      this.erroresNuevo.apellidos = 'Los apellidos son obligatorios.';
+      valido = false;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (
+      !this.nuevoUsuario.correo_institucional ||
+      !this.nuevoUsuario.correo_institucional.trim()
+    ) {
+      this.erroresNuevo.correo = 'El correo electrónico es obligatorio.';
+      valido = false;
+    } else if (!emailRegex.test(this.nuevoUsuario.correo_institucional.trim())) {
+      this.erroresNuevo.correo =
+        'Ingrese un correo electrónico válido (ej: usuario@gmail.com).';
+      valido = false;
+    }
+
+    if (!this.nuevoUsuario.password) {
+      this.erroresNuevo.password = 'La contraseña inicial es obligatoria.';
+      valido = false;
+    } else if (this.nuevoUsuario.password.length < 6) {
+      this.erroresNuevo.password =
+        'La contraseña debe tener al menos 6 caracteres.';
+      valido = false;
+    }
+
+    if (!this.nuevoUsuario.roles_ids || this.nuevoUsuario.roles_ids.length === 0) {
+      this.erroresNuevo.roles = 'Debe seleccionar al menos un rol para el usuario.';
+      valido = false;
+    }
+
+    return valido;
+  }
+
+  validarFormularioEditar(): boolean {
+    this.erroresEditar = {
+      nombres: '',
+      apellidos: '',
+      roles: '',
+    };
+    let valido = true;
+
+    if (!this.usuarioAEditar?.nombres || !this.usuarioAEditar.nombres.trim()) {
+      this.erroresEditar.nombres = 'Los nombres son obligatorios.';
+      valido = false;
+    }
+
+    if (!this.usuarioAEditar?.apellidos || !this.usuarioAEditar.apellidos.trim()) {
+      this.erroresEditar.apellidos = 'Los apellidos son obligatorios.';
+      valido = false;
+    }
+
+    if (!this.usuarioAEditar?.roles_ids || this.usuarioAEditar.roles_ids.length === 0) {
+      this.erroresEditar.roles = 'El usuario debe conservar al menos un rol asignado.';
+      valido = false;
+    }
+
+    return valido;
+  }
+
   // Creación de Usuario
   abrirModalCrear() {
     this.nuevoUsuario = {
@@ -983,6 +1189,14 @@ export class UsuariosComponent implements OnInit {
       telefono: '',
       roles_ids: [],
     };
+    this.erroresNuevo = {
+      nombres: '',
+      apellidos: '',
+      correo: '',
+      password: '',
+      roles: '',
+    };
+    this.modalErrorMsg.set(null);
     this.mostrarModalCrear.set(true);
   }
 
@@ -997,11 +1211,15 @@ export class UsuariosComponent implements OnInit {
     } else {
       this.nuevoUsuario.roles_ids.push(idRol);
     }
+    if (this.nuevoUsuario.roles_ids.length > 0) {
+      this.limpiarErrorNuevo('roles');
+    }
   }
 
   guardarNuevoUsuario() {
-    if (this.nuevoUsuario.roles_ids.length === 0) {
-      this.showError('Seleccione al menos un rol.');
+    this.modalErrorMsg.set(null);
+
+    if (!this.validarFormularioNuevo()) {
       return;
     }
 
@@ -1015,8 +1233,21 @@ export class UsuariosComponent implements OnInit {
       },
       error: (err) => {
         this.guardando.set(false);
-        const msg = err.error?.message || 'Error al crear usuario.';
-        this.showError(Array.isArray(msg) ? msg.join(', ') : msg);
+        const rawMsg = err.error?.message;
+        const msg = Array.isArray(rawMsg)
+          ? rawMsg.join(', ')
+          : rawMsg || 'Error al crear usuario en la base de datos.';
+        this.modalErrorMsg.set(msg);
+
+        // Mapear al campo específico para destacar en rojo
+        const lower = msg.toLowerCase();
+        if (lower.includes('correo') || lower.includes('email')) {
+          this.erroresNuevo.correo = msg;
+        } else if (lower.includes('contraseña') || lower.includes('password')) {
+          this.erroresNuevo.password = msg;
+        } else if (lower.includes('rol')) {
+          this.erroresNuevo.roles = msg;
+        }
       },
     });
   }
@@ -1032,6 +1263,12 @@ export class UsuariosComponent implements OnInit {
       roles_ids: (u.roles || []).map((r) => r.id_rol),
       activo: u.activo,
     };
+    this.erroresEditar = {
+      nombres: '',
+      apellidos: '',
+      roles: '',
+    };
+    this.modalEditarErrorMsg.set(null);
     this.mostrarModalEditar.set(true);
   }
 
@@ -1047,13 +1284,16 @@ export class UsuariosComponent implements OnInit {
     } else {
       this.usuarioAEditar.roles_ids.push(idRol);
     }
+    if (this.usuarioAEditar.roles_ids.length > 0) {
+      this.limpiarErrorEditar('roles');
+    }
   }
 
   guardarEdicionUsuario() {
     if (!this.usuarioAEditar) return;
+    this.modalEditarErrorMsg.set(null);
 
-    if (this.usuarioAEditar.roles_ids.length === 0) {
-      this.showError('El usuario debe conservar al menos un rol asignado.');
+    if (!this.validarFormularioEditar()) {
       return;
     }
 
@@ -1075,8 +1315,11 @@ export class UsuariosComponent implements OnInit {
       },
       error: (err) => {
         this.guardando.set(false);
-        const msg = err.error?.message || 'Error al actualizar usuario.';
-        this.showError(Array.isArray(msg) ? msg.join(', ') : msg);
+        const rawMsg = err.error?.message;
+        const msg = Array.isArray(rawMsg)
+          ? rawMsg.join(', ')
+          : rawMsg || 'Error al actualizar usuario.';
+        this.modalEditarErrorMsg.set(msg);
       },
     });
   }
