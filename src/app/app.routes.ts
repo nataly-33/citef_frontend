@@ -6,6 +6,7 @@ import { UsuariosComponent } from './pages/usuarios/usuarios.component';
 import { RolesComponent } from './pages/roles/roles.component';
 import { AuditoriaComponent } from './pages/auditoria/auditoria.component';
 import { authGuard } from './core/guards/auth.guard';
+import { permissionGuard } from './core/guards/permission.guard';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -15,9 +16,27 @@ export const routes: Routes = [
     component: ShellComponent,
     canActivate: [authGuard],
     children: [
-      { path: 'usuarios', component: UsuariosComponent },
-      { path: 'roles', component: RolesComponent },
-      { path: 'auditoria', component: AuditoriaComponent },
+      {
+        path: 'usuarios',
+        component: UsuariosComponent,
+        canActivate: [
+          permissionGuard([
+            'SEG_USUARIOS_VER',
+            'SEG_USUARIOS_CREAR',
+            'SEG_USUARIOS_EDITAR',
+          ]),
+        ],
+      },
+      {
+        path: 'roles',
+        component: RolesComponent,
+        canActivate: [permissionGuard(['SEG_ROLES_GESTIONAR'])],
+      },
+      {
+        path: 'auditoria',
+        component: AuditoriaComponent,
+        canActivate: [permissionGuard(['SEG_AUDITORIA_VER'])],
+      },
       { path: '', redirectTo: 'usuarios', pathMatch: 'full' },
     ],
   },

@@ -1,4 +1,4 @@
-import { Component, computed, signal, inject } from '@angular/core';
+import { Component, computed, signal, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
@@ -66,7 +66,7 @@ interface NavItem {
         <aside class="sidebar" [class.open]="sidebarAbierto()">
           <nav class="sidebar-nav">
             <a
-              *ngFor="let item of navItems"
+              *ngFor="let item of navItems()"
               class="nav-link"
               [routerLink]="item.ruta"
               routerLinkActive="active"
@@ -403,7 +403,7 @@ interface NavItem {
     `,
   ],
 })
-export class ShellComponent {
+export class ShellComponent implements OnInit {
   private authService = inject(AuthService);
   private router = inject(Router);
 
@@ -411,6 +411,15 @@ export class ShellComponent {
   mostrarUserMenu = signal(false);
 
   currentUser = computed(() => this.authService.currentUser());
+
+  ngOnInit(): void {
+    // Sincronizar perfil y permisos actualizados desde el backend
+    this.authService.recargarPerfil().subscribe({
+      error: () => {
+        // En caso de sesión expirada o token inválido
+      },
+    });
+  }
 
   iniciales = computed(() => {
     const user = this.currentUser();
@@ -425,12 +434,45 @@ export class ShellComponent {
     return roles && roles.length > 0 ? roles[0] : 'USUARIO';
   });
 
-  // Navegación limpia sin números de módulos ni CU
-  navItems: NavItem[] = [
-    { ruta: '/admin/usuarios', texto: 'Usuarios', icono: 'bi-people' },
-    { ruta: '/admin/roles', texto: 'Roles y Permisos', icono: 'bi-shield-check' },
-    { ruta: '/admin/auditoria', texto: 'Bitácora de Auditoría', icono: 'bi-clock-history' },
-  ];
+  // Navegación limpia y reactiva según permisos y roles RBAC
+  navItems = computed<NavItem[]>(() => {
+    const items: NavItem[] = [];
+
+    // Ver usuarios
+    if (
+      this.authService.hasAnyPermission([
+        'SEG_USUARIOS_VER',
+        'SEG_USUARIOS_CREAR',
+        'SEG_USUARIOS_EDITAR',
+      ])
+    ) {
+      items.push({
+        ruta: '/admin/usuarios',
+        texto: 'Usuarios',
+        icono: 'bi-people',
+      });
+    }
+
+    // Gestionar roles y matriz RBAC
+    if (this.authService.hasPermission('SEG_ROLES_GESTIONAR')) {
+      items.push({
+        ruta: '/admin/roles',
+        texto: 'Roles y Permisos',
+        icono: 'bi-shield-check',
+      });
+    }
+
+    // Bitácora de auditoría
+    if (this.authService.hasPermission('SEG_AUDITORIA_VER')) {
+      items.push({
+        ruta: '/admin/auditoria',
+        texto: 'Bitácora de Auditoría',
+        icono: 'bi-clock-history',
+      });
+    }
+
+    return items;
+  });
 
   toggleSidebar() {
     this.sidebarAbierto.update((v) => !v);

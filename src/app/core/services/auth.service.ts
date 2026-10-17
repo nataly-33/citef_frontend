@@ -60,7 +60,40 @@ export class AuthService {
 
   hasRole(rol: string): boolean {
     const user = this.currentUser();
-    return !!user && user.roles.includes(rol);
+    return !!user && user.roles?.includes(rol);
+  }
+
+  hasPermission(codigo: string): boolean {
+    const user = this.currentUser();
+    if (!user) return false;
+    if (user.roles?.includes('ADMINISTRADOR')) return true;
+    return !!user.permisos?.includes(codigo);
+  }
+
+  hasAnyPermission(codigos: string[]): boolean {
+    const user = this.currentUser();
+    if (!user) return false;
+    if (user.roles?.includes('ADMINISTRADOR')) return true;
+    return codigos.some((c) => user.permisos?.includes(c));
+  }
+
+  recargarPerfil(): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/perfil`).pipe(
+      tap((perfil) => {
+        if (perfil && perfil.correo) {
+          const userSession: UsuarioSession = {
+            id_usuario: perfil.id_usuario,
+            correo_institucional: perfil.correo,
+            nombres: perfil.nombres || '',
+            apellidos: perfil.apellidos || '',
+            roles: perfil.roles || [],
+            permisos: perfil.permisos || [],
+          };
+          localStorage.setItem(this.USER_KEY, JSON.stringify(userSession));
+          this.currentUser.set(userSession);
+        }
+      }),
+    );
   }
 
   private getStoredToken(): string | null {
