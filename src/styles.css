@@ -111,42 +111,48 @@ body {
 .citef-badge {
   display: inline-flex;
   align-items: center;
-  gap: 0.3rem;
-  padding: 0.2rem 0.55rem;
+  gap: 0.35rem;
+  padding: 0.25rem 0.65rem;
   font-size: 0.75rem;
-  font-weight: 600;
+  font-weight: 700;
   border-radius: 9999px;
   letter-spacing: 0.02em;
 }
 
 .citef-badge-success {
-  background-color: var(--citef-success-bg);
-  color: var(--citef-success);
-  border: 1px solid #bbf7d0;
+  background-color: #dcfce7;
+  color: #14532d;
+  border: 1.5px solid #16a34a;
 }
 
 .citef-badge-danger {
-  background-color: var(--citef-danger-bg);
-  color: var(--citef-danger);
-  border: 1px solid #fecaca;
+  background-color: #fee2e2;
+  color: #7f1d1d;
+  border: 1.5px solid #dc2626;
 }
 
 .citef-badge-info {
-  background-color: var(--citef-info-bg);
-  color: var(--citef-info);
-  border: 1px solid #bae6fd;
+  background-color: #e0f2fe;
+  color: #075985;
+  border: 1.5px solid #0284c7;
 }
 
 .citef-badge-warning {
-  background-color: var(--citef-warning-bg);
-  color: var(--citef-warning);
-  border: 1px solid #fde68a;
+  background-color: #fef3c7;
+  color: #78350f;
+  border: 1.5px solid #d97706;
+}
+
+.citef-badge-purple {
+  background-color: #ede9fe;
+  color: #5b21b6;
+  border: 1.5px solid #7c3aed;
 }
 
 .citef-badge-neutral {
   background-color: #f1f5f9;
-  color: #475569;
-  border: 1px solid #e2e8f0;
+  color: #334155;
+  border: 1.5px solid #64748b;
 }
 
 /* Tablas profesionales */
