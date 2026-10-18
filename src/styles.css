@@ -63,14 +63,14 @@ body {
   color: var(--citef-text-secondary);
 }
 .citef-btn-outline:hover {
-  background-color: #f1f5f9;
+  background-color: var(--citef-surface-soft);
   color: var(--citef-text-primary);
-  border-color: #cbd5e1;
+  border-color: var(--citef-border-strong);
 }
 
 .citef-btn-danger-outline {
   background-color: transparent;
-  border-color: #fca5a5;
+  border-color: var(--citef-danger-border);
   color: var(--citef-danger);
 }
 .citef-btn-danger-outline:hover {
@@ -120,39 +120,39 @@ body {
 }
 
 .citef-badge-success {
-  background-color: #dcfce7;
-  color: #14532d;
+  background-color: var(--citef-success-bg);
+  color: var(--citef-success);
   border: 1.5px solid #16a34a;
 }
 
 .citef-badge-danger {
-  background-color: #fee2e2;
-  color: #7f1d1d;
+  background-color: var(--citef-danger-bg);
+  color: var(--citef-danger);
   border: 1.5px solid #dc2626;
 }
 
 .citef-badge-info {
-  background-color: #e0f2fe;
-  color: #075985;
-  border: 1.5px solid #0284c7;
+  background-color: var(--citef-info-bg);
+  color: var(--citef-info);
+  border: 1.5px solid var(--citef-blue-info);
 }
 
 .citef-badge-warning {
-  background-color: #fef3c7;
-  color: #78350f;
-  border: 1.5px solid #d97706;
+  background-color: var(--citef-warning-bg);
+  color: var(--citef-warning);
+  border: 1.5px solid var(--citef-accent);
 }
 
 .citef-badge-purple {
-  background-color: #ede9fe;
-  color: #5b21b6;
-  border: 1.5px solid #7c3aed;
+  background-color: var(--citef-violet-bg);
+  color: var(--citef-violet);
+  border: 1.5px solid var(--citef-violet);
 }
 
 .citef-badge-neutral {
-  background-color: #f1f5f9;
-  color: #334155;
-  border: 1.5px solid #64748b;
+  background-color: var(--citef-surface-soft);
+  color: var(--citef-text-body);
+  border: 1.5px solid var(--citef-text-strong-muted);
 }
 
 /* Tablas profesionales */
@@ -170,7 +170,7 @@ body {
 }
 
 .citef-table th {
-  background-color: #f8fafc;
+  background-color: var(--citef-bg-main);
   color: var(--citef-text-secondary);
   font-size: 0.75rem;
   font-weight: 700;
@@ -187,7 +187,7 @@ body {
 }
 
 .citef-table th.sortable:hover {
-  background-color: #e2e8f0;
+  background-color: var(--citef-border);
   color: var(--citef-text-primary);
 }
 
@@ -199,7 +199,7 @@ body {
 }
 
 .citef-table tbody tr:hover {
-  background-color: #f8fafc;
+  background-color: var(--citef-bg-main);
 }
 
 .citef-table tbody tr:last-child td {

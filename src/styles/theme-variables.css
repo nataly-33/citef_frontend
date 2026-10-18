@@ -48,4 +48,47 @@
   --citef-danger-bg: #fee2e2;
   --citef-info: #0369a1;            /* Informativo */
   --citef-info-bg: #e0f2fe;
+
+  /* --- Tokens de infraestructura y estados visuales --- */
+  --citef-primary-deep-hover: #001a38;
+  --citef-surface-white: #ffffff;
+  --citef-surface-soft: #f1f5f9;
+  --citef-surface-subtle: #fafbfc;
+  --citef-surface-blue: #eff6ff;
+  --citef-surface-green: #f0fdf4;
+  --citef-surface-red: #fff1f2;
+  --citef-border-strong: #cbd5e1;
+  --citef-border-blue: #bfdbfe;
+  --citef-border-green: #bbf7d0;
+  --citef-border-red: #fecaca;
+  --citef-text-heading: #1e293b;
+  --citef-text-body: #334155;
+  --citef-text-strong-muted: #64748b;
+  --citef-danger-strong: #dc2626;
+  --citef-success-strong: #16a34a;
+  --citef-success-hover: #15803d;
+  --citef-blue-strong: #1d4ed8;
+  --citef-blue-border: #3b82f6;
+  --citef-blue-dark: #1e3a8a;
+  --citef-violet: #7c3aed;
+  --citef-violet-bg: #ede9fe;
+  --citef-orange: #ea580c;
+  --citef-orange-bg: #ffedd5;
+  --citef-amber-border: #fde68a;
+  --citef-red-light: #fffafb;
+
+  /* Superficies sólidas para distinguir estados de las estaciones */
+  --citef-machine-available-bg: #e8f5ed;
+  --citef-machine-occupied-bg: #e8f0fb;
+  --citef-machine-reserved-bg: #f0ebff;
+  --citef-machine-maintenance-bg: #fff3e8;
+  --citef-machine-teacher-bg: #fff0f1;
+  --citef-blue-pale: #dbeafe;
+  --citef-blue-info: #0284c7;
+  --citef-blue-border-strong: #3b82f6;
+  --citef-surface-blue-hover: #f0f7ff;
+  --citef-green-bright: #22c55e;
+  --citef-danger-border: #fca5a5;
+  --citef-warning-surface: #fffbeb;
+  --citef-neutral-surface: #f0f4f8;
 }
