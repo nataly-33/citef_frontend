@@ -19,7 +19,7 @@ import { CommonModule } from '@angular/common';
         </div>
 
         <div class="modal-actions">
-          <button type="button" class="citef-btn citef-btn-outline" (click)="cancel()">
+          <button type="button" class="citef-btn citef-btn-secondary" (click)="cancel()">
             {{ cancelBtnText }}
           </button>
           <button

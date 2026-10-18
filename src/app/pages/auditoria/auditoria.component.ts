@@ -82,7 +82,8 @@ import {
             <i class="bi bi-funnel-fill"></i>
             <span>Filtrar</span>
           </button>
-          <button class="citef-btn citef-btn-outline" (click)="limpiarFiltros()">
+          <button class="citef-btn citef-btn-secondary" (click)="limpiarFiltros()">
+            <i class="bi bi-arrow-counterclockwise me-1"></i>
             <span>Limpiar</span>
           </button>
         </div>
@@ -98,7 +99,7 @@ import {
               <span>ID</span>
               <i class="bi" [class]="iconoOrden('id_auditoria')"></i>
             </th>
-            <th class="sortable" style="width: 170px" (click)="ordenarPor('fecha_hora')">
+            <th class="sortable" style="width: 205px; white-space: nowrap;" (click)="ordenarPor('fecha_hora')">
               <span>Fecha y Hora</span>
               <i class="bi" [class]="iconoOrden('fecha_hora')"></i>
             </th>
@@ -115,11 +116,10 @@ import {
             <td class="text-center">
               <span class="text-muted font-monospace">#{{ item.id_auditoria }}</span>
             </td>
-            <td>
+            <td style="white-space: nowrap;">
               <div class="date-cell">
                 <i class="bi bi-calendar-event text-muted me-1"></i>
-                <strong>{{ item.fecha_hora | date: 'dd/MM/yyyy' }}</strong>
-                <span class="time-sub">{{ item.fecha_hora | date: 'HH:mm:ss' }}</span>
+                <span class="date-text"><strong>{{ item.fecha_hora | date: 'dd/MM/yyyy' }}</strong> {{ item.fecha_hora | date: 'HH:mm:ss' }}</span>
               </div>
             </td>
             <td>
@@ -312,14 +312,16 @@ import {
       }
 
       .date-cell {
-        display: flex;
-        flex-direction: column;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        white-space: nowrap;
         line-height: 1.2;
       }
 
-      .time-sub {
-        font-size: 0.725rem;
-        color: var(--citef-text-muted);
+      .date-text {
+        font-size: 0.8125rem;
+        color: var(--citef-text-primary);
       }
 
       .table-name-code {

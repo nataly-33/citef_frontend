@@ -270,6 +270,7 @@ import {
                 class="citef-select"
                 [(ngModel)]="filtroSemestreMateria"
                 name="filtroSemestreMateria"
+                (change)="ejecutarBusquedaMaterias()"
               >
                 <option [ngValue]="null">Todos los semestres</option>
                 <option *ngFor="let s of semestresLista" [ngValue]="s">
@@ -284,6 +285,7 @@ import {
                 class="citef-select"
                 [(ngModel)]="filtroEstadoMateria"
                 name="filtroEstadoMateria"
+                (change)="ejecutarBusquedaMaterias()"
               >
                 <option value="TODOS">Todos</option>
                 <option value="ACTIVOS">Activos</option>
@@ -320,7 +322,7 @@ import {
               <th class="text-center" style="width: 70px">ID</th>
               <th style="width: 120px">Sigla</th>
               <th>Materia</th>
-              <th class="text-center" style="width: 110px">Semestre</th>
+              <th class="text-center" style="width: 140px; white-space: nowrap;">Semestre</th>
               <th>Carrera</th>
               <th class="text-center" style="width: 110px">Estado</th>
               <th class="text-center" style="width: 120px">Acciones</th>
@@ -335,7 +337,7 @@ import {
               <td>
                 <strong class="subject-title">{{ m.nombre }}</strong>
               </td>
-              <td class="text-center">
+              <td class="text-center" style="white-space: nowrap;">
                 <span class="badge-semester">Semestre {{ m.semestre_nivel }}</span>
               </td>
               <td>
@@ -705,30 +707,30 @@ import {
 
       /* FILTERS */
       .filter-card {
-        padding: 1.25rem;
+        padding: 1.15rem 1.25rem;
       }
 
       .filter-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 1rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
         align-items: flex-end;
-      }
-
-      .filter-field-main {
-        grid-column: span 1;
-      }
-
-      @media (min-width: 992px) {
-        .filter-field-main {
-          grid-column: span 2;
-        }
       }
 
       .filter-field {
         display: flex;
         flex-direction: column;
         gap: 0.35rem;
+        flex: 1 1 150px;
+        min-width: 130px;
+      }
+
+      .filter-field-main {
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+        flex: 1.6 1 180px;
+        min-width: 150px;
       }
 
       .filter-label {
@@ -758,6 +760,8 @@ import {
         display: flex;
         gap: 0.5rem;
         align-items: flex-end;
+        flex: 0 0 auto;
+        white-space: nowrap;
       }
 
       /* BADGES & TYPOGRAPHY */
@@ -774,11 +778,13 @@ import {
       .badge-semester {
         background: #f8fafc;
         color: #475569;
-        padding: 0.2rem 0.5rem;
+        padding: 0.25rem 0.65rem;
         border-radius: 4px;
         font-size: 0.8rem;
         font-weight: 600;
         border: 1px solid #cbd5e1;
+        white-space: nowrap;
+        display: inline-block;
       }
 
       .career-title,
@@ -1251,6 +1257,7 @@ export class AcademicosComponent implements OnInit {
   }
 
   abrirModalCrearMateria(): void {
+    this.cargarListaCarrerasDropdown();
     this.editandoMateriaId.set(null);
     this.materiaForm = {
       sigla: '',
@@ -1264,6 +1271,7 @@ export class AcademicosComponent implements OnInit {
   }
 
   abrirModalEditarMateria(m: MateriaItem): void {
+    this.cargarListaCarrerasDropdown();
     this.editandoMateriaId.set(m.id_materia);
     this.materiaForm = {
       sigla: m.sigla,

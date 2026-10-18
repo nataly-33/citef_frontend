@@ -113,7 +113,7 @@ import {
             </button>
             <button
               type="button"
-              class="citef-btn citef-btn-outline"
+              class="citef-btn citef-btn-secondary"
               (click)="limpiarFiltros()"
               title="Restablecer filtros"
             >
@@ -165,7 +165,7 @@ import {
             <td>{{ u.telefono || '—' }}</td>
             <td>
               <div class="roles-badges">
-                <span *ngFor="let r of u.roles" class="badge-role">
+                <span *ngFor="let r of u.roles" class="badge-role" [ngClass]="getBadgeRolClass(r.nombre)">
                   {{ r.nombre }}
                 </span>
               </div>
@@ -343,7 +343,7 @@ import {
           <div class="modal-footer">
             <button
               type="button"
-              class="citef-btn citef-btn-outline"
+              class="citef-btn citef-btn-secondary"
               (click)="mostrarModalCrear.set(false)"
             >
               Cancelar
@@ -465,7 +465,7 @@ import {
           <div class="modal-footer">
             <button
               type="button"
-              class="citef-btn citef-btn-outline"
+              class="citef-btn citef-btn-secondary"
               (click)="mostrarModalEditar.set(false)"
             >
               Cancelar
@@ -606,13 +606,42 @@ import {
 
       .badge-role {
         display: inline-block;
-        padding: 0.2rem 0.5rem;
+        padding: 0.2rem 0.55rem;
         font-size: 0.75rem;
         font-weight: 600;
         border-radius: 4px;
+        border: 1px solid transparent;
+        white-space: nowrap;
+      }
+
+      .badge-role-admin {
+        background-color: #002855;
+        color: #ffffff;
+        border-color: #001c3d;
+      }
+
+      .badge-role-docente {
+        background-color: #fef3c7;
+        color: #92400e;
+        border-color: #fde68a;
+      }
+
+      .badge-role-auxiliar {
+        background-color: #d1fae5;
+        color: #065f46;
+        border-color: #a7f3d0;
+      }
+
+      .badge-role-tecnico {
+        background-color: #ede9fe;
+        color: #5b21b6;
+        border-color: #ddd6fe;
+      }
+
+      .badge-role-default {
         background-color: #f1f5f9;
-        color: var(--citef-text-primary, #1e293b);
-        border: 1px solid #e2e8f0;
+        color: #334155;
+        border-color: #cbd5e1;
       }
 
       /* Action Buttons */
@@ -1347,6 +1376,15 @@ export class UsuariosComponent implements OnInit {
     this.successMsg.set(msg);
     this.errorMsg.set(null);
     setTimeout(() => this.successMsg.set(null), 4000);
+  }
+
+  getBadgeRolClass(nombre: string): string {
+    const n = (nombre || '').toUpperCase().trim();
+    if (n === 'ADMINISTRADOR' || n.includes('ADMIN')) return 'badge-role-admin';
+    if (n === 'DOCENTE') return 'badge-role-docente';
+    if (n === 'AUXILIAR') return 'badge-role-auxiliar';
+    if (n === 'TECNICO' || n === 'TÉCNICO') return 'badge-role-tecnico';
+    return 'badge-role-default';
   }
 
   private showError(msg: string) {

@@ -303,7 +303,7 @@ import {
           <thead>
             <tr>
               <th class="text-center" style="width: 70px">ID</th>
-              <th>Descripción</th>
+              <th style="width: 260px; max-width: 320px;">Descripción</th>
               <th style="width: 170px">Tipo de Uso</th>
               <th class="text-center" style="width: 120px">Estado</th>
               <th class="text-center" style="width: 120px">Acciones</th>
@@ -312,8 +312,8 @@ import {
           <tbody>
             <tr *ngFor="let m of motivos()">
               <td class="text-center text-muted font-monospace">#{{ m.id_motivo }}</td>
-              <td>
-                <strong class="career-title">{{ m.descrip }}</strong>
+              <td style="max-width: 320px;">
+                <strong class="career-title text-truncate d-block" [title]="m.descrip">{{ m.descrip }}</strong>
               </td>
               <td>
                 <span

@@ -306,7 +306,7 @@ interface PermisoGrupo {
           <div class="modal-footer">
             <button
               type="button"
-              class="citef-btn citef-btn-outline"
+              class="citef-btn citef-btn-secondary"
               (click)="mostrarModal.set(false)"
             >
               Cancelar
