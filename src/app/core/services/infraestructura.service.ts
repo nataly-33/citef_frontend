@@ -48,7 +48,7 @@ export interface PerifericoItem {
   id_computadora: number | null;
   id_tipo_periferico: number;
   marca_modelo: string;
-  numero_serie: string | null;
+  numero_activo: string;
   condicion_fisica: 'BUENO' | 'REGULAR' | 'DANADO' | 'FALTANTE';
   activo: boolean;
   actualizado_en?: string;
@@ -148,6 +148,7 @@ export class InfraestructuraService {
   getPerifericos(params?: {
     busqueda?: string;
     id_tipo_periferico?: number;
+    id_sala?: number;
     condicion_fisica?: string;
     id_computadora?: number;
     en_bodega?: boolean;
@@ -159,6 +160,9 @@ export class InfraestructuraService {
     if (params?.busqueda) httpParams = httpParams.set('busqueda', params.busqueda);
     if (params?.id_tipo_periferico) {
       httpParams = httpParams.set('id_tipo_periferico', String(params.id_tipo_periferico));
+    }
+    if (params?.id_sala) {
+      httpParams = httpParams.set('id_sala', String(params.id_sala));
     }
     if (params?.condicion_fisica) {
       httpParams = httpParams.set('condicion_fisica', params.condicion_fisica);

@@ -76,6 +76,8 @@ export class EditorCuadriculaComponent implements OnInit {
   confirmModalPcVisible = signal<boolean>(false);
   confirmModalPcMensaje = signal<string>('');
   pcARetirar = signal<ComputadoraItem | null>(null);
+  perifericosModalVisible = signal<boolean>(false);
+  pcPerifericosSeleccionada = signal<ComputadoraItem | null>(null);
 
   // Arreglos de índices para el render de la matriz
   filasArray = computed(() => {
@@ -369,6 +371,16 @@ export class EditorCuadriculaComponent implements OnInit {
       maquina_docente: pc.maquina_docente,
     };
     this.modalPcVisible.set(true);
+  }
+
+  abrirModalPerifericos(pc: ComputadoraItem): void {
+    this.pcPerifericosSeleccionada.set(pc);
+    this.perifericosModalVisible.set(true);
+  }
+
+  cerrarModalPerifericos(): void {
+    this.perifericosModalVisible.set(false);
+    this.pcPerifericosSeleccionada.set(null);
   }
 
   cerrarModalPcDirecto(): void {

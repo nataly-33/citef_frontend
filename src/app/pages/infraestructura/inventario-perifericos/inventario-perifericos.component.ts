@@ -18,7 +18,7 @@ import {
 export interface ErroresPeriferico {
   id_tipo_periferico?: string;
   marca_modelo?: string;
-  numero_serie?: string;
+  numero_activo?: string;
 }
 
 @Component({
@@ -40,6 +40,7 @@ export class InventarioPerifericosComponent implements OnInit {
 
   perifericos = signal<PerifericoItem[]>([]);
   tiposPeriferico = signal<TipoPerifericoItem[]>([]);
+  salasFiltro = signal<SalaItem[]>([]);
   totalRegistros = signal<number>(0);
   paginaActual = signal<number>(1);
   tamanoPagina = 15;
@@ -48,6 +49,7 @@ export class InventarioPerifericosComponent implements OnInit {
   // Filtros
   filtroTexto = '';
   filtroTipo: string | number = '';
+  filtroSala: string | number = '';
   filtroCondicion = '';
   filtroUbicacion = ''; // '' | 'ASIGNADO' | 'BODEGA'
 
@@ -62,12 +64,12 @@ export class InventarioPerifericosComponent implements OnInit {
     id_periferico?: number;
     id_tipo_periferico: number | null;
     marca_modelo: string;
-    numero_serie: string;
+    numero_activo: string;
     condicion_fisica: 'BUENO' | 'REGULAR' | 'DANADO' | 'FALTANTE';
   } = {
     id_tipo_periferico: null,
     marca_modelo: '',
-    numero_serie: '',
+    numero_activo: '',
     condicion_fisica: 'BUENO',
   };
 
@@ -113,7 +115,15 @@ export class InventarioPerifericosComponent implements OnInit {
 
   ngOnInit(): void {
     this.cargarTipos();
+    this.cargarSalas();
     this.cargarPerifericos();
+  }
+
+  cargarSalas(): void {
+    this.infraService.getSalas({ activo: true }).subscribe({
+      next: (salas) => this.salasFiltro.set(salas.filter((s) => s.activo)),
+      error: (err) => console.error('Error al cargar laboratorios:', err),
+    });
   }
 
   cargarTipos(): void {
@@ -135,6 +145,11 @@ export class InventarioPerifericosComponent implements OnInit {
     }
     if (this.filtroTipo !== '' && this.filtroTipo !== null) {
       params.id_tipo_periferico = Number(this.filtroTipo);
+    }
+    if (this.filtroSala === 'BODEGA') {
+      params.en_bodega = true;
+    } else if (this.filtroSala !== '' && this.filtroSala !== null) {
+      params.id_sala = Number(this.filtroSala);
     }
     if (this.filtroCondicion && this.filtroCondicion.trim() !== '') {
       params.condicion_fisica = this.filtroCondicion;
@@ -168,6 +183,7 @@ export class InventarioPerifericosComponent implements OnInit {
   limpiarFiltros(): void {
     this.filtroTexto = '';
     this.filtroTipo = '';
+    this.filtroSala = '';
     this.filtroCondicion = '';
     this.filtroUbicacion = '';
     this.paginaActual.set(1);
@@ -188,7 +204,7 @@ export class InventarioPerifericosComponent implements OnInit {
     this.formPeriferico = {
       id_tipo_periferico: primerTipo,
       marca_modelo: '',
-      numero_serie: '',
+      numero_activo: '',
       condicion_fisica: 'BUENO',
     };
     this.modalVisible.set(true);
@@ -202,7 +218,7 @@ export class InventarioPerifericosComponent implements OnInit {
       id_periferico: p.id_periferico,
       id_tipo_periferico: p.id_tipo_periferico,
       marca_modelo: p.marca_modelo,
-      numero_serie: p.numero_serie || '',
+      numero_activo: p.numero_activo || '',
       condicion_fisica: p.condicion_fisica,
     };
     this.modalVisible.set(true);
@@ -233,8 +249,10 @@ export class InventarioPerifericosComponent implements OnInit {
       errs.marca_modelo = 'Máximo 80 caracteres';
     }
 
-    if (this.formPeriferico.numero_serie && this.formPeriferico.numero_serie.trim().length > 60) {
-      errs.numero_serie = 'Máximo 60 caracteres para el número de serie';
+    if (!this.formPeriferico.numero_activo || this.formPeriferico.numero_activo.trim() === '') {
+      errs.numero_activo = 'El número de activo es obligatorio';
+    } else if (this.formPeriferico.numero_activo.trim().length > 60) {
+      errs.numero_activo = 'Máximo 60 caracteres para el número de activo';
     }
 
     this.errores.set(errs);
@@ -249,15 +267,12 @@ export class InventarioPerifericosComponent implements OnInit {
     this.guardando.set(true);
     this.errorModal.set(null);
 
-    const numSerie =
-      this.formPeriferico.numero_serie && this.formPeriferico.numero_serie.trim() !== ''
-        ? this.formPeriferico.numero_serie.trim()
-        : null;
+    const numeroActivo = this.formPeriferico.numero_activo.trim();
 
     const payload: Partial<PerifericoItem> = {
       id_tipo_periferico: Number(this.formPeriferico.id_tipo_periferico),
       marca_modelo: this.formPeriferico.marca_modelo.trim(),
-      numero_serie: numSerie,
+      numero_activo: numeroActivo,
       condicion_fisica: this.formPeriferico.condicion_fisica,
     };
 
@@ -274,7 +289,7 @@ export class InventarioPerifericosComponent implements OnInit {
             this.guardando.set(false);
             const msg =
               err.error?.message ||
-              'Error al actualizar el componente. Verifique que el número de serie no esté duplicado.';
+              'Error al actualizar el componente. Verifique que el número de activo no esté duplicado.';
             this.errorModal.set(Array.isArray(msg) ? msg.join(', ') : msg);
           },
         });
@@ -289,7 +304,7 @@ export class InventarioPerifericosComponent implements OnInit {
           this.guardando.set(false);
           const msg =
             err.error?.message ||
-            'Error al registrar el componente en inventario. Verifique número de serie único.';
+            'Error al registrar el componente en inventario. Verifique número de activo único.';
           this.errorModal.set(Array.isArray(msg) ? msg.join(', ') : msg);
         },
       });
@@ -418,7 +433,7 @@ export class InventarioPerifericosComponent implements OnInit {
     if (p.activo) {
       this.confirmModalTitulo.set('Desactivar Componente');
       this.confirmModalMensaje.set(
-        `¿Está seguro de desactivar "${p.marca_modelo}" (${p.numero_serie || 'Sin serie'})?`,
+        `¿Está seguro de desactivar "${p.marca_modelo}" (${p.numero_activo || 'Sin número de activo'})?`,
       );
     } else {
       this.confirmModalTitulo.set('Reactivar Componente');

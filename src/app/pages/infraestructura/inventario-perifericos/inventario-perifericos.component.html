@@ -27,7 +27,7 @@
           <input
             type="text"
             class="citef-input search-input"
-            placeholder="Marca, modelo, serie o equipo..."
+            placeholder="Marca, modelo, Nro. Activo o equipo..."
             [(ngModel)]="filtroTexto"
             name="filtroTexto"
           />
@@ -64,6 +64,22 @@
           <option value="REGULAR">Regular</option>
           <option value="DANADO">Dañado</option>
           <option value="FALTANTE">Faltante</option>
+        </select>
+      </div>
+
+      <!-- Filtro Laboratorio / Bodega -->
+      <div class="filter-field">
+        <label class="filter-label">Laboratorio</label>
+        <select
+          class="citef-select"
+          [(ngModel)]="filtroSala"
+          name="filtroSala"
+          (change)="aplicarFiltros()"
+        >
+          <option value="">Todos los Laboratorios</option>
+          @for (s of salasFiltro(); track s.id_sala) {
+            <option [value]="s.id_sala">{{ s.codigo_sala }} - {{ s.nombre }}</option>
+          }
         </select>
       </div>
 
@@ -113,7 +129,7 @@
         <tr>
           <th style="width: 140px;">Tipo</th>
           <th>Marca y Modelo</th>
-          <th style="width: 160px;">Nro. Serie</th>
+          <th style="width: 160px;">Nro. Activo</th>
           <th style="width: 190px;">Ubicación Actual</th>
           <th class="text-center" style="width: 110px;">Condición</th>
           <th class="text-center" style="width: 100px;">Estado</th>
@@ -143,11 +159,7 @@
               <strong class="item-name">{{ p.marca_modelo }}</strong>
             </td>
             <td>
-              @if (p.numero_serie) {
-                <span class="badge-serie font-monospace">{{ p.numero_serie }}</span>
-              } @else {
-                <span class="text-muted" style="font-size: 0.8rem;">—</span>
-              }
+              <span class="badge-serie font-monospace">{{ p.numero_activo }}</span>
             </td>
             <td>
               @if (p.computadora) {
@@ -322,18 +334,18 @@
         </div>
 
         <div class="form-group">
-          <label for="numeroSerie">Número de Serie</label>
+          <label for="numeroActivo">Nro. Activo <span class="req">*</span></label>
           <input
-            id="numeroSerie"
+            id="numeroActivo"
             type="text"
             class="citef-input"
-            [class.input-error]="errores().numero_serie"
-            placeholder="Ej: SN-LOGI-847291"
-            [(ngModel)]="formPeriferico.numero_serie"
+            [class.input-error]="errores().numero_activo"
+            placeholder="Ej: ACT-FCEE-847291"
+            [(ngModel)]="formPeriferico.numero_activo"
           />
-          @if (errores().numero_serie) {
+          @if (errores().numero_activo) {
             <span class="field-error-text">
-              <i class="bi bi-exclamation-circle-fill"></i> {{ errores().numero_serie }}
+              <i class="bi bi-exclamation-circle-fill"></i> {{ errores().numero_activo }}
             </span>
           }
         </div>
@@ -389,7 +401,7 @@
             <div class="summary-title">{{ perifericoSeleccionado()?.marca_modelo }}</div>
             <div class="summary-sub">
               Tipo: {{ perifericoSeleccionado()?.tipo?.nombre || 'COMPONENTE' }} •
-              Serie: {{ perifericoSeleccionado()?.numero_serie || 'Sin número de serie' }}
+              Nro. Activo: {{ perifericoSeleccionado()?.numero_activo || 'Sin número de activo' }}
             </div>
           </div>
         </div>
