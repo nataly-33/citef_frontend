@@ -1,0 +1,415 @@
+<div class="dashboard-layout">
+  <!-- Barra Superior / Navbar Institucional -->
+  <header class="top-navbar">
+    <div class="navbar-brand">
+      <div class="brand-crest">
+        <span class="crest-uagrm">UAGRM</span>
+        <span class="crest-fcee">FCEE</span>
+      </div>
+      <div class="brand-text">
+        <span class="brand-title">CITEF</span>
+        <span class="brand-subtitle">Gestión de Laboratorios</span>
+      </div>
+    </div>
+
+    <div class="user-panel">
+      <div class="user-info" *ngIf="currentUser()">
+        <span class="user-name">{{ currentUser()?.nombres }}</span>
+        <div class="user-meta">
+          <span class="citef-badge citef-badge-info">{{ currentUser()?.roles?.[0] }}</span>
+          <span class="user-email">{{ currentUser()?.correo_institucional }}</span>
+        </div>
+      </div>
+      <button class="citef-btn citef-btn-outline btn-sm" (click)="onLogout()">
+        Cerrar Sesión
+      </button>
+    </div>
+  </header>
+
+  <!-- Contenedor Principal -->
+  <main class="main-content">
+    <!-- Navegación por Pestañas del Módulo 1 -->
+    <div class="tabs-container">
+      <button
+        class="tab-btn"
+        [class.active]="activeTab() === 'usuarios'"
+        (click)="setTab('usuarios')"
+      >
+        👥 CU1: Gestión de Usuarios
+      </button>
+      <button
+        class="tab-btn"
+        [class.active]="activeTab() === 'roles'"
+        (click)="setTab('roles')"
+      >
+        🛡️ CU3: Roles y Permisos (RBAC)
+      </button>
+      <button
+        class="tab-btn"
+        [class.active]="activeTab() === 'auditoria'"
+        (click)="setTab('auditoria')"
+      >
+        📜 CU4: Bitácora de Auditoría
+      </button>
+    </div>
+
+    <!-- Feedback de Notificaciones -->
+    <div *ngIf="successMsg()" class="alert-box alert-success">
+      {{ successMsg() }}
+    </div>
+    <div *ngIf="errorMsg()" class="alert-box alert-danger">
+      {{ errorMsg() }}
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- TAB 1: GESTIÓN DE USUARIOS (CU1)                          -->
+    <!-- ======================================================== -->
+    <section *ngIf="activeTab() === 'usuarios'" class="tab-content">
+      <div class="section-toolbar">
+        <div class="search-box">
+          <input
+            type="text"
+            class="citef-input search-input"
+            [(ngModel)]="busquedaUsuarios"
+            (keyup.enter)="cargarUsuarios()"
+            placeholder="Buscar por nombre o correo institucional..."
+          />
+          <button class="citef-btn citef-btn-primary" (click)="cargarUsuarios()">
+            Buscar
+          </button>
+        </div>
+
+        <button
+          class="citef-btn citef-btn-secondary"
+          (click)="abrirModalCrearUsuario()"
+        >
+          + Nuevo Usuario
+        </button>
+      </div>
+
+      <!-- Tabla de Usuarios -->
+      <div class="citef-card table-card">
+        <table class="citef-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Nombres y Apellidos</th>
+              <th>Correo Institucional</th>
+              <th>Teléfono</th>
+              <th>Roles Asignados</th>
+              <th>Estado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let u of listaUsuarios()">
+              <td>{{ u.id_usuario }}</td>
+              <td>
+                <strong>{{ u.nombres }} {{ u.apellidos }}</strong>
+              </td>
+              <td>{{ u.correo_institucional }}</td>
+              <td>{{ u.telefono || '—' }}</td>
+              <td>
+                <span
+                  *ngFor="let r of u.roles"
+                  class="citef-badge citef-badge-info role-tag"
+                >
+                  {{ r.nombre }}
+                </span>
+              </td>
+              <td>
+                <span
+                  class="citef-badge"
+                  [class.citef-badge-success]="u.activo"
+                  [class.citef-badge-danger]="!u.activo"
+                >
+                  {{ u.activo ? 'ACTIVO' : 'INACTIVO' }}
+                </span>
+              </td>
+              <td class="actions-cell">
+                <button
+                  class="citef-btn citef-btn-outline btn-xs"
+                  (click)="toggleEstado(u)"
+                >
+                  {{ u.activo ? 'Desactivar' : 'Activar' }}
+                </button>
+                <button
+                  class="citef-btn citef-btn-outline btn-xs"
+                  (click)="abrirModalPassword(u)"
+                >
+                  Clave
+                </button>
+              </td>
+            </tr>
+            <tr *ngIf="listaUsuarios().length === 0">
+              <td colspan="7" class="empty-state">No se encontraron usuarios</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ======================================================== -->
+    <!-- TAB 2: ROLES Y PERMISOS (CU3)                             -->
+    <!-- ======================================================== -->
+    <section *ngIf="activeTab() === 'roles'" class="tab-content">
+      <div class="roles-grid">
+        <div *ngFor="let r of listaRoles()" class="citef-card role-card">
+          <div class="role-header">
+            <h3>{{ r.nombre }}</h3>
+            <span class="citef-badge citef-badge-success">Activo</span>
+          </div>
+          <p class="role-desc">{{ r.descrip }}</p>
+
+          <div class="permissions-list">
+            <span class="perm-header">Permisos Asociados ({{ r.permisos.length }}):</span>
+            <div class="perm-chips">
+              <span
+                *ngFor="let p of r.permisos"
+                class="perm-chip"
+                [title]="p.descrip"
+              >
+                {{ p.codigo }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================================================== -->
+    <!-- TAB 3: BITÁCORA DE AUDITORÍA (CU4)                       -->
+    <!-- ======================================================== -->
+    <section *ngIf="activeTab() === 'auditoria'" class="tab-content">
+      <div class="section-toolbar">
+        <div class="audit-filters">
+          <input
+            type="text"
+            class="citef-input"
+            [(ngModel)]="filtroTabla"
+            placeholder="Tabla (ej: usuario)"
+          />
+          <input
+            type="text"
+            class="citef-input"
+            [(ngModel)]="filtroAccion"
+            placeholder="Acción (ej: LOGIN, INSERT)"
+          />
+          <input
+            type="text"
+            class="citef-input"
+            [(ngModel)]="filtroCorreo"
+            placeholder="Correo usuario"
+          />
+          <button class="citef-btn citef-btn-primary" (click)="cargarAuditoria()">
+            Filtrar
+          </button>
+        </div>
+        <button class="citef-btn citef-btn-outline" (click)="cargarAuditoria()">
+          🔄 Refrescar
+        </button>
+      </div>
+
+      <div class="citef-card table-card">
+        <table class="citef-table">
+          <thead>
+            <tr>
+              <th>Fecha y Hora</th>
+              <th>Acción</th>
+              <th>Tabla Afectada</th>
+              <th>ID Registro</th>
+              <th>Usuario Responsable</th>
+              <th>IP Cliente</th>
+              <th>Detalle JSON</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of listaAuditoria()">
+              <td>{{ item.fecha_hora | date: 'dd/MM/yyyy HH:mm:ss' }}</td>
+              <td>
+                <span
+                  class="citef-badge"
+                  [class.citef-badge-success]="item.accion === 'INSERT'"
+                  [class.citef-badge-info]="item.accion === 'UPDATE' || item.accion === 'LOGIN'"
+                  [class.citef-badge-warning]="item.accion === 'RESET_PASSWORD' || item.accion === 'CAMBIO_ESTADO'"
+                  [class.citef-badge-danger]="item.accion === 'DELETE'"
+                >
+                  {{ item.accion }}
+                </span>
+              </td>
+              <td><strong>{{ item.tabla_afectada }}</strong></td>
+              <td>#{{ item.id_registro_afectado }}</td>
+              <td>
+                {{ item.correo_usuario || 'Sistema' }}
+              </td>
+              <td><code>{{ item.ip_cliente || 'local' }}</code></td>
+              <td>
+                <details class="json-details">
+                  <summary>Ver Cambios</summary>
+                  <div class="json-viewer">
+                    <div *ngIf="item.valores_anteriores">
+                      <strong>Anterior:</strong>
+                      <pre>{{ item.valores_anteriores | json }}</pre>
+                    </div>
+                    <div *ngIf="item.valores_nuevos">
+                      <strong>Nuevo:</strong>
+                      <pre>{{ item.valores_nuevos | json }}</pre>
+                    </div>
+                  </div>
+                </details>
+              </td>
+            </tr>
+            <tr *ngIf="listaAuditoria().length === 0">
+              <td colspan="7" class="empty-state">No hay registros de auditoría</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <!-- ======================================================== -->
+  <!-- MODAL: CREAR USUARIO (CU1)                               -->
+  <!-- ======================================================== -->
+  <div *ngIf="mostrarModalCrear()" class="modal-backdrop">
+    <div class="modal-card citef-card">
+      <div class="modal-header">
+        <h3>Registrar Nuevo Usuario Institucional</h3>
+        <button class="close-btn" (click)="mostrarModalCrear.set(false)">×</button>
+      </div>
+
+      <form (ngSubmit)="guardarNuevoUsuario()" class="modal-form">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Nombres</label>
+            <input
+              type="text"
+              class="citef-input"
+              [(ngModel)]="nuevoUsuario.nombres"
+              name="nombres"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label>Apellidos</label>
+            <input
+              type="text"
+              class="citef-input"
+              [(ngModel)]="nuevoUsuario.apellidos"
+              name="apellidos"
+              required
+            />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Correo Institucional (&#64;uagrm.edu.bo)</label>
+          <input
+            type="email"
+            class="citef-input"
+            [(ngModel)]="nuevoUsuario.correo_institucional"
+            name="correo_institucional"
+            placeholder="ejemplo@uagrm.edu.bo"
+            required
+          />
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Contraseña Inicial</label>
+            <input
+              type="password"
+              class="citef-input"
+              [(ngModel)]="nuevoUsuario.password"
+              name="password"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label>Teléfono</label>
+            <input
+              type="text"
+              class="citef-input"
+              [(ngModel)]="nuevoUsuario.telefono"
+              name="telefono"
+            />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Asignación de Roles</label>
+          <div class="roles-checkboxes">
+            <label *ngFor="let r of listaRoles()" class="checkbox-label">
+              <input
+                type="checkbox"
+                [value]="r.id_rol"
+                (change)="toggleRolSeleccion(r.id_rol)"
+              />
+              {{ r.nombre }}
+            </label>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button
+            type="button"
+            class="citef-btn citef-btn-outline"
+            (click)="mostrarModalCrear.set(false)"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            class="citef-btn citef-btn-primary"
+            [disabled]="!nuevoUsuario.correo_institucional || !nuevoUsuario.password"
+          >
+            Guardar Usuario
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- MODAL: CAMBIAR CONTRASEÑA (ADMIN CU1)                   -->
+  <!-- ======================================================== -->
+  <div *ngIf="mostrarModalPass()" class="modal-backdrop">
+    <div class="modal-card citef-card">
+      <div class="modal-header">
+        <h3>Restablecer Contraseña (Administrador)</h3>
+        <button class="close-btn" (click)="mostrarModalPass.set(false)">×</button>
+      </div>
+
+      <p class="modal-info">
+        Usuario: <strong>{{ usuarioSeleccionado?.correo_institucional }}</strong>
+      </p>
+
+      <form (ngSubmit)="guardarNuevaPassword()" class="modal-form">
+        <div class="form-group">
+          <label>Nueva Contraseña</label>
+          <input
+            type="password"
+            class="citef-input"
+            [(ngModel)]="nuevaPasswordAdmin"
+            name="nuevaPasswordAdmin"
+            placeholder="Mínimo 6 caracteres"
+            required
+          />
+        </div>
+
+        <div class="modal-actions">
+          <button
+            type="button"
+            class="citef-btn citef-btn-outline"
+            (click)="mostrarModalPass.set(false)"
+          >
+            Cancelar
+          </button>
+          <button type="submit" class="citef-btn citef-btn-primary">
+            Actualizar Clave
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

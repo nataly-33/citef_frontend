@@ -1,0 +1,119 @@
+<div class="login-wrapper">
+  <div class="login-container">
+    <!-- Tarjeta de Login Formal Institucional -->
+    <div class="login-card citef-card">
+      <!-- Encabezado con Logo Transparente FCEE -->
+      <div class="institution-header">
+        <div class="logo-circle">
+          <img src="assets/logoTransparente.png" alt="Logo FCEE UAGRM" class="faculty-logo" />
+        </div>
+        <h1 class="system-title">CITEF</h1>
+        <p class="system-subtitle">Centro de Información y Tecnología</p>
+        <p class="faculty-name">Facultad de Ciencias Económicas y Empresariales · UAGRM</p>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- Mensajes de Error o Alerta -->
+      <div *ngIf="errorMessage()" class="alert-box alert-danger">
+        <i class="bi bi-exclamation-octagon-fill me-2"></i>
+        <span>{{ errorMessage() }}</span>
+      </div>
+
+      <!-- Formulario de Inicio de Sesión -->
+      <form (ngSubmit)="onLogin()" #loginForm="ngForm" class="login-form">
+        <div class="form-group">
+          <label class="form-label" for="correo">
+            <i class="bi bi-envelope-fill me-1 text-muted"></i>
+            Correo Electrónico
+          </label>
+          <div class="input-icon-wrapper">
+            <input
+              type="email"
+              id="correo"
+              name="correo"
+              class="citef-input"
+              [(ngModel)]="correo"
+              placeholder="ejemplo@gmail.com o usuario@uagrm.edu.bo"
+              required
+            />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <div class="label-with-link">
+            <label class="form-label" for="password">
+              <i class="bi bi-shield-lock-fill me-1 text-muted"></i>
+              Contraseña
+            </label>
+            <a routerLink="/recuperar-password" class="forgot-link">¿Olvidó su contraseña?</a>
+          </div>
+          <div class="input-icon-wrapper">
+            <input
+              type="password"
+              id="password"
+              name="password"
+              class="citef-input"
+              [(ngModel)]="password"
+              placeholder="••••••••"
+              required
+            />
+          </div>
+        </div>
+
+        <button
+          type="submit"
+          class="citef-btn citef-btn-primary btn-submit"
+          [disabled]="loading() || !correo || !password"
+        >
+          <i *ngIf="!loading()" class="bi bi-box-arrow-in-right me-2"></i>
+          <span *ngIf="!loading()">Ingresar al Sistema</span>
+          <span *ngIf="loading()">Validando credenciales...</span>
+        </button>
+      </form>
+
+      <!-- Acceso Rápido para Evaluación y Tribunal -->
+      <div class="demo-section">
+        <span class="demo-heading">Accesos rápidos de evaluación:</span>
+        <div class="demo-grid">
+          <button
+            type="button"
+            class="demo-role-btn"
+            (click)="setDemo('admin@uagrm.edu.bo', 'Admin123*')"
+          >
+            <i class="bi bi-shield-shaded text-primary"></i>
+            <span>Administrador</span>
+          </button>
+          <button
+            type="button"
+            class="demo-role-btn"
+            (click)="setDemo('docente@uagrm.edu.bo', 'Docente123*')"
+          >
+            <i class="bi bi-mortarboard-fill text-success"></i>
+            <span>Docente</span>
+          </button>
+          <button
+            type="button"
+            class="demo-role-btn"
+            (click)="setDemo('auxiliar@uagrm.edu.bo', 'Auxiliar123*')"
+          >
+            <i class="bi bi-display text-info"></i>
+            <span>Auxiliar</span>
+          </button>
+          <button
+            type="button"
+            class="demo-role-btn"
+            (click)="setDemo('tecnico@uagrm.edu.bo', 'Tecnico123*')"
+          >
+            <i class="bi bi-tools text-warning"></i>
+            <span>Técnico</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="system-footer-note">
+      Universidad Autónoma Gabriel René Moreno · Santa Cruz, Bolivia
+    </div>
+  </div>
+</div>

@@ -1,0 +1,466 @@
+<!-- HEADER -->
+<div class="page-header">
+  <div>
+    <h2 class="page-title">Usuarios</h2>
+  </div>
+
+  <div class="header-actions">
+    <button
+      *ngIf="puedeCrear()"
+      class="citef-btn citef-btn-primary"
+      (click)="abrirModalCrear()"
+    >
+      <i class="bi bi-person-plus"></i>
+      <span>Nuevo Usuario</span>
+    </button>
+  </div>
+</div>
+
+<!-- MENSAJES DE ALERTA -->
+<div *ngIf="successMsg()" class="alert-banner alert-success">
+  <i class="bi bi-check-circle-fill"></i>
+  <span>{{ successMsg() }}</span>
+</div>
+
+<div *ngIf="errorMsg()" class="alert-banner alert-danger">
+  <i class="bi bi-exclamation-triangle-fill"></i>
+  <span>{{ errorMsg() }}</span>
+</div>
+
+<!-- BARRA DE FILTROS Y BÚSQUEDA -->
+<div class="citef-card filter-card mb-4">
+  <form (ngSubmit)="ejecutarBusqueda()" class="filter-form">
+    <div class="filter-grid">
+      <!-- Búsqueda -->
+      <div class="filter-field-main">
+        <label class="filter-label">Búsqueda</label>
+        <div class="search-input-wrapper">
+          <i class="bi bi-search search-icon"></i>
+          <input
+            type="text"
+            class="citef-input search-input"
+            [(ngModel)]="busqueda"
+            name="busqueda"
+            placeholder="Nombre, apellido o correo..."
+          />
+        </div>
+      </div>
+
+      <!-- Filtro Estado -->
+      <div class="filter-field">
+        <label class="filter-label">Estado</label>
+        <select
+          class="citef-select"
+          [(ngModel)]="filtroEstado"
+          name="filtroEstado"
+        >
+          <option value="TODOS">Todos</option>
+          <option value="ACTIVOS">Activos</option>
+          <option value="INACTIVOS">Inactivos</option>
+        </select>
+      </div>
+
+      <!-- Filtro Rol -->
+      <div class="filter-field">
+        <label class="filter-label">Rol</label>
+        <select
+          class="citef-select"
+          [(ngModel)]="filtroRol"
+          name="filtroRol"
+        >
+          <option value="TODOS">Todos los roles</option>
+          <option *ngFor="let r of listaRoles()" [value]="r.nombre">
+            {{ r.nombre }}
+          </option>
+        </select>
+      </div>
+
+      <!-- Botones de Acción de Filtro -->
+      <div class="filter-buttons">
+        <button type="submit" class="citef-btn citef-btn-primary">
+          <i class="bi bi-search"></i>
+          <span>Buscar</span>
+        </button>
+        <button
+          type="button"
+          class="citef-btn citef-btn-secondary"
+          (click)="limpiarFiltros()"
+          title="Restablecer filtros"
+        >
+          <i class="bi bi-arrow-counterclockwise"></i>
+          <span>Limpiar</span>
+        </button>
+      </div>
+    </div>
+  </form>
+</div>
+
+<!-- TABLA DE USUARIOS CON COMPONENTES COMPARTIDOS -->
+<app-table-card>
+  <table class="citef-table">
+    <thead>
+      <tr>
+        <th class="sortable text-center" style="width: 70px" (click)="ordenarPor('id_usuario')">
+          <span>ID</span>
+          <i class="bi" [class]="iconoOrden('id_usuario')"></i>
+        </th>
+        <th class="sortable" (click)="ordenarPor('nombres')">
+          <span>Nombre Completo</span>
+          <i class="bi" [class]="iconoOrden('nombres')"></i>
+        </th>
+        <th class="sortable" (click)="ordenarPor('correo_institucional')">
+          <span>Correo Electrónico</span>
+          <i class="bi" [class]="iconoOrden('correo_institucional')"></i>
+        </th>
+        <th>Teléfono</th>
+        <th>Roles</th>
+        <th class="sortable text-center" style="width: 110px" (click)="ordenarPor('activo')">
+          <span>Estado</span>
+          <i class="bi" [class]="iconoOrden('activo')"></i>
+        </th>
+        <th class="text-center" style="width: 120px">Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let u of usuariosPaginados()">
+        <td class="text-center">
+          <span class="text-muted font-monospace">#{{ u.id_usuario }}</span>
+        </td>
+        <td>
+          <strong class="user-fullname">{{ u.nombres }} {{ u.apellidos }}</strong>
+        </td>
+        <td>
+          <span class="user-email">{{ u.correo_institucional }}</span>
+        </td>
+        <td>{{ u.telefono || '—' }}</td>
+        <td>
+          <div class="roles-badges">
+            <span *ngFor="let r of u.roles" class="badge-role" [ngClass]="getBadgeRolClass(r.nombre)">
+              {{ r.nombre }}
+            </span>
+          </div>
+        </td>
+        <td class="text-center">
+          <span
+            class="citef-badge"
+            [class.citef-badge-success]="u.activo"
+            [class.citef-badge-danger]="!u.activo"
+          >
+            {{ u.activo ? 'Activo' : 'Inactivo' }}
+          </span>
+        </td>
+        <td class="text-center">
+          <div class="action-buttons" *ngIf="puedeEditar()">
+            <button
+              type="button"
+              class="btn-icon btn-edit"
+              title="Editar datos de usuario"
+              (click)="abrirModalEditar(u)"
+            >
+              <i class="bi bi-pencil"></i>
+            </button>
+
+            <button
+              type="button"
+              class="btn-icon btn-delete"
+              [title]="u.activo ? 'Desactivar usuario' : 'Eliminar usuario'"
+              (click)="abrirConfirmacionEliminar(u)"
+            >
+              <i class="bi bi-trash3"></i>
+            </button>
+          </div>
+          <span *ngIf="!puedeEditar()" class="text-muted small">
+            <i class="bi bi-lock me-1"></i>Lectura
+          </span>
+        </td>
+      </tr>
+
+      <tr *ngIf="usuariosPaginados().length === 0">
+        <td colspan="7" class="empty-row">
+          <div class="empty-state">
+            <i class="bi bi-inbox"></i>
+            <p>No se encontraron usuarios</p>
+          </div>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- PAGINACIÓN COMPARTIDA -->
+  <div card-footer>
+    <app-pagination
+      [paginaActual]="paginaActual()"
+      [totalRegistros]="totalFiltrados()"
+      [tamanoPagina]="tamanoPagina"
+      etiqueta="usuarios"
+      (paginaCambiada)="cambiarPagina($event)"
+    ></app-pagination>
+  </div>
+</app-table-card>
+
+<!-- MODAL: CREAR USUARIO -->
+<div *ngIf="mostrarModalCrear()" class="modal-backdrop">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3 class="modal-title">Nuevo Usuario</h3>
+      <button type="button" class="btn-close" (click)="mostrarModalCrear.set(false)">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+
+    <!-- Alerta de Error dentro del Modal usando componente compartido -->
+    <app-modal-alert
+      [mensaje]="modalErrorMsg()"
+      (cerrar)="modalErrorMsg.set(null)"
+    ></app-modal-alert>
+
+    <form (ngSubmit)="guardarNuevoUsuario()" class="modal-form" novalidate>
+      <div class="form-row">
+        <div class="form-group col-6">
+          <label class="form-label">Nombres <span class="req">*</span></label>
+          <input
+            type="text"
+            class="citef-input"
+            [class.input-error]="erroresNuevo.nombres"
+            [(ngModel)]="nuevoUsuario.nombres"
+            (input)="limpiarErrorNuevo('nombres')"
+            name="nombres"
+            placeholder="Ej: Juan Carlos"
+          />
+          <span *ngIf="erroresNuevo.nombres" class="field-error-text">
+            <i class="bi bi-exclamation-circle me-1"></i>{{ erroresNuevo.nombres }}
+          </span>
+        </div>
+        <div class="form-group col-6">
+          <label class="form-label">Apellidos <span class="req">*</span></label>
+          <input
+            type="text"
+            class="citef-input"
+            [class.input-error]="erroresNuevo.apellidos"
+            [(ngModel)]="nuevoUsuario.apellidos"
+            (input)="limpiarErrorNuevo('apellidos')"
+            name="apellidos"
+            placeholder="Ej: Pérez Rodríguez"
+          />
+          <span *ngIf="erroresNuevo.apellidos" class="field-error-text">
+            <i class="bi bi-exclamation-circle me-1"></i>{{ erroresNuevo.apellidos }}
+          </span>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group col-6">
+          <label class="form-label">Correo Electrónico <span class="req">*</span></label>
+          <input
+            type="email"
+            class="citef-input"
+            [class.input-error]="erroresNuevo.correo"
+            [(ngModel)]="nuevoUsuario.correo_institucional"
+            (input)="limpiarErrorNuevo('correo')"
+            name="correo"
+            placeholder="usuario@gmail.com"
+          />
+          <span *ngIf="erroresNuevo.correo" class="field-error-text">
+            <i class="bi bi-exclamation-circle me-1"></i>{{ erroresNuevo.correo }}
+          </span>
+        </div>
+        <div class="form-group col-6">
+          <label class="form-label">Teléfono</label>
+          <input
+            type="text"
+            class="citef-input"
+            [(ngModel)]="nuevoUsuario.telefono"
+            name="telefono"
+            placeholder="Ej: 71234567"
+          />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Contraseña Inicial <span class="req">*</span></label>
+        <input
+          type="password"
+          class="citef-input"
+          [class.input-error]="erroresNuevo.password"
+          [(ngModel)]="nuevoUsuario.password"
+          (input)="limpiarErrorNuevo('password')"
+          name="password"
+          placeholder="Mínimo 6 caracteres"
+        />
+        <span *ngIf="erroresNuevo.password" class="field-error-text">
+          <i class="bi bi-exclamation-circle me-1"></i>{{ erroresNuevo.password }}
+        </span>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Roles <span class="req">*</span></label>
+        <div class="roles-chips-container" [class.container-error]="erroresNuevo.roles">
+          <div
+            *ngFor="let r of listaRoles()"
+            class="role-chip"
+            [class.active]="esRolSeleccionadoNuevo(r.id_rol)"
+            (click)="toggleRolNuevo(r.id_rol)"
+          >
+            <i class="bi" [class.bi-check-square-fill]="esRolSeleccionadoNuevo(r.id_rol)" [class.bi-square]="!esRolSeleccionadoNuevo(r.id_rol)"></i>
+            <span>{{ r.nombre }}</span>
+          </div>
+        </div>
+        <span *ngIf="erroresNuevo.roles" class="field-error-text">
+          <i class="bi bi-exclamation-circle me-1"></i>{{ erroresNuevo.roles }}
+        </span>
+      </div>
+
+      <div class="modal-footer">
+        <button
+          type="button"
+          class="citef-btn citef-btn-secondary"
+          (click)="mostrarModalCrear.set(false)"
+        >
+          Cancelar
+        </button>
+        <button
+          type="submit"
+          class="citef-btn citef-btn-primary"
+          [disabled]="guardando()"
+        >
+          <i class="bi bi-check2"></i>
+          <span>{{ guardando() ? 'Guardando...' : 'Crear Usuario' }}</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL: EDITAR USUARIO -->
+<div *ngIf="mostrarModalEditar()" class="modal-backdrop">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3 class="modal-title">Editar Usuario</h3>
+      <button type="button" class="btn-close" (click)="mostrarModalEditar.set(false)">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+
+    <!-- Alerta de Error dentro del Modal Editar usando componente compartido -->
+    <app-modal-alert
+      [mensaje]="modalEditarErrorMsg()"
+      (cerrar)="modalEditarErrorMsg.set(null)"
+    ></app-modal-alert>
+
+    <form *ngIf="usuarioAEditar" (ngSubmit)="guardarEdicionUsuario()" class="modal-form" novalidate>
+      <div class="form-row">
+        <div class="form-group col-6">
+          <label class="form-label">Nombres <span class="req">*</span></label>
+          <input
+            type="text"
+            class="citef-input"
+            [class.input-error]="erroresEditar.nombres"
+            [(ngModel)]="usuarioAEditar.nombres"
+            (input)="limpiarErrorEditar('nombres')"
+            name="editNombres"
+            required
+          />
+          <span *ngIf="erroresEditar.nombres" class="field-error-text">
+            <i class="bi bi-exclamation-circle me-1"></i>{{ erroresEditar.nombres }}
+          </span>
+        </div>
+        <div class="form-group col-6">
+          <label class="form-label">Apellidos <span class="req">*</span></label>
+          <input
+            type="text"
+            class="citef-input"
+            [class.input-error]="erroresEditar.apellidos"
+            [(ngModel)]="usuarioAEditar.apellidos"
+            (input)="limpiarErrorEditar('apellidos')"
+            name="editApellidos"
+            required
+          />
+          <span *ngIf="erroresEditar.apellidos" class="field-error-text">
+            <i class="bi bi-exclamation-circle me-1"></i>{{ erroresEditar.apellidos }}
+          </span>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group col-6">
+          <label class="form-label">Correo Electrónico</label>
+          <input
+            type="email"
+            class="citef-input bg-light"
+            [value]="usuarioAEditar.correo"
+            disabled
+          />
+        </div>
+        <div class="form-group col-6">
+          <label class="form-label">Teléfono</label>
+          <input
+            type="text"
+            class="citef-input"
+            [(ngModel)]="usuarioAEditar.telefono"
+            name="editTelefono"
+          />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Estado de la Cuenta</label>
+        <select
+          class="citef-select"
+          [(ngModel)]="usuarioAEditar.activo"
+          name="editActivo"
+        >
+          <option [ngValue]="true">Activo</option>
+          <option [ngValue]="false">Inactivo</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Roles Asignados <span class="req">*</span></label>
+        <div class="roles-chips-container" [class.container-error]="erroresEditar.roles">
+          <div
+            *ngFor="let r of listaRoles()"
+            class="role-chip"
+            [class.active]="esRolSeleccionadoEditar(r.id_rol)"
+            (click)="toggleRolEditar(r.id_rol)"
+          >
+            <i class="bi" [class.bi-check-square-fill]="esRolSeleccionadoEditar(r.id_rol)" [class.bi-square]="!esRolSeleccionadoEditar(r.id_rol)"></i>
+            <span>{{ r.nombre }}</span>
+          </div>
+        </div>
+        <span *ngIf="erroresEditar.roles" class="field-error-text">
+          <i class="bi bi-exclamation-circle me-1"></i>{{ erroresEditar.roles }}
+        </span>
+      </div>
+
+      <div class="modal-footer">
+        <button
+          type="button"
+          class="citef-btn citef-btn-secondary"
+          (click)="mostrarModalEditar.set(false)"
+        >
+          Cancelar
+        </button>
+        <button
+          type="submit"
+          class="citef-btn citef-btn-primary"
+          [disabled]="guardando()"
+        >
+          <i class="bi bi-check2"></i>
+          <span>{{ guardando() ? 'Guardando...' : 'Guardar Cambios' }}</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL REUTILIZABLE DE CONFIRMACIÓN DE ELIMINACIÓN -->
+<app-confirm-modal
+  [visible]="mostrarModalConfirmarEliminar()"
+  title="Confirmar Baja de Usuario"
+  [message]="'¿Está seguro de que desea dar de baja al usuario ' + (usuarioAEliminar?.correo_institucional || '') + '? Su estado pasará a inactivo.'"
+  confirmBtnText="Desactivar"
+  cancelBtnText="Cancelar"
+  [isDanger]="true"
+  (confirmed)="ejecutarEliminacion()"
+  (cancelled)="mostrarModalConfirmarEliminar.set(false)"
+></app-confirm-modal>

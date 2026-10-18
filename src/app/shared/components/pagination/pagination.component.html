@@ -1,0 +1,52 @@
+<div class="citef-pagination-bar" *ngIf="totalRegistros > 0">
+  <div class="pagination-info">
+    <span>Mostrando</span>
+    <strong class="info-number">{{ inicioRegistro }}–{{ finRegistro }}</strong>
+    <span>de</span>
+    <strong class="info-number">{{ totalRegistros }}</strong>
+    <span>{{ etiqueta }}</span>
+  </div>
+
+  <div class="pagination-controls">
+    <button
+      type="button"
+      class="citef-btn citef-btn-outline citef-btn-xs btn-nav"
+      [disabled]="paginaActual <= 1"
+      (click)="irAPagina(paginaActual - 1)"
+      title="Página anterior"
+    >
+      <i class="bi bi-chevron-left"></i>
+      <span>Anterior</span>
+    </button>
+
+    <div class="page-numbers" *ngIf="totalPaginas > 1">
+      <ng-container *ngFor="let item of paginasVisibles">
+        <span *ngIf="item === -1" class="page-ellipsis">…</span>
+        <button
+          *ngIf="item !== -1"
+          type="button"
+          class="page-num-btn"
+          [class.active]="item === paginaActual"
+          (click)="irAPagina(item)"
+        >
+          {{ item }}
+        </button>
+      </ng-container>
+    </div>
+
+    <span class="page-indicator" *ngIf="totalPaginas <= 1">
+      Pág. 1 de 1
+    </span>
+
+    <button
+      type="button"
+      class="citef-btn citef-btn-outline citef-btn-xs btn-nav"
+      [disabled]="paginaActual >= totalPaginas"
+      (click)="irAPagina(paginaActual + 1)"
+      title="Página siguiente"
+    >
+      <span>Siguiente</span>
+      <i class="bi bi-chevron-right"></i>
+    </button>
+  </div>
+</div>

@@ -1,0 +1,291 @@
+<!-- HEADER -->
+<div class="page-header">
+  <div>
+    <h2 class="page-title">Roles y Permisos</h2>
+  </div>
+
+  <div class="header-actions">
+    <button class="citef-btn citef-btn-primary" (click)="abrirModalCrear()">
+      <i class="bi bi-shield-plus"></i>
+      <span>Nuevo Rol</span>
+    </button>
+  </div>
+</div>
+
+<!-- ALERTAS -->
+<div *ngIf="successMsg()" class="alert-banner alert-success">
+  <i class="bi bi-check-circle-fill"></i>
+  <span>{{ successMsg() }}</span>
+</div>
+
+<div *ngIf="errorMsg()" class="alert-banner alert-danger">
+  <i class="bi bi-exclamation-triangle-fill"></i>
+  <span>{{ errorMsg() }}</span>
+</div>
+
+<!-- TABLA DE ROLES -->
+<div class="citef-card p-0 mb-4">
+  <div class="card-section-header">
+    <h3 class="section-title">Roles Configurados</h3>
+  </div>
+  <div class="table-responsive">
+    <table class="citef-table">
+      <thead>
+        <tr>
+          <th style="width: 220px">Rol</th>
+          <th>Descripción</th>
+          <th class="text-center" style="width: 140px">Permisos</th>
+          <th class="text-center" style="width: 110px">Estado</th>
+          <th class="text-center" style="width: 140px">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let r of listaRoles()">
+          <td>
+            <div class="role-identity">
+              <i class="bi bi-shield-lock text-primary"></i>
+              <strong>{{ r.nombre }}</strong>
+            </div>
+          </td>
+          <td>{{ r.descrip }}</td>
+          <td class="text-center">
+            <span class="citef-badge citef-badge-info">
+              {{ r.permisos.length || 0 }} permisos
+            </span>
+          </td>
+          <td class="text-center">
+            <span class="citef-badge citef-badge-success">Activo</span>
+          </td>
+          <td class="text-center">
+            <div class="action-buttons">
+              <button
+                type="button"
+                class="btn-icon btn-edit"
+                title="Configurar permisos del rol"
+                (click)="abrirModalEditar(r)"
+              >
+                <i class="bi bi-pencil"></i>
+              </button>
+              <button
+                type="button"
+                class="btn-icon btn-view"
+                [class.active]="rolSeleccionadoParaVer()?.id_rol === r.id_rol"
+                title="Ver permisos en matriz inferior"
+                (click)="seleccionarRolParaVer(r)"
+              >
+                <i class="bi bi-eye"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- MATRIZ DE PERMISOS -->
+<div class="citef-card p-0">
+  <div class="card-section-header filter-bar">
+    <div>
+      <h3 class="section-title">Matriz de Permisos</h3>
+      <p class="section-subtitle" *ngIf="rolSeleccionadoParaVer()">
+        Mostrando permisos para el rol <strong>{{ rolSeleccionadoParaVer()?.nombre }}</strong>
+      </p>
+    </div>
+
+    <div class="filter-controls">
+      <!-- Búsqueda rápida de permisos -->
+      <div class="search-box">
+        <i class="bi bi-search search-icon"></i>
+        <input
+          type="text"
+          class="citef-input input-sm"
+          [(ngModel)]="busquedaPermiso"
+          placeholder="Buscar permiso..."
+        />
+      </div>
+
+      <!-- Selector de rol para resaltar -->
+      <select
+        class="citef-select select-sm"
+        [ngModel]="rolSeleccionadoParaVer()?.id_rol"
+        (ngModelChange)="onCambioRolSelect($event)"
+      >
+        <option *ngFor="let r of listaRoles()" [value]="r.id_rol">
+          {{ r.nombre }}
+        </option>
+      </select>
+    </div>
+  </div>
+
+  <div class="table-responsive">
+    <table class="citef-table">
+      <thead>
+        <tr>
+          <th style="width: 200px">Módulo</th>
+          <th style="width: 250px">Código</th>
+          <th>Descripción</th>
+          <th class="text-center" style="width: 140px">Asignado</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let p of permisosPaginados()">
+          <td>
+            <span class="badge-modulo">{{ p.modulo }}</span>
+          </td>
+          <td>
+            <code class="perm-code">{{ p.codigo }}</code>
+          </td>
+          <td>{{ p.descrip }}</td>
+          <td class="text-center">
+            <span
+              *ngIf="tienePermisoRol(p.codigo)"
+              class="citef-badge citef-badge-success"
+            >
+              <i class="bi bi-check-lg"></i> Asignado
+            </span>
+            <span
+              *ngIf="!tienePermisoRol(p.codigo)"
+              class="citef-badge citef-badge-secondary"
+            >
+              No asignado
+            </span>
+          </td>
+        </tr>
+
+        <tr *ngIf="permisosFiltrados().length === 0">
+          <td colspan="4" class="empty-row">
+            <div class="empty-state">
+              <i class="bi bi-inbox"></i>
+              <p>No se encontraron permisos</p>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- PAGINACIÓN DE PERMISOS COMPARTIDA -->
+  <app-pagination
+    [paginaActual]="paginaActual()"
+    [totalRegistros]="permisosFiltrados().length"
+    [tamanoPagina]="tamanoPagina"
+    etiqueta="permisos"
+    (paginaCambiada)="cambiarPagina($event)"
+  ></app-pagination>
+</div>
+
+<!-- MODAL: CREAR / CONFIGURAR PERMISOS DE ROL -->
+<div *ngIf="mostrarModal()" class="modal-backdrop">
+  <div class="modal-card modal-lg">
+    <div class="modal-header">
+      <h3 class="modal-title">
+        {{ esEdicion() ? 'Configurar Permisos: ' + modeloRol.nombre : 'Nuevo Rol' }}
+      </h3>
+      <button type="button" class="btn-close" (click)="mostrarModal.set(false)">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+
+    <!-- Alerta de Error dentro del Modal Roles usando componente compartido -->
+    <app-modal-alert
+      [mensaje]="modalErrorMsg()"
+      (cerrar)="modalErrorMsg.set(null)"
+    ></app-modal-alert>
+
+    <form (ngSubmit)="guardarRol()" class="modal-form">
+      <div class="form-row" *ngIf="!esEdicion()">
+        <div class="form-group col-6">
+          <label class="form-label">Nombre del Rol <span class="req">*</span></label>
+          <input
+            type="text"
+            class="citef-input"
+            [(ngModel)]="modeloRol.nombre"
+            name="nombreRol"
+            placeholder="Ej: SUPERVISOR"
+            required
+          />
+        </div>
+        <div class="form-group col-6">
+          <label class="form-label">Descripción <span class="req">*</span></label>
+          <input
+            type="text"
+            class="citef-input"
+            [(ngModel)]="modeloRol.descrip"
+            name="descripRol"
+            placeholder="Ej: Control de salas y turnos"
+            required
+          />
+        </div>
+      </div>
+
+      <div class="permissions-manager">
+        <div class="manager-topbar">
+          <span class="manager-label">
+            Permisos seleccionados: <strong>{{ permisosSeleccionados.length }}</strong> de {{ catalogoPermisos().length }}
+          </span>
+          <div class="manager-actions">
+            <button type="button" class="citef-btn citef-btn-outline citef-btn-xs" (click)="seleccionarTodosPermisos()">
+              Seleccionar Todos
+            </button>
+            <button type="button" class="citef-btn citef-btn-outline citef-btn-xs" (click)="desmarcarTodosPermisos()">
+              Limpiar
+            </button>
+          </div>
+        </div>
+
+        <div class="modules-accordion-list">
+          <div *ngFor="let g of permisosAgrupados()" class="module-block">
+            <div class="module-block-header">
+              <span class="module-block-title">{{ g.modulo }}</span>
+              <button
+                type="button"
+                class="btn-toggle-module"
+                (click)="toggleModuloCompleto(g)"
+              >
+                Alternar módulo
+              </button>
+            </div>
+
+            <div class="perm-checkbox-grid">
+              <label
+                *ngFor="let p of g.permisos"
+                class="perm-checkbox-item"
+                [class.active]="estaPermisoSeleccionado(p.id_permiso)"
+              >
+                <input
+                  type="checkbox"
+                  class="custom-check"
+                  [checked]="estaPermisoSeleccionado(p.id_permiso)"
+                  (change)="togglePermiso(p.id_permiso)"
+                />
+                <div class="perm-item-text">
+                  <span class="code">{{ p.codigo }}</span>
+                  <span class="desc">{{ p.descrip }}</span>
+                </div>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button
+          type="button"
+          class="citef-btn citef-btn-secondary"
+          (click)="mostrarModal.set(false)"
+        >
+          Cancelar
+        </button>
+        <button
+          type="submit"
+          class="citef-btn citef-btn-primary"
+          [disabled]="guardando() || (!esEdicion() && (!modeloRol.nombre || !modeloRol.descrip))"
+        >
+          <i class="bi bi-check2"></i>
+          <span>{{ guardando() ? 'Guardando...' : 'Guardar Cambios' }}</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

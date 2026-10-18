@@ -1,0 +1,29 @@
+<div *ngIf="visible" class="modal-backdrop">
+  <div class="modal-card">
+    <div class="modal-header">
+      <div class="modal-icon" [class.danger]="isDanger" [class.primary]="!isDanger">
+        <i class="bi" [class.bi-exclamation-triangle-fill]="isDanger" [class.bi-info-circle-fill]="!isDanger"></i>
+      </div>
+      <div>
+        <h4 class="modal-title">{{ title }}</h4>
+        <p class="modal-message">{{ message }}</p>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button type="button" class="citef-btn citef-btn-secondary" (click)="cancel()">
+        {{ cancelBtnText }}
+      </button>
+      <button
+        type="button"
+        class="citef-btn"
+        [class.citef-btn-danger]="isDanger"
+        [class.citef-btn-primary]="!isDanger"
+        (click)="confirm()"
+      >
+        <i class="bi" [class.bi-trash3]="isDanger" [class.bi-check2]="!isDanger"></i>
+        <span>{{ confirmBtnText }}</span>
+      </button>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,438 @@
+<!-- HEADER -->
+<div class="page-header">
+  <div>
+    <h2 class="page-title">Padrón Docente</h2>
+    <p class="page-subtitle">
+      Carga masiva y administración del cuerpo docente facultativo de la FCEE
+    </p>
+  </div>
+
+  <div class="header-actions">
+    <button
+      type="button"
+      class="citef-btn citef-btn-outline"
+      (click)="descargarPlantilla()"
+      title="Descargar archivo modelo con formato oficial"
+    >
+      <i class="bi bi-download"></i>
+      <span>Plantilla CSV</span>
+    </button>
+
+    <button
+      *ngIf="puedeGestionar()"
+      class="citef-btn citef-btn-primary"
+      (click)="abrirModalCrearDocente()"
+    >
+      <i class="bi bi-person-plus"></i>
+      <span>Nuevo Docente</span>
+    </button>
+  </div>
+</div>
+
+<!-- MENSAJES DE ALERTA GLOBALES -->
+<div *ngIf="successMsg()" class="alert-banner alert-success">
+  <i class="bi bi-check-circle-fill"></i>
+  <span>{{ successMsg() }}</span>
+</div>
+
+<div *ngIf="errorMsg()" class="alert-banner alert-danger">
+  <i class="bi bi-exclamation-triangle-fill"></i>
+  <span>{{ errorMsg() }}</span>
+</div>
+
+<!-- SECCIÓN DRAG & DROP DE IMPORTACIÓN MASIVA -->
+<section class="citef-card upload-card mb-4" *ngIf="puedeGestionar()">
+  <div class="upload-header">
+    <div class="upload-header-text">
+      <h3 class="upload-title">
+        <i class="bi bi-file-earmark-spreadsheet me-2 text-primary"></i>
+        Importación Masiva de Docentes (.xlsx, .xls, .csv)
+      </h3>
+      <p class="upload-desc">
+        Arrastre o seleccione el archivo con las columnas requeridas:
+        <code>codigo, nombres, apellidos, correo, telefono</code>. Validación transaccional automática.
+      </p>
+    </div>
+  </div>
+
+  <div
+    class="drop-zone"
+    [class.drag-over]="isDragging()"
+    (dragover)="onDragOver($event)"
+    (dragleave)="onDragLeave($event)"
+    (drop)="onFileDropped($event)"
+    (click)="fileInput.click()"
+  >
+    <input
+      #fileInput
+      type="file"
+      class="d-none"
+      accept=".xlsx,.xls,.csv"
+      (change)="onFileSelected($event)"
+    />
+
+    <div class="drop-zone-content" *ngIf="!archivoSeleccionado()">
+      <i class="bi bi-cloud-arrow-up drop-icon"></i>
+      <p class="drop-primary-text">
+        Haga clic o arrastre su archivo Excel o CSV aquí
+      </p>
+      <span class="drop-secondary-text">Formatos válidos: .xlsx, .xls o .csv (Máx. 10MB)</span>
+    </div>
+
+    <div class="drop-zone-selected" *ngIf="archivoSeleccionado()">
+      <i class="bi bi-file-earmark-check drop-file-icon"></i>
+      <div class="file-info">
+        <strong class="file-name">{{ archivoSeleccionado()?.name }}</strong>
+        <span class="file-size">{{ formatTamano(archivoSeleccionado()?.size || 0) }}</span>
+      </div>
+      <button
+        type="button"
+        class="btn-remove-file"
+        (click)="removerArchivo($event)"
+        title="Quitar archivo"
+      >
+        <i class="bi bi-x-circle"></i>
+      </button>
+    </div>
+  </div>
+
+  <div class="upload-actions" *ngIf="archivoSeleccionado()">
+    <button
+      type="button"
+      class="citef-btn citef-btn-primary"
+      [disabled]="procesandoImportacion()"
+      (click)="ejecutarImportacion()"
+    >
+      <i class="bi bi-upload"></i>
+      <span>{{ procesandoImportacion() ? 'Procesando archivo...' : 'Procesar e Importar al Padrón' }}</span>
+    </button>
+
+    <button
+      type="button"
+      class="citef-btn citef-btn-secondary"
+      [disabled]="procesandoImportacion()"
+      (click)="removerArchivo($event)"
+    >
+      <span>Cancelar</span>
+    </button>
+  </div>
+</section>
+
+<!-- BARRA DE FILTROS Y BÚSQUEDA -->
+<div class="citef-card filter-card mb-4">
+  <form (ngSubmit)="ejecutarBusqueda()" class="filter-form">
+    <div class="filter-grid">
+      <div class="filter-field-main">
+        <label class="filter-label">Búsqueda</label>
+        <div class="search-input-wrapper">
+          <i class="bi bi-search search-icon"></i>
+          <input
+            type="text"
+            class="citef-input search-input"
+            [(ngModel)]="busqueda"
+            name="busqueda"
+            placeholder="Código, nombre, apellido o correo institucional..."
+          />
+        </div>
+      </div>
+
+      <div class="filter-field">
+        <label class="filter-label">Estado</label>
+        <select
+          class="citef-select"
+          [(ngModel)]="filtroEstado"
+          name="filtroEstado"
+        >
+          <option value="TODOS">Todos</option>
+          <option value="ACTIVOS">Activos</option>
+          <option value="INACTIVOS">Inactivos</option>
+        </select>
+      </div>
+
+      <div class="filter-actions">
+        <button type="submit" class="citef-btn citef-btn-primary">
+          <i class="bi bi-funnel"></i>
+          <span>Buscar</span>
+        </button>
+        <button
+          type="button"
+          class="citef-btn citef-btn-secondary"
+          (click)="limpiarFiltros()"
+        >
+          <i class="bi bi-arrow-counterclockwise"></i>
+          <span>Limpiar</span>
+        </button>
+      </div>
+    </div>
+  </form>
+</div>
+
+<!-- BANNER CONTRASEÑA GENÉRICA -->
+<div class="password-notice-banner mb-3">
+  <div class="notice-content">
+    <i class="bi bi-key-fill notice-icon"></i>
+    <div class="notice-text">
+      <span class="notice-title">Contraseña inicial predeterminada para docentes:</span>
+      <code class="notice-code">Docente.CITEF2026*</code>
+      <span class="notice-desc">
+        (Al importar o registrar docentes, se crea su cuenta de usuario con esta clave inicial para que puedan acceder con su correo institucional y solicitar reservas).
+      </span>
+    </div>
+  </div>
+</div>
+
+<!-- TABLA DE PADRÓN DOCENTE -->
+<app-table-card
+  title="Cuerpo Docente Facultativo"
+  [subtitle]="'Total docentes registrados: ' + docentesTotal()"
+>
+  <table class="citef-table">
+    <thead>
+      <tr>
+        <th style="width: 130px">Código</th>
+        <th>Nombre Completo</th>
+        <th>Correo Electrónico</th>
+        <th style="width: 120px">Teléfono</th>
+        <th style="width: 150px">Departamento</th>
+        <th style="width: 120px">Condición</th>
+        <th class="text-center" style="width: 100px">Estado</th>
+        <th class="text-center" style="width: 100px">Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let d of docentes()">
+        <td>
+          <span class="badge-code font-monospace">{{ d.codigo }}</span>
+        </td>
+        <td>
+          <strong class="docente-fullname">{{ d.nombres }} {{ d.apellidos }}</strong>
+        </td>
+        <td>
+          <span class="docente-email font-monospace">{{ d.correo }}</span>
+        </td>
+        <td>{{ d.telefono || '—' }}</td>
+        <td>
+          <span class="text-secondary small">{{ d.departamento_academico || 'General' }}</span>
+        </td>
+        <td>
+          <span
+            class="badge-contrato"
+            [class.badge-contrato-titular]="d.condicion_contrato === 'TITULAR'"
+            [class.badge-contrato-invitado]="d.condicion_contrato === 'INVITADO'"
+          >
+            {{ d.condicion_contrato || 'TITULAR' }}
+          </span>
+        </td>
+        <td class="text-center">
+          <span
+            class="citef-badge"
+            [class.citef-badge-success]="d.activo"
+            [class.citef-badge-danger]="!d.activo"
+          >
+            {{ d.activo ? 'Activo' : 'Inactivo' }}
+          </span>
+        </td>
+        <td class="text-center">
+          <div class="action-buttons" *ngIf="puedeGestionar()">
+            <button
+              type="button"
+              class="btn-icon btn-edit"
+              title="Editar docente"
+              (click)="abrirModalEditarDocente(d)"
+            >
+              <i class="bi bi-pencil"></i>
+            </button>
+            <button
+              type="button"
+              class="btn-icon btn-delete"
+              [title]="d.activo ? 'Desactivar docente' : 'Eliminar docente'"
+              (click)="abrirConfirmacionEliminarDocente(d)"
+            >
+              <i class="bi bi-trash3"></i>
+            </button>
+          </div>
+          <span *ngIf="!puedeGestionar()" class="text-muted small">
+            <i class="bi bi-lock me-1"></i>Lectura
+          </span>
+        </td>
+      </tr>
+
+      <tr *ngIf="docentes().length === 0">
+        <td colspan="6" class="empty-row">
+          <div class="empty-state">
+            <i class="bi bi-people"></i>
+            <p>No se encontraron docentes en el catálogo</p>
+          </div>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- PAGINACIÓN COMPARTIDA DE 15 FILAS -->
+  <div card-footer>
+    <app-pagination
+      [paginaActual]="docentePagina()"
+      [totalRegistros]="docentesTotal()"
+      [tamanoPagina]="limite"
+      etiqueta="docentes"
+      (paginaCambiada)="cambiarPaginaDocente($event)"
+    ></app-pagination>
+  </div>
+</app-table-card>
+
+<!-- ======================================================== -->
+<!-- MODAL: CREAR / EDITAR DOCENTE INDIVIDUAL -->
+<!-- ======================================================== -->
+<div *ngIf="mostrarModalDocente()" class="modal-backdrop">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3 class="modal-title">
+        {{ editandoCodigo() ? 'Editar Docente' : 'Nuevo Docente' }}
+      </h3>
+      <button type="button" class="btn-close" (click)="cerrarModalDocente()">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+
+    <app-modal-alert
+      [mensaje]="modalDocenteError()"
+      (cerrar)="modalDocenteError.set(null)"
+    ></app-modal-alert>
+
+    <form (ngSubmit)="guardarDocente()" class="modal-form" novalidate>
+      <div class="form-group" *ngIf="!editandoCodigo()">
+        <label class="form-label">Código Docente UAGRM <span class="req">*</span></label>
+        <input
+          type="text"
+          class="citef-input"
+          [class.input-error]="docenteErrors().codigo"
+          [(ngModel)]="docenteForm.codigo"
+          name="codigo"
+          placeholder="Ej: DOC-2026-01"
+        />
+        <div class="field-error-text" *ngIf="docenteErrors().codigo">
+          <i class="bi bi-exclamation-circle-fill me-1"></i>
+          <span>{{ docenteErrors().codigo }}</span>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group col-6">
+          <label class="form-label">Nombres <span class="req">*</span></label>
+          <input
+            type="text"
+            class="citef-input"
+            [class.input-error]="docenteErrors().nombres"
+            [(ngModel)]="docenteForm.nombres"
+            name="nombres"
+            placeholder="Nombres completos"
+          />
+          <div class="field-error-text" *ngIf="docenteErrors().nombres">
+            <i class="bi bi-exclamation-circle-fill me-1"></i>
+            <span>{{ docenteErrors().nombres }}</span>
+          </div>
+        </div>
+
+        <div class="form-group col-6">
+          <label class="form-label">Apellidos <span class="req">*</span></label>
+          <input
+            type="text"
+            class="citef-input"
+            [class.input-error]="docenteErrors().apellidos"
+            [(ngModel)]="docenteForm.apellidos"
+            name="apellidos"
+            placeholder="Apellidos completos"
+          />
+          <div class="field-error-text" *ngIf="docenteErrors().apellidos">
+            <i class="bi bi-exclamation-circle-fill me-1"></i>
+            <span>{{ docenteErrors().apellidos }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group col-6">
+          <label class="form-label">Correo Electrónico <span class="req">*</span></label>
+          <input
+            type="email"
+            class="citef-input"
+            [class.input-error]="docenteErrors().correo"
+            [(ngModel)]="docenteForm.correo"
+            name="correo"
+            placeholder="docente@uagrm.edu.bo"
+          />
+          <div class="field-error-text" *ngIf="docenteErrors().correo">
+            <i class="bi bi-exclamation-circle-fill me-1"></i>
+            <span>{{ docenteErrors().correo }}</span>
+          </div>
+        </div>
+
+        <div class="form-group col-6">
+          <label class="form-label">Teléfono / Celular</label>
+          <input
+            type="text"
+            class="citef-input"
+            [(ngModel)]="docenteForm.telefono"
+            name="telefono"
+            placeholder="Ej: 71234567"
+          />
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group col-6">
+          <label class="form-label">Departamento Académico</label>
+          <input
+            type="text"
+            class="citef-input"
+            [(ngModel)]="docenteForm.departamento_academico"
+            name="departamento_academico"
+            placeholder="Ej: Finanzas, Economía, etc."
+          />
+        </div>
+
+        <div class="form-group col-6">
+          <label class="form-label">Condición de Contrato</label>
+          <select
+            class="citef-select"
+            [(ngModel)]="docenteForm.condicion_contrato"
+            name="condicion_contrato"
+          >
+            <option value="TITULAR">TITULAR</option>
+            <option value="INVITADO">INVITADO</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button
+          type="button"
+          class="citef-btn citef-btn-secondary"
+          (click)="cerrarModalDocente()"
+        >
+          Cancelar
+        </button>
+        <button
+          type="submit"
+          class="citef-btn citef-btn-primary"
+          [disabled]="guardandoDocente()"
+        >
+          <i class="bi bi-check2"></i>
+          <span>{{ guardandoDocente() ? 'Guardando...' : 'Guardar' }}</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL DE CONFIRMACIÓN -->
+<app-confirm-modal
+  [visible]="mostrarConfirmarEliminar()"
+  title="Desactivar Docente"
+  [message]="confirmacionMensaje"
+  [isDanger]="true"
+  confirmBtnText="Sí, Desactivar"
+  cancelBtnText="Cancelar"
+  (confirmed)="ejecutarEliminacion()"
+  (cancelled)="mostrarConfirmarEliminar.set(false)"
+></app-confirm-modal>

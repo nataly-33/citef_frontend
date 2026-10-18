@@ -1,0 +1,263 @@
+<div class="inicio-container">
+  <!-- CABECERA INSTITUCIONAL DE BIENVENIDA -->
+  <div class="welcome-banner">
+    <div class="welcome-text">
+      <div class="institutional-tag">
+        <i class="bi bi-mortarboard-fill me-1"></i>
+        Facultad de Ciencias Económicas y Empresariales · UAGRM
+      </div>
+      <h1 class="welcome-title">
+        Bienvenido al Sistema CITEF, {{ usuario()?.nombres }}
+      </h1>
+      <p class="welcome-sub">
+        Centro de Información y Tecnología · Plataforma Integral de Gestión y Control de Laboratorios
+      </p>
+    </div>
+
+    <div class="welcome-badge-box">
+      <span class="role-chip" [ngClass]="roleClass()">
+        <i class="bi" [ngClass]="roleIcon()"></i>
+        {{ primerRol() }}
+      </span>
+      <span class="status-indicator">
+        <span class="status-dot"></span> Sesión Activa
+      </span>
+    </div>
+  </div>
+
+  <!-- TARJETA DE PERFIL INSTITUCIONAL -->
+  <div class="profile-card">
+    <div class="profile-header">
+      <div class="profile-avatar">
+        {{ iniciales() }}
+      </div>
+      <div class="profile-info">
+        <h3 class="profile-name">{{ usuario()?.nombres }} {{ usuario()?.apellidos }}</h3>
+        <span class="profile-email">
+          <i class="bi bi-envelope me-1"></i>{{ usuario()?.correo_institucional }}
+        </span>
+      </div>
+    </div>
+
+    <div class="profile-meta-grid">
+      <div class="meta-item">
+        <span class="meta-label">ID de Cuenta</span>
+        <span class="meta-val">#{{ usuario()?.id_usuario }}</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">Rol Institucional</span>
+        <span class="meta-val">{{ primerRol() }}</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">Estado de Acceso</span>
+        <span class="meta-val text-success">
+          <i class="bi bi-check-circle-fill me-1"></i>Habilitado
+        </span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">Permisos Asignados</span>
+        <span class="meta-val">{{ usuario()?.permisos?.length || 0 }} privilegios</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECCIÓN ESPECÍFICA POR ROL -->
+
+  <!-- 1. VISTA DOCENTE -->
+  <div *ngIf="esDocente()" class="role-section">
+    <div class="section-title-box">
+      <i class="bi bi-person-workspace text-primary fs-4"></i>
+      <div>
+        <h2 class="section-title">Panel del Docente</h2>
+        <p class="section-desc">Accesos y estado de servicios académicos para reservas y laboratorios</p>
+      </div>
+    </div>
+
+    <div class="module-cards-grid">
+      <div class="module-card">
+        <div class="card-icon bg-indigo">
+          <i class="bi bi-calendar-check"></i>
+        </div>
+        <div class="card-body">
+          <span class="module-code">Módulo 5</span>
+          <h3 class="card-title">Reserva de Salas de Cómputo</h3>
+          <p class="card-desc">
+            Solicitud y programación de salas de computación para clases prácticas, evaluaciones parciales y talleres formativos.
+          </p>
+          <span class="badge-status-upcoming">
+            <i class="bi bi-clock-history me-1"></i>Próximo Módulo a Habilitar
+          </span>
+        </div>
+      </div>
+
+      <div class="module-card">
+        <div class="card-icon bg-emerald">
+          <i class="bi bi-person-lines-fill"></i>
+        </div>
+        <div class="card-body">
+          <span class="module-code">Módulo 4</span>
+          <h3 class="card-title">Asistencias en Laboratorio</h3>
+          <p class="card-desc">
+            Registro y seguimiento de asistencia de estudiantes matriculados durante las sesiones prácticas de sus asignaturas.
+          </p>
+          <span class="badge-status-upcoming">
+            <i class="bi bi-clock-history me-1"></i>Próximo Módulo a Habilitar
+          </span>
+        </div>
+      </div>
+
+      <div class="module-card">
+        <div class="card-icon bg-blue">
+          <i class="bi bi-bar-chart-line"></i>
+        </div>
+        <div class="card-body">
+          <span class="module-code">Módulo 7</span>
+          <h3 class="card-title">Reportes y Estadísticas</h3>
+          <p class="card-desc">
+            Consulta de historial de ocupación, reservas ejecutadas e informes de desempeño de sus grupos curriculares.
+          </p>
+          <span class="badge-status-upcoming">
+            <i class="bi bi-clock-history me-1"></i>Próximo Módulo a Habilitar
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. VISTA AUXILIAR -->
+  <div *ngIf="esAuxiliar()" class="role-section">
+    <div class="section-title-box">
+      <i class="bi bi-display text-primary fs-4"></i>
+      <div>
+        <h2 class="section-title">Panel del Auxiliar de Laboratorio</h2>
+        <p class="section-desc">Herramientas operativas de gestión de puestos, asistencias e incidencias</p>
+      </div>
+    </div>
+
+    <div class="module-cards-grid">
+      <div class="module-card">
+        <div class="card-icon bg-emerald">
+          <i class="bi bi-pc-display"></i>
+        </div>
+        <div class="card-body">
+          <span class="module-code">Módulo 4</span>
+          <h3 class="card-title">Control de Ocupación en Tiempo Real</h3>
+          <p class="card-desc">
+            Asignación de puestos libres, monitoreo de sesiones y liberación de máquinas para estudiantes de la FCEE.
+          </p>
+          <span class="badge-status-upcoming">
+            <i class="bi bi-clock-history me-1"></i>Próximo Módulo a Habilitar
+          </span>
+        </div>
+      </div>
+
+      <div class="module-card">
+        <div class="card-icon bg-amber">
+          <i class="bi bi-clock"></i>
+        </div>
+        <div class="card-body">
+          <span class="module-code">Módulo 6</span>
+          <h3 class="card-title">Gestión de Turnos e Incidencias</h3>
+          <p class="card-desc">
+            Apertura y cierre de jornada, reporte de fallas de hardware/software y registro de objetos extraviados.
+          </p>
+          <span class="badge-status-upcoming">
+            <i class="bi bi-clock-history me-1"></i>Próximo Módulo a Habilitar
+          </span>
+        </div>
+      </div>
+
+      <div class="module-card">
+        <div class="card-icon bg-blue">
+          <i class="bi bi-box-seam"></i>
+        </div>
+        <div class="card-body">
+          <span class="module-code">Módulo 3</span>
+          <h3 class="card-title">Inventario y Salas de Cómputo</h3>
+          <p class="card-desc">
+            Verificación de periféricos, CPUs y estado físico del equipamiento de cada laboratorio del CITEF.
+          </p>
+          <span class="badge-status-upcoming">
+            <i class="bi bi-clock-history me-1"></i>Próximo Módulo a Habilitar
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. VISTA ADMINISTRADOR -->
+  <div *ngIf="esAdmin()" class="role-section">
+    <div class="section-title-box">
+      <i class="bi bi-shield-check text-primary fs-4"></i>
+      <div>
+        <h2 class="section-title">Accesos de Gestión Central</h2>
+        <p class="section-desc">Módulos activos y operativos configurados en el Sistema CITEF</p>
+      </div>
+    </div>
+
+    <div class="admin-quick-links">
+      <a routerLink="/admin/usuarios" class="admin-card-link">
+        <i class="bi bi-people-fill"></i>
+        <div class="link-text">
+          <strong>Gestión de Usuarios</strong>
+          <span>Altas, bajas, roles y contraseñas</span>
+        </div>
+        <i class="bi bi-chevron-right ms-auto"></i>
+      </a>
+
+      <a routerLink="/admin/roles" class="admin-card-link">
+        <i class="bi bi-shield-lock-fill"></i>
+        <div class="link-text">
+          <strong>Roles y Permisos (RBAC)</strong>
+          <span>Matriz de privilegios institucionales</span>
+        </div>
+        <i class="bi bi-chevron-right ms-auto"></i>
+      </a>
+
+      <a routerLink="/admin/auditoria" class="admin-card-link">
+        <i class="bi bi-clock-history"></i>
+        <div class="link-text">
+          <strong>Bitácora de Auditoría</strong>
+          <span>Trazabilidad transaccional forense</span>
+        </div>
+        <i class="bi bi-chevron-right ms-auto"></i>
+      </a>
+
+      <a routerLink="/admin/catalogos/academicos" class="admin-card-link">
+        <i class="bi bi-journal-bookmark-fill"></i>
+        <div class="link-text">
+          <strong>Catálogos Académicos</strong>
+          <span>Carreras FCEE y materias multigrupo</span>
+        </div>
+        <i class="bi bi-chevron-right ms-auto"></i>
+      </a>
+
+      <a routerLink="/admin/catalogos/operativos" class="admin-card-link">
+        <i class="bi bi-sliders"></i>
+        <div class="link-text">
+          <strong>Parámetros Operativos</strong>
+          <span>Franjas horarias y motivos de uso</span>
+        </div>
+        <i class="bi bi-chevron-right ms-auto"></i>
+      </a>
+
+      <a routerLink="/admin/catalogos/docentes" class="admin-card-link">
+        <i class="bi bi-file-earmark-spreadsheet-fill"></i>
+        <div class="link-text">
+          <strong>Padrón Docente</strong>
+          <span>Importación Excel/CSV y credenciales</span>
+        </div>
+        <i class="bi bi-chevron-right ms-auto"></i>
+      </a>
+
+      <a routerLink="/admin/catalogos/turnos" class="admin-card-link">
+        <i class="bi bi-calendar-week-fill"></i>
+        <div class="link-text">
+          <strong>Turnos de Auxiliares</strong>
+          <span>Asignación semestral fija por 6 meses</span>
+        </div>
+        <i class="bi bi-chevron-right ms-auto"></i>
+      </a>
+    </div>
+  </div>
+</div>

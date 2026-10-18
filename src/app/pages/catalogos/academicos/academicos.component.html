@@ -1,0 +1,630 @@
+<!-- HEADER -->
+<div class="page-header">
+  <div>
+    <h2 class="page-title">Catálogos Académicos</h2>
+    <p class="page-subtitle">
+      Administración de Carreras, Semestres y Materias de la FCEE
+    </p>
+  </div>
+
+  <div class="header-actions">
+    <button
+      *ngIf="pestanaActiva() === 'carreras' && puedeGestionar()"
+      class="citef-btn citef-btn-primary"
+      (click)="abrirModalCrearCarrera()"
+    >
+      <i class="bi bi-plus-circle"></i>
+      <span>Nueva Carrera</span>
+    </button>
+
+    <button
+      *ngIf="pestanaActiva() === 'materias' && puedeGestionar()"
+      class="citef-btn citef-btn-primary"
+      (click)="abrirModalCrearMateria()"
+    >
+      <i class="bi bi-plus-circle"></i>
+      <span>Nueva Materia</span>
+    </button>
+  </div>
+</div>
+
+<!-- TABS DE NAVEGACIÓN -->
+<div class="nav-tabs-container mb-4">
+  <button
+    type="button"
+    class="tab-btn"
+    [class.active]="pestanaActiva() === 'carreras'"
+    (click)="cambiarPestana('carreras')"
+  >
+    <i class="bi bi-mortarboard me-2"></i>
+    <span>Carreras</span>
+    <span class="tab-badge" *ngIf="carrerasTotal() > 0">{{ carrerasTotal() }}</span>
+  </button>
+
+  <button
+    type="button"
+    class="tab-btn"
+    [class.active]="pestanaActiva() === 'materias'"
+    (click)="cambiarPestana('materias')"
+  >
+    <i class="bi bi-journal-bookmark me-2"></i>
+    <span>Materias</span>
+    <span class="tab-badge" *ngIf="materiasTotal() > 0">{{ materiasTotal() }}</span>
+  </button>
+</div>
+
+<!-- MENSAJES DE ALERTA GLOBALES -->
+<div *ngIf="successMsg()" class="alert-banner alert-success">
+  <i class="bi bi-check-circle-fill"></i>
+  <span>{{ successMsg() }}</span>
+</div>
+
+<div *ngIf="errorMsg()" class="alert-banner alert-danger">
+  <i class="bi bi-exclamation-triangle-fill"></i>
+  <span>{{ errorMsg() }}</span>
+</div>
+
+<!-- ======================================================== -->
+<!-- PESTAÑA 1: GESTIÓN DE CARRERAS -->
+<!-- ======================================================== -->
+<section *ngIf="pestanaActiva() === 'carreras'">
+  <!-- FILTROS CARRERAS -->
+  <div class="citef-card filter-card mb-4">
+    <form (ngSubmit)="ejecutarBusquedaCarreras()" class="filter-form">
+      <div class="filter-grid">
+        <div class="filter-field-main">
+          <label class="filter-label">Búsqueda</label>
+          <div class="search-input-wrapper">
+            <i class="bi bi-search search-icon"></i>
+            <input
+              type="text"
+              class="citef-input search-input"
+              [(ngModel)]="busquedaCarrera"
+              name="busquedaCarrera"
+              placeholder="Código o nombre de carrera..."
+            />
+          </div>
+        </div>
+
+        <div class="filter-field">
+          <label class="filter-label">Estado</label>
+          <select
+            class="citef-select"
+            [(ngModel)]="filtroEstadoCarrera"
+            name="filtroEstadoCarrera"
+          >
+            <option value="TODOS">Todos</option>
+            <option value="ACTIVOS">Activos</option>
+            <option value="INACTIVOS">Inactivos</option>
+          </select>
+        </div>
+
+        <div class="filter-actions">
+          <button type="submit" class="citef-btn citef-btn-primary">
+            <i class="bi bi-funnel"></i>
+            <span>Buscar</span>
+          </button>
+          <button
+            type="button"
+            class="citef-btn citef-btn-secondary"
+            (click)="limpiarFiltrosCarreras()"
+          >
+            <i class="bi bi-arrow-counterclockwise"></i>
+            <span>Limpiar</span>
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <!-- TABLA DE CARRERAS -->
+  <app-table-card
+    title="Catálogo de Carreras"
+    [subtitle]="'Total registradas: ' + carrerasTotal()"
+  >
+    <table class="citef-table">
+      <thead>
+        <tr>
+          <th class="text-center" style="width: 70px">ID</th>
+          <th style="width: 140px">Código</th>
+          <th>Nombre de la Carrera</th>
+          <th class="text-center" style="width: 120px">Estado</th>
+          <th class="text-center" style="width: 120px">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let c of carreras()">
+          <td class="text-center text-muted font-monospace">#{{ c.id_carrera }}</td>
+          <td>
+            <span class="badge-code font-monospace">{{ c.codigo }}</span>
+          </td>
+          <td>
+            <strong class="career-title">{{ c.nombre }}</strong>
+          </td>
+          <td class="text-center">
+            <span
+              class="citef-badge"
+              [class.citef-badge-success]="c.activo"
+              [class.citef-badge-danger]="!c.activo"
+            >
+              {{ c.activo ? 'Activo' : 'Inactivo' }}
+            </span>
+          </td>
+          <td class="text-center">
+            <div class="action-buttons" *ngIf="puedeGestionar()">
+              <button
+                type="button"
+                class="btn-icon btn-edit"
+                title="Editar carrera"
+                (click)="abrirModalEditarCarrera(c)"
+              >
+                <i class="bi bi-pencil"></i>
+              </button>
+              <button
+                type="button"
+                class="btn-icon btn-delete"
+                [title]="c.activo ? 'Desactivar carrera' : 'Eliminar carrera'"
+                (click)="abrirConfirmacionEliminarCarrera(c)"
+              >
+                <i class="bi bi-trash3"></i>
+              </button>
+            </div>
+            <span *ngIf="!puedeGestionar()" class="text-muted small">
+              <i class="bi bi-lock me-1"></i>Lectura
+            </span>
+          </td>
+        </tr>
+
+        <tr *ngIf="carreras().length === 0">
+          <td colspan="5" class="empty-row">
+            <div class="empty-state">
+              <i class="bi bi-mortarboard"></i>
+              <p>No se encontraron carreras registradas</p>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- PAGINACIÓN COMPARTIDA DE 15 FILAS -->
+    <div card-footer>
+      <app-pagination
+        [paginaActual]="carreraPagina()"
+        [totalRegistros]="carrerasTotal()"
+        [tamanoPagina]="limite"
+        etiqueta="carreras"
+        (paginaCambiada)="cambiarPaginaCarrera($event)"
+      ></app-pagination>
+    </div>
+  </app-table-card>
+</section>
+
+<!-- ======================================================== -->
+<!-- PESTAÑA 2: GESTIÓN DE MATERIAS -->
+<!-- ======================================================== -->
+<section *ngIf="pestanaActiva() === 'materias'">
+  <!-- FILTROS MATERIAS -->
+  <div class="citef-card filter-card mb-4">
+    <form (ngSubmit)="ejecutarBusquedaMaterias()" class="filter-form">
+      <div class="filter-grid">
+        <div class="filter-field">
+          <label class="filter-label">Filtrar por Carrera</label>
+          <select
+            class="citef-select"
+            [(ngModel)]="filtroCarreraMateria"
+            name="filtroCarreraMateria"
+            (change)="ejecutarBusquedaMaterias()"
+          >
+            <option [ngValue]="null">Todas las carreras</option>
+            <option *ngFor="let car of listaCarrerasTodas()" [ngValue]="car.id_carrera">
+              {{ car.codigo }} - {{ car.nombre }}
+            </option>
+          </select>
+        </div>
+
+        <div class="filter-field-main">
+          <label class="filter-label">Búsqueda</label>
+          <div class="search-input-wrapper">
+            <i class="bi bi-search search-icon"></i>
+            <input
+              type="text"
+              class="citef-input search-input"
+              [(ngModel)]="busquedaMateria"
+              name="busquedaMateria"
+              placeholder="Sigla o nombre de materia..."
+            />
+          </div>
+        </div>
+
+        <div class="filter-field">
+          <label class="filter-label">Semestre / Nivel</label>
+          <select
+            class="citef-select"
+            [(ngModel)]="filtroSemestreMateria"
+            name="filtroSemestreMateria"
+            (change)="ejecutarBusquedaMaterias()"
+          >
+            <option [ngValue]="null">Todos los semestres</option>
+            <option *ngFor="let s of semestresLista" [ngValue]="s">
+              Semestre {{ s }}
+            </option>
+          </select>
+        </div>
+
+        <div class="filter-field">
+          <label class="filter-label">Estado</label>
+          <select
+            class="citef-select"
+            [(ngModel)]="filtroEstadoMateria"
+            name="filtroEstadoMateria"
+            (change)="ejecutarBusquedaMaterias()"
+          >
+            <option value="TODOS">Todos</option>
+            <option value="ACTIVOS">Activos</option>
+            <option value="INACTIVOS">Inactivos</option>
+          </select>
+        </div>
+
+        <div class="filter-actions">
+          <button type="submit" class="citef-btn citef-btn-primary">
+            <i class="bi bi-funnel"></i>
+            <span>Buscar</span>
+          </button>
+          <button
+            type="button"
+            class="citef-btn citef-btn-secondary"
+            (click)="limpiarFiltrosMaterias()"
+          >
+            <i class="bi bi-arrow-counterclockwise"></i>
+            <span>Limpiar</span>
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <!-- TABLA DE MATERIAS -->
+  <app-table-card
+    title="Catálogo de Materias"
+    [subtitle]="'Total registradas: ' + materiasTotal()"
+  >
+    <table class="citef-table">
+      <thead>
+        <tr>
+          <th class="text-center" style="width: 70px">ID</th>
+          <th style="width: 120px">Sigla</th>
+          <th>Materia</th>
+          <th class="text-center" style="width: 140px; white-space: nowrap;">Semestre</th>
+          <th>Carrera</th>
+          <th class="text-center" style="width: 110px">Estado</th>
+          <th class="text-center" style="width: 120px">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let m of materias()">
+          <td class="text-center text-muted font-monospace">#{{ m.id_materia }}</td>
+          <td>
+            <span class="badge-code font-monospace">{{ m.sigla }}</span>
+          </td>
+          <td>
+            <strong class="subject-title">{{ m.nombre }}</strong>
+          </td>
+          <td class="text-center" style="white-space: nowrap;">
+            <span class="badge-semester" *ngIf="m.semestre_nivel">Semestre {{ m.semestre_nivel }}</span>
+            <span class="text-muted small" *ngIf="!m.semestre_nivel">—</span>
+          </td>
+          <td>
+            <div class="career-tags-container" *ngIf="m.carreras_asociadas && m.carreras_asociadas.length > 0">
+              <span *ngFor="let ca of m.carreras_asociadas" class="badge-career-tag">
+                {{ ca.codigo_carrera || ca.nombre_carrera }} <small class="text-muted">(Sem {{ ca.semestre_nivel }})</small>
+              </span>
+            </div>
+            <span class="career-label" *ngIf="(!m.carreras_asociadas || m.carreras_asociadas.length === 0) && m.carrera">
+              {{ m.carrera.nombre }}
+            </span>
+            <span class="text-muted small" *ngIf="(!m.carreras_asociadas || m.carreras_asociadas.length === 0) && !m.carrera">
+              —
+            </span>
+          </td>
+          <td class="text-center">
+            <span
+              class="citef-badge"
+              [class.citef-badge-success]="m.activo"
+              [class.citef-badge-danger]="!m.activo"
+            >
+              {{ m.activo ? 'Activo' : 'Inactivo' }}
+            </span>
+          </td>
+          <td class="text-center">
+            <div class="action-buttons" *ngIf="puedeGestionar()">
+              <button
+                type="button"
+                class="btn-icon btn-edit"
+                title="Editar materia"
+                (click)="abrirModalEditarMateria(m)"
+              >
+                <i class="bi bi-pencil"></i>
+              </button>
+              <button
+                type="button"
+                class="btn-icon btn-delete"
+                [title]="m.activo ? 'Desactivar materia' : 'Eliminar materia'"
+                (click)="abrirConfirmacionEliminarMateria(m)"
+              >
+                <i class="bi bi-trash3"></i>
+              </button>
+            </div>
+            <span *ngIf="!puedeGestionar()" class="text-muted small">
+              <i class="bi bi-lock me-1"></i>Lectura
+            </span>
+          </td>
+        </tr>
+
+        <tr *ngIf="materias().length === 0">
+          <td colspan="7" class="empty-row">
+            <div class="empty-state">
+              <i class="bi bi-journal-x"></i>
+              <p>No se encontraron materias registradas</p>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- PAGINACIÓN COMPARTIDA DE 15 FILAS -->
+    <div card-footer>
+      <app-pagination
+        [paginaActual]="materiaPagina()"
+        [totalRegistros]="materiasTotal()"
+        [tamanoPagina]="limite"
+        etiqueta="materias"
+        (paginaCambiada)="cambiarPaginaMateria($event)"
+      ></app-pagination>
+    </div>
+  </app-table-card>
+</section>
+
+<!-- ======================================================== -->
+<!-- MODAL: CREAR / EDITAR CARRERA -->
+<!-- ======================================================== -->
+<div *ngIf="mostrarModalCarrera()" class="modal-backdrop">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3 class="modal-title">
+        {{ editandoCarreraId() ? 'Editar Carrera' : 'Nueva Carrera' }}
+      </h3>
+      <button type="button" class="btn-close" (click)="cerrarModalCarrera()">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+
+    <!-- Alerta de Error dentro del Modal -->
+    <app-modal-alert
+      [mensaje]="modalCarreraError()"
+      (cerrar)="modalCarreraError.set(null)"
+    ></app-modal-alert>
+
+    <form (ngSubmit)="guardarCarrera()" class="modal-form" novalidate>
+      <div class="form-group">
+        <label class="form-label">Código de Carrera <span class="req">*</span></label>
+        <input
+          type="text"
+          class="citef-input"
+          [class.input-error]="carreraErrors().codigo"
+          [(ngModel)]="carreraForm.codigo"
+          name="codigo"
+          placeholder="Ej: 186-5"
+        />
+        <div class="field-error-text" *ngIf="carreraErrors().codigo">
+          <i class="bi bi-exclamation-circle-fill me-1"></i>
+          <span>{{ carreraErrors().codigo }}</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Nombre de la Carrera <span class="req">*</span></label>
+        <input
+          type="text"
+          class="citef-input"
+          [class.input-error]="carreraErrors().nombre"
+          [(ngModel)]="carreraForm.nombre"
+          name="nombre"
+          placeholder="Ej: Ingeniería Comercial"
+        />
+        <div class="field-error-text" *ngIf="carreraErrors().nombre">
+          <i class="bi bi-exclamation-circle-fill me-1"></i>
+          <span>{{ carreraErrors().nombre }}</span>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button
+          type="button"
+          class="citef-btn citef-btn-secondary"
+          (click)="cerrarModalCarrera()"
+        >
+          Cancelar
+        </button>
+        <button
+          type="submit"
+          class="citef-btn citef-btn-primary"
+          [disabled]="guardandoCarrera()"
+        >
+          <i class="bi bi-check2"></i>
+          <span>{{ guardandoCarrera() ? 'Guardando...' : 'Guardar' }}</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ======================================================== -->
+<!-- MODAL: CREAR / EDITAR MATERIA -->
+<!-- ======================================================== -->
+<div *ngIf="mostrarModalMateria()" class="modal-backdrop">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3 class="modal-title">
+        {{ editandoMateriaId() ? 'Editar Materia' : 'Nueva Materia' }}
+      </h3>
+      <button type="button" class="btn-close" (click)="cerrarModalMateria()">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+
+    <!-- Alerta de Error dentro del Modal -->
+    <app-modal-alert
+      [mensaje]="modalMateriaError()"
+      (cerrar)="modalMateriaError.set(null)"
+    ></app-modal-alert>
+
+    <form (ngSubmit)="guardarMateria()" class="modal-form" novalidate>
+      <div class="form-row">
+        <div class="form-group col-4">
+          <label class="form-label">Sigla de Materia <span class="req">*</span></label>
+          <input
+            type="text"
+            class="citef-input"
+            [class.input-error]="materiaErrors().sigla"
+            [(ngModel)]="materiaForm.sigla"
+            name="sigla"
+            placeholder="Ej: MAT101"
+          />
+          <div class="field-error-text" *ngIf="materiaErrors().sigla">
+            <i class="bi bi-exclamation-circle-fill me-1"></i>
+            <span>{{ materiaErrors().sigla }}</span>
+          </div>
+        </div>
+
+        <div class="form-group col-8">
+          <label class="form-label">Nombre de la Asignatura <span class="req">*</span></label>
+          <input
+            type="text"
+            class="citef-input"
+            [class.input-error]="materiaErrors().nombre"
+            [(ngModel)]="materiaForm.nombre"
+            name="nombre"
+            placeholder="Ej: Cálculo I, Contabilidad General"
+          />
+          <div class="field-error-text" *ngIf="materiaErrors().nombre">
+            <i class="bi bi-exclamation-circle-fill me-1"></i>
+            <span>{{ materiaErrors().nombre }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECCIÓN MÚLTIPLES CARRERAS Y SEMESTRES -->
+      <div class="carreras-asociadas-box">
+        <div class="carreras-box-header">
+          <div>
+            <label class="form-label mb-0">
+              <i class="bi bi-diagram-3 me-1 text-primary"></i>
+              Carreras Curriculares y Semestres <span class="req">*</span>
+            </label>
+            <span class="carreras-subtext">
+              Indique en qué carrera(s) se dicta la materia y el semestre correspondiente
+            </span>
+          </div>
+          <button
+            type="button"
+            class="citef-btn citef-btn-outline btn-xs"
+            (click)="agregarCarreraFila()"
+            title="Vincular a otra carrera"
+          >
+            <i class="bi bi-plus-lg me-1"></i>
+            <span>Agregar Carrera</span>
+          </button>
+        </div>
+
+        <div class="carreras-rows-list">
+          <div
+            *ngFor="let item of materiaCarreras; let i = index"
+            class="carrera-row-item"
+          >
+            <div class="row-inputs-grid">
+              <div class="form-group mb-0 flex-grow-1">
+                <label class="row-label">Carrera #{{ i + 1 }}</label>
+                <select
+                  class="citef-select select-sm"
+                  [class.input-error]="carreraFilaError(i, 'carrera')"
+                  [(ngModel)]="item.id_carrera"
+                  [name]="'carrera_' + i"
+                >
+                  <option [ngValue]="null" disabled>Seleccione carrera...</option>
+                  <option *ngFor="let c of listaCarrerasTodas()" [ngValue]="c.id_carrera">
+                    {{ c.codigo }} - {{ c.nombre }}
+                  </option>
+                </select>
+              </div>
+
+              <div class="form-group mb-0 col-semestre-pick">
+                <label class="row-label">Semestre</label>
+                <select
+                  class="citef-select select-sm"
+                  [class.input-error]="carreraFilaError(i, 'semestre')"
+                  [(ngModel)]="item.semestre_nivel"
+                  [name]="'semestre_' + i"
+                >
+                  <option [ngValue]="null" disabled>Semestre...</option>
+                  <option *ngFor="let s of semestresLista" [ngValue]="s">
+                    Semestre {{ s }}
+                  </option>
+                </select>
+              </div>
+
+              <button
+                type="button"
+                class="btn-trash-row"
+                [disabled]="materiaCarreras.length <= 1"
+                (click)="removerCarreraFila(i)"
+                title="Eliminar esta carrera de la materia"
+              >
+                <i class="bi bi-trash"></i>
+              </button>
+            </div>
+
+            <div class="field-error-text" *ngIf="carreraFilaError(i, 'general')">
+              <i class="bi bi-exclamation-circle-fill me-1"></i>
+              <span>{{ carreraFilaError(i, 'general') }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="field-error-text mt-1" *ngIf="materiaErrors().carreras">
+          <i class="bi bi-exclamation-circle-fill me-1"></i>
+          <span>{{ materiaErrors().carreras }}</span>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button
+          type="button"
+          class="citef-btn citef-btn-secondary"
+          (click)="cerrarModalMateria()"
+        >
+          Cancelar
+        </button>
+        <button
+          type="submit"
+          class="citef-btn citef-btn-primary"
+          [disabled]="guardandoMateria()"
+        >
+          <i class="bi bi-check2"></i>
+          <span>{{ guardandoMateria() ? 'Guardando...' : 'Guardar' }}</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL DE CONFIRMACIÓN -->
+<app-confirm-modal
+  [visible]="mostrarConfirmarEliminar()"
+  [title]="confirmacionTitulo"
+  [message]="confirmacionMensaje"
+  [isDanger]="true"
+  confirmBtnText="Sí, Desactivar"
+  cancelBtnText="Cancelar"
+  (confirmed)="ejecutarEliminacion()"
+  (cancelled)="mostrarConfirmarEliminar.set(false)"
+></app-confirm-modal>

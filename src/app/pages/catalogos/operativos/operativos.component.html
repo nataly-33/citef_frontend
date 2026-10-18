@@ -1,0 +1,536 @@
+<!-- HEADER -->
+<div class="page-header">
+  <div>
+    <h2 class="page-title">Parámetros Operativos</h2>
+    <p class="page-subtitle">
+      Configuración de Franjas Horarias y Motivos de Uso Autorizados
+    </p>
+  </div>
+
+  <div class="header-actions">
+    <button
+      *ngIf="pestanaActiva() === 'horarios' && puedeGestionar()"
+      class="citef-btn citef-btn-primary"
+      (click)="abrirModalCrearHorario()"
+    >
+      <i class="bi bi-clock-history"></i>
+      <span>Nueva Franja Horaria</span>
+    </button>
+
+    <button
+      *ngIf="pestanaActiva() === 'motivos' && puedeGestionar()"
+      class="citef-btn citef-btn-primary"
+      (click)="abrirModalCrearMotivo()"
+    >
+      <i class="bi bi-tag"></i>
+      <span>Nuevo Motivo de Uso</span>
+    </button>
+  </div>
+</div>
+
+<!-- TABS DE NAVEGACIÓN -->
+<div class="nav-tabs-container mb-4">
+  <button
+    type="button"
+    class="tab-btn"
+    [class.active]="pestanaActiva() === 'horarios'"
+    (click)="cambiarPestana('horarios')"
+  >
+    <i class="bi bi-clock me-2"></i>
+    <span>Franjas Horarias</span>
+    <span class="tab-badge" *ngIf="horariosTotal() > 0">{{ horariosTotal() }}</span>
+  </button>
+
+  <button
+    type="button"
+    class="tab-btn"
+    [class.active]="pestanaActiva() === 'motivos'"
+    (click)="cambiarPestana('motivos')"
+  >
+    <i class="bi bi-bookmarks me-2"></i>
+    <span>Motivos de Uso</span>
+    <span class="tab-badge" *ngIf="motivosTotal() > 0">{{ motivosTotal() }}</span>
+  </button>
+</div>
+
+<!-- MENSAJES DE ALERTA GLOBALES -->
+<div *ngIf="successMsg()" class="alert-banner alert-success">
+  <i class="bi bi-check-circle-fill"></i>
+  <span>{{ successMsg() }}</span>
+</div>
+
+<div *ngIf="errorMsg()" class="alert-banner alert-danger">
+  <i class="bi bi-exclamation-triangle-fill"></i>
+  <span>{{ errorMsg() }}</span>
+</div>
+
+<!-- ======================================================== -->
+<!-- PESTAÑA 1: FRANJAS HORARIAS -->
+<!-- ======================================================== -->
+<section *ngIf="pestanaActiva() === 'horarios'">
+  <!-- FILTROS HORARIOS -->
+  <div class="citef-card filter-card mb-4">
+    <form (ngSubmit)="ejecutarBusquedaHorarios()" class="filter-form">
+      <div class="filter-grid">
+        <div class="filter-field">
+          <label class="filter-label">Estado</label>
+          <select
+            class="citef-select"
+            [(ngModel)]="filtroEstadoHorario"
+            name="filtroEstadoHorario"
+          >
+            <option value="TODOS">Todos</option>
+            <option value="ACTIVOS">Activos</option>
+            <option value="INACTIVOS">Inactivos</option>
+          </select>
+        </div>
+
+        <div class="filter-actions">
+          <button type="submit" class="citef-btn citef-btn-primary">
+            <i class="bi bi-funnel"></i>
+            <span>Filtrar</span>
+          </button>
+          <button
+            type="button"
+            class="citef-btn citef-btn-secondary"
+            (click)="limpiarFiltrosHorarios()"
+          >
+            <i class="bi bi-arrow-counterclockwise"></i>
+            <span>Restablecer</span>
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <!-- TABLA DE FRANJAS HORARIAS -->
+  <app-table-card
+    title="Franjas Horarias Operativas"
+    [subtitle]="'Total registradas: ' + horariosTotal()"
+  >
+    <table class="citef-table">
+      <thead>
+        <tr>
+          <th class="text-center" style="width: 70px">ID</th>
+          <th style="width: 160px">Turno</th>
+          <th class="text-center" style="width: 140px">Hora Inicio</th>
+          <th class="text-center" style="width: 140px">Hora Fin</th>
+          <th class="text-center">Intervalo de Operación</th>
+          <th class="text-center" style="width: 120px">Estado</th>
+          <th class="text-center" style="width: 120px">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let h of horarios()">
+          <td class="text-center text-muted font-monospace">#{{ h.id_horario }}</td>
+          <td>
+            <span class="shift-badge font-monospace" [ngClass]="'shift-' + h.turno.toLowerCase()">
+              {{ h.turno }}
+            </span>
+          </td>
+          <td class="text-center font-monospace">
+            <i class="bi bi-clock me-1 text-muted"></i>
+            {{ formatHora(h.hora_inicio) }}
+          </td>
+          <td class="text-center font-monospace">
+            <i class="bi bi-clock me-1 text-muted"></i>
+            {{ formatHora(h.hora_fin) }}
+          </td>
+          <td class="text-center">
+            <span class="range-badge">
+              {{ formatHora(h.hora_inicio) }} – {{ formatHora(h.hora_fin) }}
+            </span>
+          </td>
+          <td class="text-center">
+            <span
+              class="citef-badge"
+              [class.citef-badge-success]="h.activo"
+              [class.citef-badge-danger]="!h.activo"
+            >
+              {{ h.activo ? 'Activo' : 'Inactivo' }}
+            </span>
+          </td>
+          <td class="text-center">
+            <div class="action-buttons" *ngIf="puedeGestionar()">
+              <button
+                type="button"
+                class="btn-icon btn-edit"
+                title="Editar horario"
+                (click)="abrirModalEditarHorario(h)"
+              >
+                <i class="bi bi-pencil"></i>
+              </button>
+              <button
+                type="button"
+                class="btn-icon btn-delete"
+                [title]="h.activo ? 'Desactivar horario' : 'Eliminar horario'"
+                (click)="abrirConfirmacionEliminarHorario(h)"
+              >
+                <i class="bi bi-trash3"></i>
+              </button>
+            </div>
+            <span *ngIf="!puedeGestionar()" class="text-muted small">
+              <i class="bi bi-lock me-1"></i>Lectura
+            </span>
+          </td>
+        </tr>
+
+        <tr *ngIf="horarios().length === 0">
+          <td colspan="7" class="empty-row">
+            <div class="empty-state">
+              <i class="bi bi-clock-history"></i>
+              <p>No se encontraron franjas horarias configuradas</p>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- PAGINACIÓN COMPARTIDA DE 15 FILAS -->
+    <div card-footer>
+      <app-pagination
+        [paginaActual]="horarioPagina()"
+        [totalRegistros]="horariosTotal()"
+        [tamanoPagina]="limite"
+        etiqueta="horarios"
+        (paginaCambiada)="cambiarPaginaHorario($event)"
+      ></app-pagination>
+    </div>
+  </app-table-card>
+</section>
+
+<!-- ======================================================== -->
+<!-- PESTAÑA 2: MOTIVOS DE USO -->
+<!-- ======================================================== -->
+<section *ngIf="pestanaActiva() === 'motivos'">
+  <!-- FILTROS MOTIVOS -->
+  <div class="citef-card filter-card mb-4">
+    <form (ngSubmit)="ejecutarBusquedaMotivos()" class="filter-form">
+      <div class="filter-grid">
+        <div class="filter-field-main">
+          <label class="filter-label">Búsqueda</label>
+          <div class="search-input-wrapper">
+            <i class="bi bi-search search-icon"></i>
+            <input
+              type="text"
+              class="citef-input search-input"
+              [(ngModel)]="busquedaMotivo"
+              name="busquedaMotivo"
+              placeholder="Descripción del motivo..."
+            />
+          </div>
+        </div>
+
+        <div class="filter-field">
+          <label class="filter-label">Tipo de Uso</label>
+          <select
+            class="citef-select"
+            [(ngModel)]="filtroTipoMotivo"
+            name="filtroTipoMotivo"
+          >
+            <option value="TODOS">Todos los tipos</option>
+            <option value="ACADEMICO">Académico</option>
+            <option value="LIBRE">Libre</option>
+            <option value="ADMINISTRATIVO">Administrativo</option>
+          </select>
+        </div>
+
+        <div class="filter-field">
+          <label class="filter-label">Estado</label>
+          <select
+            class="citef-select"
+            [(ngModel)]="filtroEstadoMotivo"
+            name="filtroEstadoMotivo"
+          >
+            <option value="TODOS">Todos</option>
+            <option value="ACTIVOS">Activos</option>
+            <option value="INACTIVOS">Inactivos</option>
+          </select>
+        </div>
+
+        <div class="filter-actions">
+          <button type="submit" class="citef-btn citef-btn-primary">
+            <i class="bi bi-funnel"></i>
+            <span>Buscar</span>
+          </button>
+          <button
+            type="button"
+            class="citef-btn citef-btn-secondary"
+            (click)="limpiarFiltrosMotivos()"
+          >
+            <i class="bi bi-arrow-counterclockwise"></i>
+            <span>Limpiar</span>
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <!-- TABLA DE MOTIVOS DE USO -->
+  <app-table-card
+    title="Motivos de Uso Autorizados"
+    [subtitle]="'Total registrados: ' + motivosTotal()"
+  >
+    <table class="citef-table">
+      <thead>
+        <tr>
+          <th class="text-center" style="width: 70px">ID</th>
+          <th style="width: 260px; max-width: 320px;">Descripción</th>
+          <th style="width: 170px">Tipo de Uso</th>
+          <th class="text-center" style="width: 120px">Estado</th>
+          <th class="text-center" style="width: 120px">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let m of motivos()">
+          <td class="text-center text-muted font-monospace">#{{ m.id_motivo }}</td>
+          <td style="max-width: 320px;">
+            <strong class="career-title text-truncate d-block" [title]="m.descrip">{{ m.descrip }}</strong>
+          </td>
+          <td>
+            <span
+              class="badge-type"
+              [ngClass]="'badge-type-' + m.tipo.toLowerCase()"
+            >
+              {{ m.tipo }}
+            </span>
+          </td>
+          <td class="text-center">
+            <span
+              class="citef-badge"
+              [class.citef-badge-success]="m.activo"
+              [class.citef-badge-danger]="!m.activo"
+            >
+              {{ m.activo ? 'Activo' : 'Inactivo' }}
+            </span>
+          </td>
+          <td class="text-center">
+            <div class="action-buttons" *ngIf="puedeGestionar()">
+              <button
+                type="button"
+                class="btn-icon btn-edit"
+                title="Editar motivo"
+                (click)="abrirModalEditarMotivo(m)"
+              >
+                <i class="bi bi-pencil"></i>
+              </button>
+              <button
+                type="button"
+                class="btn-icon btn-delete"
+                [title]="m.activo ? 'Desactivar motivo' : 'Eliminar motivo'"
+                (click)="abrirConfirmacionEliminarMotivo(m)"
+              >
+                <i class="bi bi-trash3"></i>
+              </button>
+            </div>
+            <span *ngIf="!puedeGestionar()" class="text-muted small">
+              <i class="bi bi-lock me-1"></i>Lectura
+            </span>
+          </td>
+        </tr>
+
+        <tr *ngIf="motivos().length === 0">
+          <td colspan="5" class="empty-row">
+            <div class="empty-state">
+              <i class="bi bi-bookmarks"></i>
+              <p>No se encontraron motivos de uso registrados</p>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- PAGINACIÓN COMPARTIDA DE 15 FILAS -->
+    <div card-footer>
+      <app-pagination
+        [paginaActual]="motivoPagina()"
+        [totalRegistros]="motivosTotal()"
+        [tamanoPagina]="limite"
+        etiqueta="motivos"
+        (paginaCambiada)="cambiarPaginaMotivo($event)"
+      ></app-pagination>
+    </div>
+  </app-table-card>
+</section>
+
+<!-- ======================================================== -->
+<!-- MODAL: CREAR / EDITAR HORARIO -->
+<!-- ======================================================== -->
+<div *ngIf="mostrarModalHorario()" class="modal-backdrop">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3 class="modal-title">
+        {{ editandoHorarioId() ? 'Editar Franja Horaria' : 'Nueva Franja Horaria' }}
+      </h3>
+      <button type="button" class="btn-close" (click)="cerrarModalHorario()">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+
+    <app-modal-alert
+      [mensaje]="modalHorarioError()"
+      (cerrar)="modalHorarioError.set(null)"
+    ></app-modal-alert>
+
+    <form (ngSubmit)="guardarHorario()" class="modal-form" novalidate>
+      <div class="form-group">
+        <label class="form-label">Turno Operativo <span class="req">*</span></label>
+        <select
+          class="citef-select"
+          [class.input-error]="horarioErrors().turno"
+          [(ngModel)]="horarioForm.turno"
+          name="turno"
+        >
+          <option value="" disabled>Seleccione turno...</option>
+          <option value="MAÑANA">MAÑANA</option>
+          <option value="TARDE">TARDE</option>
+          <option value="NOCHE">NOCHE</option>
+        </select>
+        <div class="field-error-text" *ngIf="horarioErrors().turno">
+          <i class="bi bi-exclamation-circle-fill me-1"></i>
+          <span>{{ horarioErrors().turno }}</span>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group col-6">
+          <label class="form-label">Hora de Inicio <span class="req">*</span></label>
+          <input
+            type="time"
+            step="1"
+            class="citef-input"
+            [class.input-error]="horarioErrors().hora_inicio"
+            [(ngModel)]="horarioForm.hora_inicio"
+            name="hora_inicio"
+          />
+          <div class="field-error-text" *ngIf="horarioErrors().hora_inicio">
+            <i class="bi bi-exclamation-circle-fill me-1"></i>
+            <span>{{ horarioErrors().hora_inicio }}</span>
+          </div>
+        </div>
+
+        <div class="form-group col-6">
+          <label class="form-label">Hora de Fin <span class="req">*</span></label>
+          <input
+            type="time"
+            step="1"
+            class="citef-input"
+            [class.input-error]="horarioErrors().hora_fin"
+            [(ngModel)]="horarioForm.hora_fin"
+            name="hora_fin"
+          />
+          <div class="field-error-text" *ngIf="horarioErrors().hora_fin">
+            <i class="bi bi-exclamation-circle-fill me-1"></i>
+            <span>{{ horarioErrors().hora_fin }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button
+          type="button"
+          class="citef-btn citef-btn-secondary"
+          (click)="cerrarModalHorario()"
+        >
+          Cancelar
+        </button>
+        <button
+          type="submit"
+          class="citef-btn citef-btn-primary"
+          [disabled]="guardandoHorario()"
+        >
+          <i class="bi bi-check2"></i>
+          <span>{{ guardandoHorario() ? 'Guardando...' : 'Guardar' }}</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ======================================================== -->
+<!-- MODAL: CREAR / EDITAR MOTIVO -->
+<!-- ======================================================== -->
+<div *ngIf="mostrarModalMotivo()" class="modal-backdrop">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3 class="modal-title">
+        {{ editandoMotivoId() ? 'Editar Motivo de Uso' : 'Nuevo Motivo de Uso' }}
+      </h3>
+      <button type="button" class="btn-close" (click)="cerrarModalMotivo()">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+
+    <app-modal-alert
+      [mensaje]="modalMotivoError()"
+      (cerrar)="modalMotivoError.set(null)"
+    ></app-modal-alert>
+
+    <form (ngSubmit)="guardarMotivo()" class="modal-form" novalidate>
+      <div class="form-group">
+        <label class="form-label">Descripción del Motivo <span class="req">*</span></label>
+        <input
+          type="text"
+          class="citef-input"
+          [class.input-error]="motivoErrors().descrip"
+          [(ngModel)]="motivoForm.descrip"
+          name="descrip"
+          placeholder="Ej: Clase Práctica, Examen de Grado..."
+        />
+        <div class="field-error-text" *ngIf="motivoErrors().descrip">
+          <i class="bi bi-exclamation-circle-fill me-1"></i>
+          <span>{{ motivoErrors().descrip }}</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Tipo de Uso <span class="req">*</span></label>
+        <select
+          class="citef-select"
+          [class.input-error]="motivoErrors().tipo"
+          [(ngModel)]="motivoForm.tipo"
+          name="tipo"
+        >
+          <option value="" disabled>Seleccione categoría...</option>
+          <option value="ACADEMICO">Académico</option>
+          <option value="LIBRE">Libre / Investigación</option>
+          <option value="ADMINISTRATIVO">Administrativo / Soporte</option>
+        </select>
+        <div class="field-error-text" *ngIf="motivoErrors().tipo">
+          <i class="bi bi-exclamation-circle-fill me-1"></i>
+          <span>{{ motivoErrors().tipo }}</span>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button
+          type="button"
+          class="citef-btn citef-btn-secondary"
+          (click)="cerrarModalMotivo()"
+        >
+          Cancelar
+        </button>
+        <button
+          type="submit"
+          class="citef-btn citef-btn-primary"
+          [disabled]="guardandoMotivo()"
+        >
+          <i class="bi bi-check2"></i>
+          <span>{{ guardandoMotivo() ? 'Guardando...' : 'Guardar' }}</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL DE CONFIRMACIÓN -->
+<app-confirm-modal
+  [visible]="mostrarConfirmarEliminar()"
+  [title]="confirmacionTitulo"
+  [message]="confirmacionMensaje"
+  [isDanger]="true"
+  confirmBtnText="Sí, Desactivar"
+  cancelBtnText="Cancelar"
+  (confirmed)="ejecutarEliminacion()"
+  (cancelled)="mostrarConfirmarEliminar.set(false)"
+></app-confirm-modal>

@@ -1,0 +1,352 @@
+.inicio-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* BANNER DE BIENVENIDA */
+.welcome-banner {
+  background: linear-gradient(135deg, #002855 0%, #001733 100%);
+  border-radius: var(--citef-radius-lg);
+  padding: 2rem;
+  color: #ffffff;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  box-shadow: 0 4px 12px rgba(0, 40, 85, 0.15);
+  border-left: 6px solid var(--citef-primary);
+}
+
+.institutional-tag {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #f1f5f9;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.5rem;
+  opacity: 0.9;
+}
+
+.welcome-title {
+  font-size: 1.75rem;
+  font-weight: 800;
+  margin: 0 0 0.5rem 0;
+  color: #ffffff;
+}
+
+.welcome-sub {
+  font-size: 0.95rem;
+  margin: 0;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.welcome-badge-box {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+
+.role-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 1rem;
+  border-radius: 9999px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  letter-spacing: 0.5px;
+}
+
+.role-admin {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.role-docente {
+  background: #e0e7ff;
+  color: #3730a3;
+}
+
+.role-auxiliar {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.role-tecnico {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.role-default {
+  background: #f1f5f9;
+  color: #334155;
+}
+
+.status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  color: #86efac;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  background-color: #22c55e;
+  border-radius: 50%;
+  display: inline-block;
+  box-shadow: 0 0 6px #22c55e;
+}
+
+/* TARJETA DE PERFIL */
+.profile-card {
+  background: var(--citef-bg-surface);
+  border: 1px solid var(--citef-border);
+  border-radius: var(--citef-radius-lg);
+  padding: 1.5rem;
+  box-shadow: var(--citef-shadow);
+}
+
+.profile-header {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid var(--citef-border);
+  margin-bottom: 1.25rem;
+}
+
+.profile-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--citef-primary) 0%, #7f0d1b 100%);
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(168, 17, 36, 0.25);
+}
+
+.profile-name {
+  font-size: 1.2rem;
+  font-weight: 800;
+  margin: 0 0 0.25rem 0;
+  color: var(--citef-text-primary);
+}
+
+.profile-email {
+  font-size: 0.85rem;
+  color: var(--citef-text-secondary);
+}
+
+.profile-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.meta-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.meta-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--citef-text-muted);
+  letter-spacing: 0.4px;
+}
+
+.meta-val {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--citef-text-primary);
+}
+
+/* SECCIONES ESPECÍFICAS */
+.role-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.section-title-box {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid var(--citef-border);
+}
+
+.section-title {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: var(--citef-text-primary);
+  margin: 0;
+}
+
+.section-desc {
+  font-size: 0.85rem;
+  color: var(--citef-text-secondary);
+  margin: 0;
+}
+
+/* GRID DE TARJETAS DE MÓDULOS */
+.module-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.25rem;
+}
+
+.module-card {
+  background: var(--citef-bg-surface);
+  border: 1px solid var(--citef-border);
+  border-radius: var(--citef-radius-lg);
+  padding: 1.5rem;
+  display: flex;
+  gap: 1.25rem;
+  box-shadow: var(--citef-shadow);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.module-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+}
+
+.card-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.bg-indigo {
+  background-color: #e0e7ff;
+  color: #4338ca;
+}
+
+.bg-emerald {
+  background-color: #d1fae5;
+  color: #047857;
+}
+
+.bg-amber {
+  background-color: #fef3c7;
+  color: #b45309;
+}
+
+.bg-blue {
+  background-color: #dbeafe;
+  color: #1d4ed8;
+}
+
+.card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.module-code {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--citef-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.card-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--citef-text-primary);
+  margin: 0;
+}
+
+.card-desc {
+  font-size: 0.85rem;
+  color: var(--citef-text-secondary);
+  margin: 0 0 0.5rem 0;
+  line-height: 1.4;
+}
+
+.badge-status-upcoming {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #64748b;
+  background-color: #f1f5f9;
+  padding: 0.25rem 0.6rem;
+  border-radius: 6px;
+  align-self: flex-start;
+}
+
+/* ENLACES RÁPIDOS DE ADMINISTRADOR */
+.admin-quick-links {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.admin-card-link {
+  background: var(--citef-bg-surface);
+  border: 1px solid var(--citef-border);
+  border-radius: var(--citef-radius-md);
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  text-decoration: none;
+  color: var(--citef-text-primary);
+  box-shadow: var(--citef-shadow);
+  transition: all 0.2s;
+}
+
+.admin-card-link > i:first-child {
+  font-size: 1.6rem;
+  color: var(--citef-primary);
+}
+
+.admin-card-link:hover {
+  border-color: var(--citef-primary);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(168, 17, 36, 0.1);
+}
+
+.admin-card-link .link-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.admin-card-link .link-text strong {
+  font-size: 0.95rem;
+}
+
+.admin-card-link .link-text span {
+  font-size: 0.8rem;
+  color: var(--citef-text-secondary);
+}
+
+@media (max-width: 768px) {
+  .welcome-banner {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .welcome-badge-box {
+    align-items: flex-start;
+  }
+}

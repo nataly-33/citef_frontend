@@ -1,0 +1,21 @@
+<div
+  *ngIf="mensaje"
+  class="modal-alert-banner"
+  [ngClass]="'modal-alert-' + tipo"
+  role="alert"
+>
+  <div class="alert-content">
+    <i class="bi alert-icon" [ngClass]="icono"></i>
+    <div class="alert-text">{{ mensaje }}</div>
+  </div>
+
+  <button
+    *ngIf="dismissible"
+    type="button"
+    class="alert-close-btn"
+    (click)="cerrarAlerta()"
+    title="Cerrar notificación"
+  >
+    <i class="bi bi-x-lg"></i>
+  </button>
+</div>

@@ -1,0 +1,19 @@
+<div class="citef-card p-0 table-card-container">
+  <div class="table-card-header" *ngIf="title || hasActions">
+    <div>
+      <h3 class="table-card-title" *ngIf="title">{{ title }}</h3>
+      <p class="table-card-subtitle" *ngIf="subtitle">{{ subtitle }}</p>
+    </div>
+    <div class="table-card-actions">
+      <ng-content select="[card-actions]"></ng-content>
+    </div>
+  </div>
+
+  <div class="table-responsive">
+    <ng-content></ng-content>
+  </div>
+
+  <div class="table-card-footer">
+    <ng-content select="[card-footer]"></ng-content>
+  </div>
+</div>
