@@ -9,6 +9,9 @@ export interface DocenteItem {
   apellidos: string;
   correo: string;
   telefono?: string | null;
+  departamento_academico?: string;
+  condicion_contrato?: string;
+  id_usuario?: number;
   activo: boolean;
   creado_en?: string;
   actualizado_en?: string;
@@ -16,10 +19,15 @@ export interface DocenteItem {
 
 export interface ImportarDocentesResponse {
   mensaje: string;
-  totalImportados: number;
-  insertados?: number;
-  actualizados?: number;
-  items?: DocenteItem[];
+  total_importados?: number;
+  totalImportados?: number;
+  password_generica?: string;
+  docentes?: Array<{
+    codigo: string;
+    nombres: string;
+    apellidos: string;
+    correo: string;
+  }>;
 }
 
 @Injectable({
@@ -35,14 +43,14 @@ export class DocentesService {
     activo?: boolean;
     pagina?: number;
     limite?: number;
-  }): Observable<PaginatedResponse<DocenteItem>> {
+  }): Observable<PaginatedResponse<DocenteItem> & { password_generica?: string }> {
     let httpParams = new HttpParams();
     if (params?.busqueda) httpParams = httpParams.set('busqueda', params.busqueda);
     if (params?.activo !== undefined) httpParams = httpParams.set('activo', String(params.activo));
     if (params?.pagina) httpParams = httpParams.set('pagina', String(params.pagina));
     if (params?.limite) httpParams = httpParams.set('limite', String(params.limite));
 
-    return this.http.get<PaginatedResponse<DocenteItem>>(this.apiUrl, {
+    return this.http.get<PaginatedResponse<DocenteItem> & { password_generica?: string }>(this.apiUrl, {
       params: httpParams,
     });
   }
@@ -57,6 +65,8 @@ export class DocentesService {
     apellidos: string;
     correo: string;
     telefono?: string;
+    departamento_academico?: string;
+    condicion_contrato?: string;
     activo?: boolean;
   }): Observable<DocenteItem> {
     return this.http.post<DocenteItem>(this.apiUrl, payload);
@@ -69,6 +79,8 @@ export class DocentesService {
       apellidos?: string;
       correo?: string;
       telefono?: string;
+      departamento_academico?: string;
+      condicion_contrato?: string;
       activo?: boolean;
     },
   ): Observable<DocenteItem> {
@@ -90,13 +102,13 @@ export class DocentesService {
   }
 
   descargarPlantillaCsv(): void {
-    const cabeceras = 'codigo,nombres,apellidos,correo,telefono\n';
+    const cabeceras = 'codigo,nombres,apellidos,correo,telefono,departamento,condicion\n';
     const filasEjemplo =
-      'DOC-1001,Carlos Humberto,Gutiérrez Flores,carlos.gutierrez@uagrm.edu.bo,71023456\n' +
-      'DOC-1002,María Elena,Rojas Mercado,maria.rojas@uagrm.edu.bo,72134567\n' +
-      'DOC-1003,Fernando Javier,Paredes Suárez,fernando.paredes@uagrm.edu.bo,73245678\n';
+      'DOC-1001,Carlos Humberto,Gutierrez Flores,carlos.gutierrez@uagrm.edu.bo,71023456,Administracion,TITULAR\n' +
+      'DOC-1002,Maria Elena,Rojas Mercado,maria.rojas@uagrm.edu.bo,72134567,Economia,INVITADO\n' +
+      'DOC-1003,Fernando Javier,Paredes Suarez,fernando.paredes@uagrm.edu.bo,73245678,Finanzas,TITULAR\n';
 
-    const contenido = '\uFEFF' + cabeceras + filasEjemplo; // BOM para soporte UTF-8 en Excel
+    const contenido = '\uFEFF' + cabeceras + filasEjemplo;
     const blob = new Blob([contenido], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');

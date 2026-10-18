@@ -831,6 +831,8 @@ export class TurnosAuxiliaresComponent implements OnInit {
   }
 
   abrirModalCrear(): void {
+    this.cargarAuxiliares();
+    this.cargarHorarios();
     this.editandoId.set(null);
     const hoy = new Date();
     const hoyStr = hoy.toISOString().split('T')[0];
@@ -850,6 +852,8 @@ export class TurnosAuxiliaresComponent implements OnInit {
   }
 
   abrirModalEditar(a: AsignacionTurnoItem): void {
+    this.cargarAuxiliares();
+    this.cargarHorarios();
     this.editandoId.set(a.id_asignacion_turno);
     this.turnoForm = {
       id_usuario: a.id_usuario,

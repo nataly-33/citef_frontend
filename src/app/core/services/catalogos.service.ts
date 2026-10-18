@@ -12,14 +12,24 @@ export interface CarreraItem {
   actualizado_en?: string;
 }
 
+export interface CarreraMateriaAsociada {
+  id_carrera_materia: number;
+  id_carrera: number;
+  codigo_carrera?: string;
+  nombre_carrera?: string;
+  semestre_nivel: number;
+  activo: boolean;
+}
+
 export interface MateriaItem {
   id_materia: number;
   sigla: string;
   nombre: string;
-  semestre_nivel: number;
-  id_carrera: number;
+  semestre_nivel?: number;
+  id_carrera?: number;
   activo: boolean;
   carrera?: CarreraItem;
+  carreras_asociadas?: CarreraMateriaAsociada[];
   creado_en?: string;
   actualizado_en?: string;
 }
@@ -138,8 +148,9 @@ export class CatalogosService {
   crearMateria(payload: {
     sigla: string;
     nombre: string;
-    semestre_nivel: number;
-    id_carrera: number;
+    semestre_nivel?: number;
+    id_carrera?: number;
+    carreras?: Array<{ id_carrera: number; semestre_nivel: number }>;
     activo?: boolean;
   }): Observable<MateriaItem> {
     return this.http.post<MateriaItem>(`${this.apiUrl}/materias`, payload);
@@ -152,6 +163,7 @@ export class CatalogosService {
       nombre?: string;
       semestre_nivel?: number;
       id_carrera?: number;
+      carreras?: Array<{ id_carrera: number; semestre_nivel: number }>;
       activo?: boolean;
     },
   ): Observable<MateriaItem> {

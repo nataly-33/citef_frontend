@@ -338,11 +338,20 @@ import {
                 <strong class="subject-title">{{ m.nombre }}</strong>
               </td>
               <td class="text-center" style="white-space: nowrap;">
-                <span class="badge-semester">Semestre {{ m.semestre_nivel }}</span>
+                <span class="badge-semester" *ngIf="m.semestre_nivel">Semestre {{ m.semestre_nivel }}</span>
+                <span class="text-muted small" *ngIf="!m.semestre_nivel">—</span>
               </td>
               <td>
-                <span class="career-label">
-                  {{ m.carrera ? m.carrera.nombre : '—' }}
+                <div class="career-tags-container" *ngIf="m.carreras_asociadas && m.carreras_asociadas.length > 0">
+                  <span *ngFor="let ca of m.carreras_asociadas" class="badge-career-tag">
+                    {{ ca.codigo_carrera || ca.nombre_carrera }} <small class="text-muted">(Sem {{ ca.semestre_nivel }})</small>
+                  </span>
+                </div>
+                <span class="career-label" *ngIf="(!m.carreras_asociadas || m.carreras_asociadas.length === 0) && m.carrera">
+                  {{ m.carrera.nombre }}
+                </span>
+                <span class="text-muted small" *ngIf="(!m.carreras_asociadas || m.carreras_asociadas.length === 0) && !m.carrera">
+                  —
                 </span>
               </td>
               <td class="text-center">
@@ -498,28 +507,9 @@ import {
         ></app-modal-alert>
 
         <form (ngSubmit)="guardarMateria()" class="modal-form" novalidate>
-          <div class="form-group">
-            <label class="form-label">Carrera Perteneciente <span class="req">*</span></label>
-            <select
-              class="citef-select"
-              [class.input-error]="materiaErrors().id_carrera"
-              [(ngModel)]="materiaForm.id_carrera"
-              name="id_carrera"
-            >
-              <option [ngValue]="null" disabled>Seleccione una carrera...</option>
-              <option *ngFor="let c of listaCarrerasTodas()" [ngValue]="c.id_carrera">
-                {{ c.codigo }} - {{ c.nombre }}
-              </option>
-            </select>
-            <div class="field-error-text" *ngIf="materiaErrors().id_carrera">
-              <i class="bi bi-exclamation-circle-fill me-1"></i>
-              <span>{{ materiaErrors().id_carrera }}</span>
-            </div>
-          </div>
-
           <div class="form-row">
-            <div class="form-group col-6">
-              <label class="form-label">Sigla <span class="req">*</span></label>
+            <div class="form-group col-4">
+              <label class="form-label">Sigla de Materia <span class="req">*</span></label>
               <input
                 type="text"
                 class="citef-input"
@@ -534,39 +524,103 @@ import {
               </div>
             </div>
 
-            <div class="form-group col-6">
-              <label class="form-label">Semestre / Nivel <span class="req">*</span></label>
-              <select
-                class="citef-select"
-                [class.input-error]="materiaErrors().semestre_nivel"
-                [(ngModel)]="materiaForm.semestre_nivel"
-                name="semestre_nivel"
-              >
-                <option [ngValue]="null" disabled>Seleccione semestre...</option>
-                <option *ngFor="let s of semestresLista" [ngValue]="s">
-                  Semestre {{ s }}
-                </option>
-              </select>
-              <div class="field-error-text" *ngIf="materiaErrors().semestre_nivel">
+            <div class="form-group col-8">
+              <label class="form-label">Nombre de la Asignatura <span class="req">*</span></label>
+              <input
+                type="text"
+                class="citef-input"
+                [class.input-error]="materiaErrors().nombre"
+                [(ngModel)]="materiaForm.nombre"
+                name="nombre"
+                placeholder="Ej: Cálculo I, Contabilidad General"
+              />
+              <div class="field-error-text" *ngIf="materiaErrors().nombre">
                 <i class="bi bi-exclamation-circle-fill me-1"></i>
-                <span>{{ materiaErrors().semestre_nivel }}</span>
+                <span>{{ materiaErrors().nombre }}</span>
               </div>
             </div>
           </div>
 
-          <div class="form-group">
-            <label class="form-label">Nombre de la Materia <span class="req">*</span></label>
-            <input
-              type="text"
-              class="citef-input"
-              [class.input-error]="materiaErrors().nombre"
-              [(ngModel)]="materiaForm.nombre"
-              name="nombre"
-              placeholder="Ej: Álgebra Lineal"
-            />
-            <div class="field-error-text" *ngIf="materiaErrors().nombre">
+          <!-- SECCIÓN MÚLTIPLES CARRERAS Y SEMESTRES -->
+          <div class="carreras-asociadas-box">
+            <div class="carreras-box-header">
+              <div>
+                <label class="form-label mb-0">
+                  <i class="bi bi-diagram-3 me-1 text-primary"></i>
+                  Carreras Curriculares y Semestres <span class="req">*</span>
+                </label>
+                <span class="carreras-subtext">
+                  Indique en qué carrera(s) se dicta la materia y el semestre correspondiente
+                </span>
+              </div>
+              <button
+                type="button"
+                class="citef-btn citef-btn-outline btn-xs"
+                (click)="agregarCarreraFila()"
+                title="Vincular a otra carrera"
+              >
+                <i class="bi bi-plus-lg me-1"></i>
+                <span>Agregar Carrera</span>
+              </button>
+            </div>
+
+            <div class="carreras-rows-list">
+              <div
+                *ngFor="let item of materiaCarreras; let i = index"
+                class="carrera-row-item"
+              >
+                <div class="row-inputs-grid">
+                  <div class="form-group mb-0 flex-grow-1">
+                    <label class="row-label">Carrera #{{ i + 1 }}</label>
+                    <select
+                      class="citef-select select-sm"
+                      [class.input-error]="carreraFilaError(i, 'carrera')"
+                      [(ngModel)]="item.id_carrera"
+                      [name]="'carrera_' + i"
+                    >
+                      <option [ngValue]="null" disabled>Seleccione carrera...</option>
+                      <option *ngFor="let c of listaCarrerasTodas()" [ngValue]="c.id_carrera">
+                        {{ c.codigo }} - {{ c.nombre }}
+                      </option>
+                    </select>
+                  </div>
+
+                  <div class="form-group mb-0 col-semestre-pick">
+                    <label class="row-label">Semestre</label>
+                    <select
+                      class="citef-select select-sm"
+                      [class.input-error]="carreraFilaError(i, 'semestre')"
+                      [(ngModel)]="item.semestre_nivel"
+                      [name]="'semestre_' + i"
+                    >
+                      <option [ngValue]="null" disabled>Semestre...</option>
+                      <option *ngFor="let s of semestresLista" [ngValue]="s">
+                        Semestre {{ s }}
+                      </option>
+                    </select>
+                  </div>
+
+                  <button
+                    type="button"
+                    class="btn-trash-row"
+                    [disabled]="materiaCarreras.length <= 1"
+                    (click)="removerCarreraFila(i)"
+                    title="Eliminar esta carrera de la materia"
+                  >
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </div>
+
+                <div class="field-error-text" *ngIf="carreraFilaError(i, 'general')">
+                  <i class="bi bi-exclamation-circle-fill me-1"></i>
+                  <span>{{ carreraFilaError(i, 'general') }}</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="field-error-text mt-1" *ngIf="materiaErrors().carreras">
               <i class="bi bi-exclamation-circle-fill me-1"></i>
-              <span>{{ materiaErrors().nombre }}</span>
+              <span>{{ materiaErrors().carreras }}</span>
             </div>
           </div>
 
@@ -798,6 +852,22 @@ import {
         font-size: 0.85rem;
       }
 
+      .career-tags-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.35rem;
+      }
+
+      .badge-career-tag {
+        background: #f1f5f9;
+        color: #0f172a;
+        padding: 0.15rem 0.45rem;
+        border-radius: 4px;
+        font-size: 0.775rem;
+        border: 1px solid #cbd5e1;
+        white-space: nowrap;
+      }
+
       /* ACTION BUTTONS */
       .action-buttons {
         display: flex;
@@ -921,6 +991,121 @@ import {
         flex: 1;
       }
 
+      .col-4 {
+        flex: 0 0 35%;
+      }
+
+      .col-8 {
+        flex: 1;
+      }
+
+      .modal-card.modal-card-lg {
+        max-width: 600px;
+      }
+
+      /* SECCIÓN MÚLTIPLES CARRERAS Y SEMESTRES */
+      .carreras-asociadas-box {
+        border: 1px solid var(--citef-border, #e2e8f0);
+        border-radius: var(--citef-radius-sm, 6px);
+        padding: 0.85rem;
+        background-color: #f8fafc;
+        display: flex;
+        flex-direction: column;
+        gap: 0.6rem;
+      }
+
+      .carreras-box-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 0.5rem;
+      }
+
+      .carreras-subtext {
+        font-size: 0.74rem;
+        color: var(--citef-text-secondary, #64748b);
+        display: block;
+        margin-top: 0.15rem;
+      }
+
+      .carreras-rows-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        max-height: 200px;
+        overflow-y: auto;
+        padding-right: 0.25rem;
+      }
+
+      .carrera-row-item {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        padding: 0.5rem 0.65rem;
+      }
+
+      .row-inputs-grid {
+        display: flex;
+        gap: 0.6rem;
+        align-items: flex-end;
+      }
+
+      .row-label {
+        font-size: 0.7rem;
+        font-weight: 700;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        margin-bottom: 0.2rem;
+        display: block;
+      }
+
+      .select-sm {
+        height: 36px;
+        font-size: 0.8125rem;
+        padding: 0.3rem 0.6rem;
+      }
+
+      .col-semestre-pick {
+        width: 140px;
+        flex-shrink: 0;
+      }
+
+      .btn-trash-row {
+        height: 36px;
+        width: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: transparent;
+        border: 1px solid #fecaca;
+        color: #dc2626;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.15s;
+        flex-shrink: 0;
+      }
+
+      .btn-trash-row:hover:not(:disabled) {
+        background-color: #fee2e2;
+        border-color: #ef4444;
+      }
+
+      .btn-trash-row:disabled {
+        opacity: 0.35;
+        cursor: not-allowed;
+        border-color: #e2e8f0;
+        color: #94a3b8;
+      }
+
+      .btn-xs {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.6rem;
+        height: 28px;
+        display: inline-flex;
+        align-items: center;
+      }
+
       .form-group {
         display: flex;
         flex-direction: column;
@@ -1031,16 +1216,19 @@ export class AcademicosComponent implements OnInit {
   materiaForm = {
     sigla: '',
     nombre: '',
-    semestre_nivel: null as number | null,
-    id_carrera: null as number | null,
   };
+
+  materiaCarreras: Array<{ id_carrera: number | null; semestre_nivel: number | null }> = [
+    { id_carrera: null, semestre_nivel: 1 },
+  ];
 
   materiaErrors = signal<{
     sigla?: string;
     nombre?: string;
-    semestre_nivel?: string;
-    id_carrera?: string;
+    carreras?: string;
   }>({});
+
+  carrerasFilaErrors = signal<Record<number, { carrera?: string; semestre?: string; general?: string }>>({});
 
   // ==========================================
   // CONFIRMACIÓN DE ELIMINACIÓN
@@ -1256,16 +1444,36 @@ export class AcademicosComponent implements OnInit {
     this.cargarMaterias();
   }
 
+  agregarCarreraFila(): void {
+    this.materiaCarreras.push({ id_carrera: null, semestre_nivel: 1 });
+  }
+
+  removerCarreraFila(index: number): void {
+    if (this.materiaCarreras.length > 1) {
+      this.materiaCarreras.splice(index, 1);
+      if (Object.keys(this.carrerasFilaErrors()).length > 0) {
+        this.validarMateria();
+      }
+    }
+  }
+
+  carreraFilaError(index: number, tipo: 'carrera' | 'semestre' | 'general'): string | undefined {
+    return this.carrerasFilaErrors()[index]?.[tipo];
+  }
+
   abrirModalCrearMateria(): void {
     this.cargarListaCarrerasDropdown();
     this.editandoMateriaId.set(null);
     this.materiaForm = {
       sigla: '',
       nombre: '',
-      semestre_nivel: null,
-      id_carrera: this.filtroCarreraMateria || null,
     };
+    const carreraInicial = this.filtroCarreraMateria || null;
+    this.materiaCarreras = [
+      { id_carrera: carreraInicial, semestre_nivel: 1 },
+    ];
     this.materiaErrors.set({});
+    this.carrerasFilaErrors.set({});
     this.modalMateriaError.set(null);
     this.mostrarModalMateria.set(true);
   }
@@ -1276,10 +1484,23 @@ export class AcademicosComponent implements OnInit {
     this.materiaForm = {
       sigla: m.sigla,
       nombre: m.nombre,
-      semestre_nivel: m.semestre_nivel,
-      id_carrera: m.id_carrera,
     };
+
+    if (m.carreras_asociadas && m.carreras_asociadas.length > 0) {
+      this.materiaCarreras = m.carreras_asociadas.map((ca) => ({
+        id_carrera: ca.id_carrera,
+        semestre_nivel: ca.semestre_nivel,
+      }));
+    } else if (m.id_carrera) {
+      this.materiaCarreras = [
+        { id_carrera: m.id_carrera, semestre_nivel: m.semestre_nivel || 1 },
+      ];
+    } else {
+      this.materiaCarreras = [{ id_carrera: null, semestre_nivel: 1 }];
+    }
+
     this.materiaErrors.set({});
+    this.carrerasFilaErrors.set({});
     this.modalMateriaError.set(null);
     this.mostrarModalMateria.set(true);
   }
@@ -1288,28 +1509,22 @@ export class AcademicosComponent implements OnInit {
     this.mostrarModalMateria.set(false);
     this.modalMateriaError.set(null);
     this.materiaErrors.set({});
+    this.carrerasFilaErrors.set({});
   }
 
   validarMateria(): boolean {
     const errs: {
       sigla?: string;
       nombre?: string;
-      semestre_nivel?: string;
-      id_carrera?: string;
+      carreras?: string;
     } = {};
 
-    if (!this.materiaForm.id_carrera) {
-      errs.id_carrera = 'Debe seleccionar una carrera de la lista';
-    }
+    const filaErrors: Record<number, { carrera?: string; semestre?: string; general?: string }> = {};
 
     if (!this.materiaForm.sigla || !this.materiaForm.sigla.trim()) {
       errs.sigla = 'La sigla de la materia es obligatoria (ej: MAT101)';
     } else if (this.materiaForm.sigla.trim().length > 20) {
       errs.sigla = 'La sigla no puede superar 20 caracteres';
-    }
-
-    if (!this.materiaForm.semestre_nivel) {
-      errs.semestre_nivel = 'Debe especificar el semestre (1 al 10)';
     }
 
     if (!this.materiaForm.nombre || !this.materiaForm.nombre.trim()) {
@@ -1318,8 +1533,42 @@ export class AcademicosComponent implements OnInit {
       errs.nombre = 'El nombre no puede superar 150 caracteres';
     }
 
+    if (!this.materiaCarreras || this.materiaCarreras.length === 0) {
+      errs.carreras = 'Debe vincular al menos una carrera a la materia';
+    } else {
+      const carrerasVistas = new Set<number>();
+
+      this.materiaCarreras.forEach((c, idx) => {
+        const rowErr: { carrera?: string; semestre?: string; general?: string } = {};
+
+        if (!c.id_carrera) {
+          rowErr.carrera = 'Seleccione una carrera';
+          rowErr.general = 'Debe seleccionar una carrera de la lista';
+        } else if (carrerasVistas.has(c.id_carrera)) {
+          rowErr.carrera = 'Carrera repetida';
+          rowErr.general = 'Esta carrera ya fue agregada en otra fila';
+        } else {
+          carrerasVistas.add(c.id_carrera);
+        }
+
+        if (!c.semestre_nivel) {
+          rowErr.semestre = 'Indique semestre';
+          if (!rowErr.general) rowErr.general = 'Debe seleccionar el semestre correspondiente';
+        }
+
+        if (Object.keys(rowErr).length > 0) {
+          filaErrors[idx] = rowErr;
+        }
+      });
+
+      if (Object.keys(filaErrors).length > 0) {
+        errs.carreras = 'Corrija las carreras y semestres marcados en rojo';
+      }
+    }
+
     this.materiaErrors.set(errs);
-    return Object.keys(errs).length === 0;
+    this.carrerasFilaErrors.set(filaErrors);
+    return Object.keys(errs).length === 0 && Object.keys(filaErrors).length === 0;
   }
 
   guardarMateria(): void {
@@ -1328,11 +1577,17 @@ export class AcademicosComponent implements OnInit {
     this.guardandoMateria.set(true);
     this.modalMateriaError.set(null);
 
+    const carrerasPayload = this.materiaCarreras.map((c) => ({
+      id_carrera: Number(c.id_carrera),
+      semestre_nivel: Number(c.semestre_nivel),
+    }));
+
     const payload = {
       sigla: this.materiaForm.sigla.trim().toUpperCase(),
       nombre: this.materiaForm.nombre.trim(),
-      semestre_nivel: Number(this.materiaForm.semestre_nivel),
-      id_carrera: Number(this.materiaForm.id_carrera),
+      carreras: carrerasPayload,
+      id_carrera: carrerasPayload[0]?.id_carrera,
+      semestre_nivel: carrerasPayload[0]?.semestre_nivel,
     };
 
     const id = this.editandoMateriaId();

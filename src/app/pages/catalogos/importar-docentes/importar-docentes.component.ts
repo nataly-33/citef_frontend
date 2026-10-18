@@ -194,6 +194,20 @@ import {
       </form>
     </div>
 
+    <!-- BANNER CONTRASEÑA GENÉRICA -->
+    <div class="password-notice-banner mb-3">
+      <div class="notice-content">
+        <i class="bi bi-key-fill notice-icon"></i>
+        <div class="notice-text">
+          <span class="notice-title">Contraseña inicial predeterminada para docentes:</span>
+          <code class="notice-code">Docente.CITEF2026*</code>
+          <span class="notice-desc">
+            (Al importar o registrar docentes, se crea su cuenta de usuario con esta clave inicial para que puedan acceder con su correo institucional y solicitar reservas).
+          </span>
+        </div>
+      </div>
+    </div>
+
     <!-- TABLA DE PADRÓN DOCENTE -->
     <app-table-card
       title="Cuerpo Docente Facultativo"
@@ -202,12 +216,14 @@ import {
       <table class="citef-table">
         <thead>
           <tr>
-            <th style="width: 140px">Código</th>
+            <th style="width: 130px">Código</th>
             <th>Nombre Completo</th>
             <th>Correo Electrónico</th>
-            <th style="width: 140px">Teléfono</th>
-            <th class="text-center" style="width: 120px">Estado</th>
-            <th class="text-center" style="width: 120px">Acciones</th>
+            <th style="width: 120px">Teléfono</th>
+            <th style="width: 150px">Departamento</th>
+            <th style="width: 120px">Condición</th>
+            <th class="text-center" style="width: 100px">Estado</th>
+            <th class="text-center" style="width: 100px">Acciones</th>
           </tr>
         </thead>
         <tbody>
@@ -222,6 +238,18 @@ import {
               <span class="docente-email font-monospace">{{ d.correo }}</span>
             </td>
             <td>{{ d.telefono || '—' }}</td>
+            <td>
+              <span class="text-secondary small">{{ d.departamento_academico || 'General' }}</span>
+            </td>
+            <td>
+              <span
+                class="badge-contrato"
+                [class.badge-contrato-titular]="d.condicion_contrato === 'TITULAR'"
+                [class.badge-contrato-invitado]="d.condicion_contrato === 'INVITADO'"
+              >
+                {{ d.condicion_contrato || 'TITULAR' }}
+              </span>
+            </td>
             <td class="text-center">
               <span
                 class="citef-badge"
@@ -375,6 +403,31 @@ import {
                 name="telefono"
                 placeholder="Ej: 71234567"
               />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group col-6">
+              <label class="form-label">Departamento Académico</label>
+              <input
+                type="text"
+                class="citef-input"
+                [(ngModel)]="docenteForm.departamento_academico"
+                name="departamento_academico"
+                placeholder="Ej: Finanzas, Economía, etc."
+              />
+            </div>
+
+            <div class="form-group col-6">
+              <label class="form-label">Condición de Contrato</label>
+              <select
+                class="citef-select"
+                [(ngModel)]="docenteForm.condicion_contrato"
+                name="condicion_contrato"
+              >
+                <option value="TITULAR">TITULAR</option>
+                <option value="INVITADO">INVITADO</option>
+              </select>
             </div>
           </div>
 
@@ -652,6 +705,72 @@ import {
         font-size: 0.85rem;
       }
 
+      .badge-contrato {
+        display: inline-block;
+        padding: 0.2rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-weight: 600;
+      }
+
+      .badge-contrato-titular {
+        background-color: #f0fdf4;
+        color: #166534;
+        border: 1px solid #bbf7d0;
+      }
+
+      .badge-contrato-invitado {
+        background-color: #eff6ff;
+        color: #1e40af;
+        border: 1px solid #bfdbfe;
+      }
+
+      .password-notice-banner {
+        background-color: #fffbfa;
+        border: 1px solid #fed7aa;
+        border-left: 4px solid var(--citef-secondary, #a81124);
+        border-radius: var(--citef-radius-sm, 6px);
+        padding: 0.75rem 1.25rem;
+      }
+
+      .notice-content {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+      }
+
+      .notice-icon {
+        font-size: 1.25rem;
+        color: var(--citef-secondary, #a81124);
+      }
+
+      .notice-text {
+        font-size: 0.85rem;
+        color: #334155;
+        line-height: 1.4;
+      }
+
+      .notice-title {
+        font-weight: 600;
+        margin-right: 0.4rem;
+        color: #0f172a;
+      }
+
+      .notice-code {
+        background-color: #fee2e2;
+        color: #991b1b;
+        font-weight: 700;
+        padding: 0.15rem 0.45rem;
+        border-radius: 4px;
+        border: 1px solid #fecaca;
+        margin-right: 0.5rem;
+      }
+
+      .notice-desc {
+        color: #64748b;
+        font-size: 0.8125rem;
+      }
+
       /* ACTION BUTTONS */
       .action-buttons {
         display: flex;
@@ -864,6 +983,8 @@ export class ImportarDocentesComponent implements OnInit {
     apellidos: '',
     correo: '',
     telefono: '',
+    departamento_academico: 'General',
+    condicion_contrato: 'TITULAR',
   };
 
   docenteErrors = signal<{
@@ -1036,6 +1157,8 @@ export class ImportarDocentesComponent implements OnInit {
       apellidos: '',
       correo: '',
       telefono: '',
+      departamento_academico: 'General',
+      condicion_contrato: 'TITULAR',
     };
     this.docenteErrors.set({});
     this.modalDocenteError.set(null);
@@ -1050,6 +1173,8 @@ export class ImportarDocentesComponent implements OnInit {
       apellidos: d.apellidos,
       correo: d.correo,
       telefono: d.telefono || '',
+      departamento_academico: d.departamento_academico || 'General',
+      condicion_contrato: d.condicion_contrato || 'TITULAR',
     };
     this.docenteErrors.set({});
     this.modalDocenteError.set(null);
@@ -1109,6 +1234,8 @@ export class ImportarDocentesComponent implements OnInit {
       apellidos: this.docenteForm.apellidos.trim(),
       correo: this.docenteForm.correo.trim().toLowerCase(),
       telefono: this.docenteForm.telefono ? this.docenteForm.telefono.trim() : undefined,
+      departamento_academico: this.docenteForm.departamento_academico?.trim() || 'General',
+      condicion_contrato: this.docenteForm.condicion_contrato || 'TITULAR',
     };
 
     const codigo = this.editandoCodigo();
