@@ -1,0 +1,437 @@
+<!-- PAGE HEADER -->
+<div class="page-header">
+  <div>
+    <h2 class="page-title">
+      <i class="bi bi-building"></i>
+      <span>Salas y Laboratorios</span>
+    </h2>
+  </div>
+
+  <div class="header-actions">
+    <button class="citef-btn citef-btn-primary" (click)="abrirModalCrear()">
+      <i class="bi bi-plus-circle"></i>
+      <span>Nuevo Laboratorio</span>
+    </button>
+  </div>
+</div>
+
+<!-- BARRA DE FILTROS -->
+<div class="citef-card filter-card mb-4">
+  <form (ngSubmit)="aplicarFiltros()" class="filter-form">
+    <div class="filter-grid">
+      <!-- Búsqueda -->
+      <div class="filter-field-main">
+        <label class="filter-label">Búsqueda Rápida</label>
+        <div class="search-input-wrapper">
+          <i class="bi bi-search search-icon"></i>
+          <input
+            type="text"
+            class="citef-input search-input"
+            placeholder="Código de sala o nombre..."
+            [(ngModel)]="filtroTexto"
+            name="filtroTexto"
+          />
+        </div>
+      </div>
+
+      <!-- Filtro Piso -->
+      <div class="filter-field">
+        <label class="filter-label">Nivel de Piso</label>
+        <select
+          class="citef-select"
+          [(ngModel)]="filtroPiso"
+          name="filtroPiso"
+          (change)="aplicarFiltros()"
+        >
+          <option value="">Todos los Pisos</option>
+          <option [value]="0">Planta Baja</option>
+          <option [value]="1">Piso 1</option>
+          <option [value]="2">Piso 2</option>
+          <option [value]="3">Piso 3</option>
+        </select>
+      </div>
+
+      <!-- Filtro Estado -->
+      <div class="filter-field">
+        <label class="filter-label">Estado Operativo</label>
+        <select
+          class="citef-select"
+          [(ngModel)]="filtroEstado"
+          name="filtroEstado"
+          (change)="aplicarFiltros()"
+        >
+          <option value="">Todos los Estados</option>
+          <option value="OPERATIVA">Operativa</option>
+          <option value="EN_MANTENIMIENTO">En Mantenimiento</option>
+          <option value="CERRADA">Cerrada</option>
+        </select>
+      </div>
+
+      <!-- Botones de Acción de Filtro -->
+      <div class="filter-buttons">
+        <button type="submit" class="citef-btn citef-btn-primary" title="Buscar">
+          <i class="bi bi-search"></i>
+          <span>Buscar</span>
+        </button>
+        <button
+          type="button"
+          class="citef-btn citef-btn-secondary"
+          (click)="limpiarFiltros()"
+          title="Restablecer filtros"
+        >
+          <i class="bi bi-arrow-counterclockwise"></i>
+          <span>Limpiar</span>
+        </button>
+      </div>
+    </div>
+  </form>
+</div>
+
+<!-- TABLA DE SALAS CON COMPONENTES COMPARTIDOS -->
+<app-table-card
+  title="Salas de Cómputo Registradas"
+  [subtitle]="'Total registrado: ' + salas().length + ' laboratorios'"
+>
+  <div class="table-responsive">
+    <table class="citef-table">
+      <thead>
+        <tr>
+          <th style="width: 100px;">Código</th>
+          <th>Nombre del Laboratorio</th>
+          <th class="text-center" style="width: 90px;">Piso</th>
+          <th class="text-center" style="width: 120px;">Capacidad Alumnos</th>
+          <th class="text-center" style="width: 140px;">Equipos Asignados</th>
+          <th class="text-center" style="width: 120px;">Equipamiento</th>
+          <th class="text-center" style="width: 120px;">Estado</th>
+          <th class="text-center" style="width: 130px;">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (s of salasPaginadas(); track s.id_sala) {
+          <tr [class.row-disabled]="!s.activo">
+            <td>
+              <span class="badge-code font-monospace">{{ s.codigo_sala }}</span>
+            </td>
+            <td>
+              <strong class="lab-name">{{ s.nombre }}</strong>
+              <div class="lab-sub">
+                Cuadrícula: {{ s.filas_cuadricula }} filas x {{ s.columnas_cuadricula }} columnas
+              </div>
+            </td>
+            <td class="text-center">
+              <span class="badge-piso font-monospace">
+                {{ s.piso === 0 ? 'PB' : 'Piso ' + s.piso }}
+              </span>
+            </td>
+            <td class="text-center">
+              <span class="capacity-text">{{ s.cant_estudiantes }} puestos</span>
+            </td>
+            <td class="text-center">
+              <div class="equipos-pill font-monospace">
+                <i class="bi bi-display"></i>
+                <span>{{ s.total_equipos || 0 }} / {{ s.cant_estudiantes }}</span>
+              </div>
+            </td>
+            <td class="text-center">
+              <div class="amenities-icons" style="justify-content: center;">
+                <i
+                  class="bi bi-person-workspace"
+                  [class.amenity-active]="s.maquina_docente"
+                  [class.amenity-inactive]="!s.maquina_docente"
+                  [title]="s.maquina_docente ? 'Estación Docente disponible' : 'Sin máquina docente'"
+                ></i>
+                <i
+                  class="bi bi-projector"
+                  [class.amenity-active]="s.proyector"
+                  [class.amenity-inactive]="!s.proyector"
+                  [title]="s.proyector ? 'Proyector audiovisual operativo' : 'Sin proyector'"
+                ></i>
+                <i
+                  class="bi bi-snow"
+                  [class.amenity-active]="s.aire_acondicionado"
+                  [class.amenity-inactive]="!s.aire_acondicionado"
+                  [title]="s.aire_acondicionado ? 'Climatizado / Aire acondicionado' : 'Sin aire acondicionado'"
+                ></i>
+              </div>
+            </td>
+            <td class="text-center">
+              @if (s.estado_operativo === 'OPERATIVA') {
+                <span class="citef-badge citef-badge-success">
+                  <i class="bi bi-check-circle-fill"></i> Operativa
+                </span>
+              } @else if (s.estado_operativo === 'EN_MANTENIMIENTO') {
+                <span class="citef-badge citef-badge-warning">
+                  <i class="bi bi-wrench-adjustable"></i> Mantenimiento
+                </span>
+              } @else {
+                <span class="citef-badge citef-badge-danger">
+                  <i class="bi bi-slash-circle-fill"></i> Cerrada
+                </span>
+              }
+            </td>
+            <td class="text-center">
+              <div class="action-buttons">
+                <button
+                  type="button"
+                  class="btn-icon btn-grid"
+                  (click)="irAEditorCuadricula(s.id_sala)"
+                  title="Configurar Cuadrícula X/Y"
+                >
+                  <i class="bi bi-grid-3x3"></i>
+                </button>
+                <button
+                  type="button"
+                  class="btn-icon btn-edit"
+                  (click)="abrirModalEditar(s)"
+                  title="Editar Datos de Sala"
+                >
+                  <i class="bi bi-pencil"></i>
+                </button>
+                <button
+                  type="button"
+                  class="btn-icon"
+                  [class.btn-delete]="s.activo"
+                  [class.btn-restore]="!s.activo"
+                  (click)="solicitarCambioEstado(s)"
+                  [title]="s.activo ? 'Desactivar Sala' : 'Reactivar Sala'"
+                >
+                  <i [class]="s.activo ? 'bi bi-trash' : 'bi bi-arrow-counterclockwise'"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="8">
+              <div class="empty-state">
+                <i class="bi bi-inbox"></i>
+                <p>No se encontraron salas o laboratorios registrados con los filtros aplicados</p>
+              </div>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Paginación compartida 15 filas alineada a la derecha -->
+  <div style="display: flex; justify-content: flex-end; margin-top: 1rem;">
+    <app-pagination
+      [paginaActual]="paginaActual()"
+      [totalRegistros]="salasFiltradas().length"
+      [tamanoPagina]="tamanoPagina"
+      etiqueta="laboratorios"
+      (paginaCambiada)="cambiarPagina($event)"
+    ></app-pagination>
+  </div>
+</app-table-card>
+
+<!-- Modal Crear/Editar Sala -->
+@if (modalVisible()) {
+  <div class="modal-backdrop" (click)="cerrarModal($event)">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>
+          <i class="bi bi-building"></i>
+          {{ modoEdicion() ? 'Editar Laboratorio' : 'Registrar Nuevo Laboratorio' }}
+        </h2>
+        <button class="btn-close-modal" (click)="cerrarModalDirecto()" title="Cerrar">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <app-modal-alert
+          [mensaje]="errorModal()"
+          tipo="danger"
+          (cerrar)="errorModal.set(null)"
+        ></app-modal-alert>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="codigoSala">Código de Sala <span class="req">*</span></label>
+            <input
+              id="codigoSala"
+              type="text"
+              class="citef-input"
+              [class.input-error]="errores().codigo_sala"
+              placeholder="Ej: LAB-03"
+              [(ngModel)]="formSala.codigo_sala"
+            />
+            @if (errores().codigo_sala) {
+              <span class="field-error-text">
+                <i class="bi bi-exclamation-circle-fill"></i> {{ errores().codigo_sala }}
+              </span>
+            }
+          </div>
+
+          <div class="form-group">
+            <label for="pisoSala">Nivel de Piso <span class="req">*</span></label>
+            <input
+              id="pisoSala"
+              type="number"
+              min="0"
+              max="20"
+              class="citef-input"
+              [class.input-error]="errores().piso"
+              placeholder="Ej: 1"
+              [(ngModel)]="formSala.piso"
+            />
+            @if (errores().piso) {
+              <span class="field-error-text">
+                <i class="bi bi-exclamation-circle-fill"></i> {{ errores().piso }}
+              </span>
+            }
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="nombreSala">Nombre Descriptivo <span class="req">*</span></label>
+          <input
+            id="nombreSala"
+            type="text"
+            class="citef-input"
+            [class.input-error]="errores().nombre"
+            placeholder="Ej: Laboratorio de Comercio Exterior 3"
+            [(ngModel)]="formSala.nombre"
+          />
+          @if (errores().nombre) {
+            <span class="field-error-text">
+              <i class="bi bi-exclamation-circle-fill"></i> {{ errores().nombre }}
+            </span>
+          }
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="cantEstudiantes">Capacidad Alumnos <span class="req">*</span></label>
+            <input
+              id="cantEstudiantes"
+              type="number"
+              min="1"
+              max="100"
+              class="citef-input"
+              [class.input-error]="errores().cant_estudiantes"
+              [(ngModel)]="formSala.cant_estudiantes"
+            />
+            @if (errores().cant_estudiantes) {
+              <span class="field-error-text">
+                <i class="bi bi-exclamation-circle-fill"></i> {{ errores().cant_estudiantes }}
+              </span>
+            }
+          </div>
+
+          <div class="form-group">
+            <label for="estadoOperativo">Estado Operativo</label>
+            <select
+              id="estadoOperativo"
+              class="citef-select"
+              [(ngModel)]="formSala.estado_operativo"
+            >
+              <option value="OPERATIVA">OPERATIVA</option>
+              <option value="EN_MANTENIMIENTO">EN MANTENIMIENTO</option>
+              <option value="CERRADA">CERRADA</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="filasCuadricula">Filas en Cuadrícula (Y)</label>
+            <input
+              id="filasCuadricula"
+              type="number"
+              min="2"
+              max="20"
+              class="citef-input"
+              [class.input-error]="errores().filas_cuadricula"
+              [(ngModel)]="formSala.filas_cuadricula"
+            />
+            @if (errores().filas_cuadricula) {
+              <span class="field-error-text">
+                <i class="bi bi-exclamation-circle-fill"></i> {{ errores().filas_cuadricula }}
+              </span>
+            }
+          </div>
+
+          <div class="form-group">
+            <label for="columnasCuadricula">Columnas en Cuadrícula (X)</label>
+            <input
+              id="columnasCuadricula"
+              type="number"
+              min="2"
+              max="20"
+              class="citef-input"
+              [class.input-error]="errores().columnas_cuadricula"
+              [(ngModel)]="formSala.columnas_cuadricula"
+            />
+            @if (errores().columnas_cuadricula) {
+              <span class="field-error-text">
+                <i class="bi bi-exclamation-circle-fill"></i> {{ errores().columnas_cuadricula }}
+              </span>
+            }
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Equipamiento e Infraestructura Base</label>
+          <div class="checkboxes-group">
+            <label class="checkbox-label">
+              <input
+                type="checkbox"
+                [(ngModel)]="formSala.maquina_docente"
+              />
+              <span>Estación Docente</span>
+            </label>
+
+            <label class="checkbox-label">
+              <input
+                type="checkbox"
+                [(ngModel)]="formSala.proyector"
+              />
+              <span>Proyector Audiovisual</span>
+            </label>
+
+            <label class="checkbox-label">
+              <input
+                type="checkbox"
+                [(ngModel)]="formSala.aire_acondicionado"
+              />
+              <span>Aire Acondicionado</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <!-- Botón Cancelar con Rojo Carmesí Institucional -->
+        <button type="button" class="btn-modal-cancel" (click)="cerrarModalDirecto()">
+          Cancelar
+        </button>
+        <button
+          type="button"
+          class="btn-modal-submit"
+          [disabled]="guardando()"
+          (click)="guardarSala()"
+        >
+          @if (guardando()) {
+            <i class="bi bi-arrow-repeat spin"></i> Guardando...
+          } @else {
+            <i class="bi bi-check-lg"></i> {{ modoEdicion() ? 'Guardar Cambios' : 'Crear Sala' }}
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Confirm Modal -->
+<app-confirm-modal
+  [visible]="confirmModalVisible()"
+  [title]="confirmModalTitulo()"
+  [message]="confirmModalMensaje()"
+  [isDanger]="salaAfectada()?.activo ?? true"
+  [confirmBtnText]="(salaAfectada()?.activo ?? true) ? 'Desactivar' : 'Reactivar'"
+  (confirmed)="ejecutarCambioEstado()"
+  (cancelled)="confirmModalVisible.set(false)"
+></app-confirm-modal>

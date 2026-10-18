@@ -126,6 +126,33 @@ export class ShellComponent implements OnInit {
       });
     }
 
+    // MÓDULO 3: Infraestructura y Recursos Físicos
+    if (
+      this.authService.hasAnyPermission([
+        'INFRA_LABS_GESTIONAR',
+        'INFRA_SALAS_CONFIGURAR',
+      ])
+    ) {
+      items.push({
+        ruta: '/admin/infraestructura/salas',
+        texto: 'Salas y Laboratorios',
+        icono: 'bi-building',
+      });
+      items.push({
+        ruta: '/admin/infraestructura/cuadricula',
+        texto: 'Editor de Cuadrícula',
+        icono: 'bi-grid-3x3',
+      });
+    }
+
+    if (this.authService.hasPermission('INFRA_INVENTARIO_GESTIONAR')) {
+      items.push({
+        ruta: '/admin/infraestructura/perifericos',
+        texto: 'Inventario Periféricos',
+        icono: 'bi-motherboard',
+      });
+    }
+
     return items;
   });
 

@@ -9,6 +9,9 @@ import { AcademicosComponent } from './pages/catalogos/academicos/academicos.com
 import { OperativosComponent } from './pages/catalogos/operativos/operativos.component';
 import { ImportarDocentesComponent } from './pages/catalogos/importar-docentes/importar-docentes.component';
 import { TurnosAuxiliaresComponent } from './pages/catalogos/turnos-auxiliares/turnos-auxiliares.component';
+import { SalasComponent } from './pages/infraestructura/salas/salas.component';
+import { EditorCuadriculaComponent } from './pages/infraestructura/editor-cuadricula/editor-cuadricula.component';
+import { InventarioPerifericosComponent } from './pages/infraestructura/inventario-perifericos/inventario-perifericos.component';
 import { InicioComponent } from './pages/inicio/inicio.component';
 import { authGuard } from './core/guards/auth.guard';
 import { permissionGuard } from './core/guards/permission.guard';
@@ -67,14 +70,43 @@ export const routes: Routes = [
         component: TurnosAuxiliaresComponent,
         canActivate: [permissionGuard(['CAT_ASIGNAR_TURNOS'])],
       },
+      // MÓDULO 3: Infraestructura y Recursos Físicos
+      {
+        path: 'infraestructura/salas',
+        component: SalasComponent,
+        canActivate: [
+          permissionGuard(['INFRA_LABS_GESTIONAR', 'INFRA_SALAS_CONFIGURAR']),
+        ],
+      },
+      {
+        path: 'infraestructura/cuadricula/:id',
+        component: EditorCuadriculaComponent,
+        canActivate: [permissionGuard(['INFRA_SALAS_CONFIGURAR'])],
+      },
+      {
+        path: 'infraestructura/cuadricula',
+        component: EditorCuadriculaComponent,
+        canActivate: [permissionGuard(['INFRA_SALAS_CONFIGURAR'])],
+      },
+      {
+        path: 'infraestructura/perifericos',
+        component: InventarioPerifericosComponent,
+        canActivate: [permissionGuard(['INFRA_INVENTARIO_GESTIONAR'])],
+      },
       // Aliases directos para facilidad de navegación
       { path: 'academicos', redirectTo: 'catalogos/academicos', pathMatch: 'full' },
       { path: 'operativos', redirectTo: 'catalogos/operativos', pathMatch: 'full' },
       { path: 'docentes', redirectTo: 'catalogos/docentes', pathMatch: 'full' },
       { path: 'turnos-auxiliares', redirectTo: 'catalogos/turnos', pathMatch: 'full' },
+      { path: 'salas', redirectTo: 'infraestructura/salas', pathMatch: 'full' },
+      { path: 'cuadricula', redirectTo: 'infraestructura/cuadricula', pathMatch: 'full' },
+      { path: 'perifericos', redirectTo: 'infraestructura/perifericos', pathMatch: 'full' },
       { path: '', redirectTo: 'inicio', pathMatch: 'full' },
     ],
   },
+  { path: 'infraestructura/cuadricula/:id', redirectTo: 'admin/infraestructura/cuadricula/:id', pathMatch: 'full' },
+  { path: 'infraestructura/salas', redirectTo: 'admin/infraestructura/salas', pathMatch: 'full' },
+  { path: 'infraestructura/perifericos', redirectTo: 'admin/infraestructura/perifericos', pathMatch: 'full' },
   { path: '', redirectTo: 'login', pathMatch: 'full' },
   { path: '**', redirectTo: 'login' },
 ];
