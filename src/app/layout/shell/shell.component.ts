@@ -471,6 +471,42 @@ export class ShellComponent implements OnInit {
       });
     }
 
+    // MÓDULO 2: Catálogos Académicos
+    if (this.authService.hasPermission('CAT_ACADEMICOS_GESTIONAR')) {
+      items.push({
+        ruta: '/admin/catalogos/academicos',
+        texto: 'Catálogos Académicos',
+        icono: 'bi-journal-bookmark',
+      });
+    }
+
+    // MÓDULO 2: Parámetros Operativos
+    if (this.authService.hasPermission('CAT_HORARIOS_GESTIONAR')) {
+      items.push({
+        ruta: '/admin/catalogos/operativos',
+        texto: 'Parámetros Operativos',
+        icono: 'bi-sliders',
+      });
+    }
+
+    // MÓDULO 2: Padrón Docente
+    if (this.authService.hasPermission('CAT_IMPORTAR_DOCENTES')) {
+      items.push({
+        ruta: '/admin/catalogos/docentes',
+        texto: 'Padrón Docente',
+        icono: 'bi-file-earmark-spreadsheet',
+      });
+    }
+
+    // MÓDULO 2: Turnos de Auxiliares
+    if (this.authService.hasPermission('CAT_ASIGNAR_TURNOS')) {
+      items.push({
+        ruta: '/admin/catalogos/turnos',
+        texto: 'Turnos Auxiliares',
+        icono: 'bi-calendar-week',
+      });
+    }
+
     return items;
   });
 
