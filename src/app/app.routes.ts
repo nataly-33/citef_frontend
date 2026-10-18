@@ -9,6 +9,7 @@ import { AcademicosComponent } from './pages/catalogos/academicos/academicos.com
 import { OperativosComponent } from './pages/catalogos/operativos/operativos.component';
 import { ImportarDocentesComponent } from './pages/catalogos/importar-docentes/importar-docentes.component';
 import { TurnosAuxiliaresComponent } from './pages/catalogos/turnos-auxiliares/turnos-auxiliares.component';
+import { InicioComponent } from './pages/inicio/inicio.component';
 import { authGuard } from './core/guards/auth.guard';
 import { permissionGuard } from './core/guards/permission.guard';
 
@@ -20,6 +21,10 @@ export const routes: Routes = [
     component: ShellComponent,
     canActivate: [authGuard],
     children: [
+      {
+        path: 'inicio',
+        component: InicioComponent,
+      },
       {
         path: 'usuarios',
         component: UsuariosComponent,
@@ -67,7 +72,7 @@ export const routes: Routes = [
       { path: 'operativos', redirectTo: 'catalogos/operativos', pathMatch: 'full' },
       { path: 'docentes', redirectTo: 'catalogos/docentes', pathMatch: 'full' },
       { path: 'turnos-auxiliares', redirectTo: 'catalogos/turnos', pathMatch: 'full' },
-      { path: '', redirectTo: 'usuarios', pathMatch: 'full' },
+      { path: '', redirectTo: 'inicio', pathMatch: 'full' },
     ],
   },
   { path: '', redirectTo: 'login', pathMatch: 'full' },

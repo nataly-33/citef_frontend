@@ -342,7 +342,11 @@ export class LoginComponent {
     this.authService.login(this.correo, this.password).subscribe({
       next: () => {
         this.loading.set(false);
-        this.router.navigate(['/admin/usuarios']);
+        if (this.authService.hasPermission('SEG_USUARIOS_VER')) {
+          this.router.navigate(['/admin/usuarios']);
+        } else {
+          this.router.navigate(['/admin/inicio']);
+        }
       },
       error: (err) => {
         this.loading.set(false);

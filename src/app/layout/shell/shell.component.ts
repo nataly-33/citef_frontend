@@ -436,7 +436,13 @@ export class ShellComponent implements OnInit {
 
   // Navegación limpia y reactiva según permisos y roles RBAC
   navItems = computed<NavItem[]>(() => {
-    const items: NavItem[] = [];
+    const items: NavItem[] = [
+      {
+        ruta: '/admin/inicio',
+        texto: 'Inicio / Panel',
+        icono: 'bi-house-door',
+      },
+    ];
 
     // Ver usuarios
     if (

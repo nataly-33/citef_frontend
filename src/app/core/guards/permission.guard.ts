@@ -21,10 +21,16 @@ export const permissionGuard = (requiredPermisos: string[]): CanActivateFn => {
       router.navigate(['/admin/usuarios']);
     } else if (authService.hasPermission('SEG_ROLES_GESTIONAR')) {
       router.navigate(['/admin/roles']);
-    } else if (authService.hasPermission('SEG_AUDITORIA_VER')) {
-      router.navigate(['/admin/auditoria']);
+    } else if (authService.hasPermission('CAT_ACADEMICOS_GESTIONAR')) {
+      router.navigate(['/admin/catalogos/academicos']);
+    } else if (authService.hasPermission('CAT_HORARIOS_GESTIONAR')) {
+      router.navigate(['/admin/catalogos/operativos']);
+    } else if (authService.hasPermission('CAT_IMPORTAR_DOCENTES')) {
+      router.navigate(['/admin/catalogos/docentes']);
+    } else if (authService.hasPermission('CAT_ASIGNAR_TURNOS')) {
+      router.navigate(['/admin/catalogos/turnos']);
     } else {
-      router.navigate(['/login']);
+      router.navigate(['/admin/inicio']);
     }
     return false;
   };
