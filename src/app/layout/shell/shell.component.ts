@@ -153,6 +153,28 @@ export class ShellComponent implements OnInit {
       });
     }
 
+    // MÓDULO 4: Ocupación y Monitoreo en Tiempo Real
+    if (
+      this.authService.hasAnyPermission([
+        'TIEMPOREAL_MONITOREAR',
+        'TIEMPOREAL_ASIGNAR',
+      ])
+    ) {
+      items.push({
+        ruta: '/admin/ocupacion/monitoreo',
+        texto: 'Monitoreo de Salas',
+        icono: 'bi-speedometer2',
+      });
+    }
+
+    if (this.authService.hasPermission('TIEMPOREAL_ASISTENCIAS')) {
+      items.push({
+        ruta: '/admin/ocupacion/asistencias',
+        texto: 'Historial Asistencias',
+        icono: 'bi-card-checklist',
+      });
+    }
+
     return items;
   });
 

@@ -12,6 +12,8 @@ import { TurnosAuxiliaresComponent } from './pages/catalogos/turnos-auxiliares/t
 import { SalasComponent } from './pages/infraestructura/salas/salas.component';
 import { EditorCuadriculaComponent } from './pages/infraestructura/editor-cuadricula/editor-cuadricula.component';
 import { InventarioPerifericosComponent } from './pages/infraestructura/inventario-perifericos/inventario-perifericos.component';
+import { MonitorSalaComponent } from './pages/ocupacion/monitor-sala/monitor-sala.component';
+import { AsistenciasComponent } from './pages/ocupacion/asistencias/asistencias.component';
 import { InicioComponent } from './pages/inicio/inicio.component';
 import { authGuard } from './core/guards/auth.guard';
 import { permissionGuard } from './core/guards/permission.guard';
@@ -93,6 +95,19 @@ export const routes: Routes = [
         component: InventarioPerifericosComponent,
         canActivate: [permissionGuard(['INFRA_INVENTARIO_GESTIONAR'])],
       },
+      // MÓDULO 4: Ocupación y Monitoreo en Tiempo Real
+      {
+        path: 'ocupacion/monitoreo',
+        component: MonitorSalaComponent,
+        canActivate: [
+          permissionGuard(['TIEMPOREAL_MONITOREAR', 'TIEMPOREAL_ASIGNAR']),
+        ],
+      },
+      {
+        path: 'ocupacion/asistencias',
+        component: AsistenciasComponent,
+        canActivate: [permissionGuard(['TIEMPOREAL_ASISTENCIAS'])],
+      },
       // Aliases directos para facilidad de navegación
       { path: 'academicos', redirectTo: 'catalogos/academicos', pathMatch: 'full' },
       { path: 'operativos', redirectTo: 'catalogos/operativos', pathMatch: 'full' },
@@ -101,12 +116,16 @@ export const routes: Routes = [
       { path: 'salas', redirectTo: 'infraestructura/salas', pathMatch: 'full' },
       { path: 'cuadricula', redirectTo: 'infraestructura/cuadricula', pathMatch: 'full' },
       { path: 'perifericos', redirectTo: 'infraestructura/perifericos', pathMatch: 'full' },
+      { path: 'monitoreo', redirectTo: 'ocupacion/monitoreo', pathMatch: 'full' },
+      { path: 'asistencias', redirectTo: 'ocupacion/asistencias', pathMatch: 'full' },
       { path: '', redirectTo: 'inicio', pathMatch: 'full' },
     ],
   },
   { path: 'infraestructura/cuadricula/:id', redirectTo: 'admin/infraestructura/cuadricula/:id', pathMatch: 'full' },
   { path: 'infraestructura/salas', redirectTo: 'admin/infraestructura/salas', pathMatch: 'full' },
   { path: 'infraestructura/perifericos', redirectTo: 'admin/infraestructura/perifericos', pathMatch: 'full' },
+  { path: 'ocupacion/monitoreo', redirectTo: 'admin/ocupacion/monitoreo', pathMatch: 'full' },
+  { path: 'ocupacion/asistencias', redirectTo: 'admin/ocupacion/asistencias', pathMatch: 'full' },
   { path: '', redirectTo: 'login', pathMatch: 'full' },
   { path: '**', redirectTo: 'login' },
 ];

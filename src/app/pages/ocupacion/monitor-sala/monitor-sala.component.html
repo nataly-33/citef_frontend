@@ -1,0 +1,739 @@
+<div class="monitor-container">
+  <!-- Toolbar Superior Compacta -->
+  <div class="monitor-toolbar">
+    <div class="toolbar-left">
+      <div class="header-title">
+        <h1>
+          <i class="bi bi-speedometer2"></i> Monitoreo en Tiempo Real
+        </h1>
+      </div>
+
+      <div class="room-selector-group">
+        <label for="selectSala">Laboratorio:</label>
+        <select
+          id="selectSala"
+          class="room-select"
+          [ngModel]="salaSeleccionadaId()"
+          (ngModelChange)="cambiarSala($event)"
+        >
+          @for (s of salas(); track s.id_sala) {
+            <option [value]="s.id_sala">
+              {{ s.codigo_sala }} (Piso {{ s.piso }})
+            </option>
+          }
+        </select>
+      </div>
+
+      <!-- Indicador WebSocket en Vivo -->
+      <div
+        class="live-status-pill"
+        [class.status-live]="socketConectado()"
+        [class.status-polling]="!socketConectado()"
+        [title]="socketConectado() ? 'Conectado a WebSocket síncrono (/ws/ocupacion)' : 'Modo reactivo con refresco periódico'"
+      >
+        <span class="live-dot"></span>
+        <span>{{ socketConectado() ? 'EN VIVO' : 'SINCRONIZADO' }}</span>
+      </div>
+    </div>
+
+    <div class="toolbar-right">
+      <!-- Botón Cola de Espera -->
+      <button
+        class="btn-toolbar btn-queue"
+        (click)="abrirModalCola()"
+        title="Gestión de Cola de Espera M/M/c"
+      >
+        <i class="bi bi-people-fill"></i>
+        <span>Cola de Espera</span>
+        @if ((estadoSala()?.kpis?.cola_pendiente_conteo || 0) > 0) {
+          <span class="queue-counter-badge">
+            {{ estadoSala()?.kpis?.cola_pendiente_conteo }}
+          </span>
+        }
+      </button>
+
+      <!-- Botón Asignación Automática Balanceada -->
+      <button
+        class="btn-toolbar btn-assign-auto"
+        (click)="abrirModalAsignarAutomatico()"
+        title="Asignación Inteligente: Selecciona el puesto con menor desgaste acumulado"
+      >
+        <i class="bi bi-lightning-charge-fill"></i>
+        <span>Asignar Equipo (Balanceo)</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Mensajes de Notificación Global -->
+  @if (mensajeExito()) {
+    <div class="alert-banner alert-success">
+      <i class="bi bi-check-circle-fill"></i>
+      <span>{{ mensajeExito() }}</span>
+    </div>
+  }
+
+  @if (errorGeneral()) {
+    <div class="alert-banner alert-danger">
+      <i class="bi bi-exclamation-triangle-fill"></i>
+      <span>{{ errorGeneral() }}</span>
+    </div>
+  }
+
+  <!-- Espacio de Trabajo: Escenario Cuadrícula (Izquierda) + KPIs en Columna (Derecha) -->
+  @if (estadoSala(); as estado) {
+    <div class="monitor-workspace">
+      <!-- Área Principal Izquierda: Banner de Saturación Compacto + Tablero Escénico -->
+      <div class="monitor-main-stage">
+        @if (estado.kpis.saturada) {
+          <div class="saturation-callout-compact">
+            <div class="sc-left">
+              <i class="bi bi-exclamation-octagon-fill"></i>
+              <span>
+                <strong>¡Saturación Alta ({{ estado.kpis.porcentaje_ocupacion }}%)!</strong>
+                Espera M/M/c proyectada: <strong>~{{ estado.kpis.wq_estimado_min }}m</strong>.
+              </span>
+            </div>
+            <button class="btn-callout-queue-compact" (click)="abrirModalCola()">
+              <i class="bi bi-people-fill"></i> Ver Cola ({{ estado.kpis.cola_pendiente_conteo }})
+            </button>
+          </div>
+        }
+
+        <app-lab-cuadricula
+          [modo]="'monitor'"
+          [filas]="estado.sala.filas_cuadricula"
+          [columnas]="estado.sala.columnas_cuadricula"
+          [computadoras]="estado.computadoras"
+          subtituloPodium="FRENTE DE SALA (PABELLÓN FCEE)"
+          (asignar)="abrirModalAsignarManual($event)"
+          (liberar)="abrirModalLiberar($event)"
+          (verDetalle)="abrirModalDetalle($event)"
+        ></app-lab-cuadricula>
+      </div>
+
+      <!-- Columna Lateral Derecha con KPIs apilados verticalmente -->
+      <aside class="monitor-sidebar-kpis">
+        <!-- Total Puestos -->
+        <div class="sidebar-kpi-card card-total">
+          <div class="kpi-icon"><i class="bi bi-pc-display"></i></div>
+          <div class="kpi-content">
+            <span class="kpi-value">{{ estado.kpis.total_puestos }}</span>
+            <span class="kpi-label">Puestos</span>
+          </div>
+        </div>
+
+        <!-- Disponibles -->
+        <div class="sidebar-kpi-card card-disp">
+          <div class="kpi-icon"><i class="bi bi-check-circle-fill"></i></div>
+          <div class="kpi-content">
+            <span class="kpi-value">{{ estado.kpis.disponibles }}</span>
+            <span class="kpi-label">Disponibles</span>
+          </div>
+        </div>
+
+        <!-- En Uso -->
+        <div class="sidebar-kpi-card card-ocup">
+          <div class="kpi-icon"><i class="bi bi-person-fill"></i></div>
+          <div class="kpi-content">
+            <span class="kpi-value">{{ estado.kpis.ocupadas }}</span>
+            <span class="kpi-label">En Uso</span>
+          </div>
+        </div>
+
+        <!-- Reservados -->
+        <div class="sidebar-kpi-card card-res">
+          <div class="kpi-icon"><i class="bi bi-calendar-check-fill"></i></div>
+          <div class="kpi-content">
+            <span class="kpi-value">{{ estado.kpis.reservadas }}</span>
+            <span class="kpi-label">Reservados</span>
+          </div>
+        </div>
+
+        <!-- Mantenimiento -->
+        <div class="sidebar-kpi-card card-mant">
+          <div class="kpi-icon"><i class="bi bi-wrench-adjustable-circle-fill"></i></div>
+          <div class="kpi-content">
+            <span class="kpi-value">{{ estado.kpis.mantenimiento }}</span>
+            <span class="kpi-label">Mantenimiento</span>
+          </div>
+        </div>
+
+        <!-- Ocupación y Medidor de Saturación -->
+        <div class="sidebar-kpi-card card-meter" [class.meter-saturated]="estado.kpis.saturada">
+          <div class="meter-header">
+            <span class="meter-title">Ocupación</span>
+            <span class="meter-percentage font-monospace">{{ estado.kpis.porcentaje_ocupacion }}%</span>
+          </div>
+          <div class="progress-bar-container">
+            <div
+              class="progress-bar-fill"
+              [style.width.%]="estado.kpis.porcentaje_ocupacion"
+              [class.fill-danger]="estado.kpis.saturada"
+            ></div>
+          </div>
+          <div class="meter-footer">
+            @if (estado.kpis.saturada) {
+              <span class="badge-saturada">
+                <i class="bi bi-exclamation-triangle-fill"></i> ALTA
+              </span>
+            } @else {
+              <span class="badge-normal">
+                <i class="bi bi-shield-check"></i> NORMAL
+              </span>
+            }
+          </div>
+        </div>
+      </aside>
+    </div>
+  }
+</div>
+
+<!-- ================= MODAL ASIGNAR EQUIPO ================= -->
+@if (modalAsignarVisible()) {
+  <div class="modal-backdrop" (click)="modalAsignarVisible.set(false)">
+    <div class="modal-card modal-lg" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>
+          <i class="bi bi-person-plus-fill"></i>
+          {{ esAsignacionAutomatica() ? 'Asignación Inteligente de Equipo (Balanceo de Hardware)' : 'Asignar Puesto ' + computadoraSeleccionada()?.codigo_equipo }}
+        </h2>
+        <button class="btn-close-modal" (click)="modalAsignarVisible.set(false)" title="Cerrar">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <app-modal-alert
+          [mensaje]="errorAsignar()"
+          tipo="danger"
+          (cerrar)="errorAsignar.set(null)"
+        ></app-modal-alert>
+
+        <!-- Indicador de Puesto Sugerido si es Automático -->
+        @if (esAsignacionAutomatica()) {
+          @if (equipoSugerido(); as sugerido) {
+            <div class="hardware-balance-callout">
+              <div class="hb-icon">
+                <i class="bi bi-lightning-charge-fill"></i>
+              </div>
+              <div class="hb-text">
+                <h4>Puesto Sugerido: <span class="font-monospace">{{ sugerido.codigo_equipo }}</span></h4>
+                <p>
+                  El algoritmo ha seleccionado automáticamente este puesto por registrar la menor carga de horas de uso
+                  acumuladas (<strong>{{ formatHorasUso(sugerido.horas_uso_acumuladas) }}</strong>), garantizando
+                  el desgaste homogéneo del parque computacional.
+                </p>
+              </div>
+            </div>
+          } @else {
+            <div class="no-machine-callout">
+              <div class="nm-icon">
+                <i class="bi bi-exclamation-octagon-fill"></i>
+              </div>
+              <div class="nm-text">
+                <h4>¡Ningún puesto libre disponible en este momento!</h4>
+                <p>
+                  El laboratorio se encuentra al <strong>100% de saturación</strong>. No hay puestos libres disponibles.
+                  Espere a que algún estudiante concluya su sesión activa antes de realizar la asignación.
+                </p>
+              </div>
+            </div>
+          }
+        }
+
+        <!-- Buscador de Estudiante por Registro Universitario -->
+        <div class="search-student-box">
+          <label for="inputRegistro">Registro Universitario (RU) del Estudiante <span class="req">*</span></label>
+          <div class="search-input-group">
+            <div class="input-with-icon">
+              <i class="bi bi-search"></i>
+              <input
+                id="inputRegistro"
+                type="text"
+                class="form-control"
+                placeholder="Ej: 220011501"
+                [ngModel]="busquedaRegistro()"
+                (ngModelChange)="busquedaRegistro.set($event)"
+                (keydown.enter)="buscarEstudiante()"
+              />
+            </div>
+            <button
+              class="btn-search-student"
+              (click)="buscarEstudiante()"
+              [disabled]="buscandoEstudiante() || !busquedaRegistro().trim()"
+            >
+              @if (buscandoEstudiante()) {
+                <i class="bi bi-arrow-repeat spin"></i> Buscando...
+              } @else {
+                <i class="bi bi-check2"></i> Validar Alumno
+              }
+            </button>
+          </div>
+        </div>
+
+        <!-- Alertas Preventivas de Sanción o Doble Sesión -->
+        @if (alertaSancion()) {
+          <div class="alert-inline alert-danger">
+            <i class="bi bi-exclamation-octagon-fill"></i>
+            <div>
+              <strong>¡Estudiante Bloqueado por Sanción Técnica!</strong>
+              <p>{{ alertaSancion() }}</p>
+            </div>
+          </div>
+        }
+
+        @if (alertaSesionPrevia()) {
+          <div class="alert-inline alert-warning">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            <div>
+              <strong>¡Doble Sesión Simultánea No Permitida!</strong>
+              <p>{{ alertaSesionPrevia() }}</p>
+            </div>
+          </div>
+        }
+
+        <!-- Datos del Estudiante Encontrado -->
+        @if (estudianteEncontrado(); as est) {
+          <div class="student-profile-preview" [class.profile-blocked]="est.sancionado">
+            <div class="profile-avatar">
+              <i class="bi bi-person-circle"></i>
+            </div>
+            <div class="profile-details">
+              <h3>{{ est.nombres }} {{ est.apellidos }}</h3>
+              <div class="profile-badges">
+                <span class="badge-ru font-monospace"><i class="bi bi-card-text"></i> RU: {{ est.registro }}</span>
+                <span class="badge-ci font-monospace"><i class="bi bi-person-vcard"></i> CI: {{ est.ci }}</span>
+                <span class="badge-career"><i class="bi bi-mortarboard"></i> {{ est.carrera?.nombre || 'Carrera' }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Selector de Motivo y Observaciones -->
+          <div class="form-row mt-3">
+            <div class="form-group col-md-6">
+              <label for="selectMotivo">Motivo Académico de Asistencia <span class="req">*</span></label>
+              <select
+                id="selectMotivo"
+                class="form-control"
+                [ngModel]="motivoSeleccionado()"
+                (ngModelChange)="motivoSeleccionado.set($event)"
+              >
+                @for (m of motivos(); track m.id_motivo) {
+                  <option [value]="m.id_motivo">{{ m.descrip }} ({{ m.tipo }})</option>
+                }
+              </select>
+            </div>
+
+            <div class="form-group col-md-6">
+              <label for="txtObs">Observaciones (Opcional)</label>
+              <input
+                id="txtObs"
+                type="text"
+                class="form-control"
+                placeholder="Ej: Trae memoria USB personal, mouse externo"
+                [ngModel]="observacionesAsignar()"
+                (ngModelChange)="observacionesAsignar.set($event)"
+              />
+            </div>
+          </div>
+        }
+
+        <!-- Opción de Alta Rápida si no existe -->
+        @if (!estudianteEncontrado() && mostrarFormNuevoEstudiante()) {
+          <div class="quick-register-card">
+            <h4><i class="bi bi-person-plus"></i> Registro Inmediato de Estudiante</h4>
+            <div class="form-row">
+              <div class="form-group col-md-4">
+                <label>Registro (RU) <span class="req">*</span></label>
+                <input
+                  type="text"
+                  class="form-control"
+                  [class.input-error]="erroresNuevoEstudiante()['registro']"
+                  [(ngModel)]="formNuevoEstudiante.registro"
+                />
+                @if (erroresNuevoEstudiante()['registro']) {
+                  <span class="field-error-text">{{ erroresNuevoEstudiante()['registro'] }}</span>
+                }
+              </div>
+              <div class="form-group col-md-4">
+                <label>Cédula (CI) <span class="req">*</span></label>
+                <input
+                  type="text"
+                  class="form-control"
+                  [class.input-error]="erroresNuevoEstudiante()['ci']"
+                  [(ngModel)]="formNuevoEstudiante.ci"
+                />
+                @if (erroresNuevoEstudiante()['ci']) {
+                  <span class="field-error-text">{{ erroresNuevoEstudiante()['ci'] }}</span>
+                }
+              </div>
+              <div class="form-group col-md-4">
+                <label>Carrera Universitaria <span class="req">*</span></label>
+                <select class="form-control" [(ngModel)]="formNuevoEstudiante.id_carrera">
+                  @for (c of carreras(); track c.id_carrera) {
+                    <option [ngValue]="c.id_carrera">{{ c.codigo }} — {{ c.nombre }}</option>
+                  }
+                </select>
+                @if (erroresNuevoEstudiante()['carrera']) {
+                  <span class="field-error-text">{{ erroresNuevoEstudiante()['carrera'] }}</span>
+                }
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group col-md-4">
+                <label>Nombres <span class="req">*</span></label>
+                <input
+                  type="text"
+                  class="form-control"
+                  [class.input-error]="erroresNuevoEstudiante()['nombres']"
+                  [(ngModel)]="formNuevoEstudiante.nombres"
+                />
+                @if (erroresNuevoEstudiante()['nombres']) {
+                  <span class="field-error-text">{{ erroresNuevoEstudiante()['nombres'] }}</span>
+                }
+              </div>
+              <div class="form-group col-md-4">
+                <label>Apellidos <span class="req">*</span></label>
+                <input
+                  type="text"
+                  class="form-control"
+                  [class.input-error]="erroresNuevoEstudiante()['apellidos']"
+                  [(ngModel)]="formNuevoEstudiante.apellidos"
+                />
+                @if (erroresNuevoEstudiante()['apellidos']) {
+                  <span class="field-error-text">{{ erroresNuevoEstudiante()['apellidos'] }}</span>
+                }
+              </div>
+              <div class="form-group col-md-4">
+                <label>Correo Electrónico</label>
+                <input
+                  type="email"
+                  class="form-control"
+                  placeholder="estudiante@uagrm.edu.bo"
+                  [(ngModel)]="formNuevoEstudiante.correo"
+                />
+              </div>
+            </div>
+
+            <div class="text-end mt-2">
+              <button class="btn-save-quick-student" (click)="guardarNuevoEstudiante()">
+                <i class="bi bi-check-circle-fill"></i> Guardar y Asignar
+              </button>
+            </div>
+          </div>
+        } @else if (!estudianteEncontrado() && !buscandoEstudiante()) {
+          <div class="empty-student-notice">
+            <button class="btn-toggle-quick-register" (click)="activarRegistroNuevoEstudiante()">
+              <i class="bi bi-person-plus-fill"></i> Registrar Estudiante No Empadronado
+            </button>
+          </div>
+        }
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-cancel" (click)="modalAsignarVisible.set(false)">
+          <i class="bi bi-x-circle"></i> Cancelar
+        </button>
+        <button
+          class="btn-confirm-assign"
+          [disabled]="(esAsignacionAutomatica() && !equipoSugerido()) || (!esAsignacionAutomatica() && !computadoraSeleccionada()) || !estudianteEncontrado() || alertaSancion() !== null || alertaSesionPrevia() !== null || guardandoAsignacion()"
+          (click)="confirmarAsignacion()"
+        >
+          @if (guardandoAsignacion()) {
+            <i class="bi bi-arrow-repeat spin"></i> Asignando...
+          } @else {
+            <i class="bi bi-check2-circle"></i> Confirmar Asignación
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ================= MODAL LIBERAR EQUIPO (CHECKOUT) ================= -->
+@if (modalLiberarVisible()) {
+  <div class="modal-backdrop" (click)="modalLiberarVisible.set(false)">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>
+          <i class="bi bi-box-arrow-right"></i> Liberar Puesto {{ computadoraALiberar()?.codigo_equipo }}
+        </h2>
+        <button class="btn-close-modal" (click)="modalLiberarVisible.set(false)" title="Cerrar">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <app-modal-alert
+          [mensaje]="errorLiberar()"
+          tipo="danger"
+          (cerrar)="errorLiberar.set(null)"
+        ></app-modal-alert>
+
+        @if (computadoraALiberar()?.sesion_activa; as sesion) {
+          <div class="release-summary-card">
+            <div class="rs-row">
+              <span class="rs-label">Puesto:</span>
+              <span class="rs-value font-monospace">{{ computadoraALiberar()?.codigo_equipo }}</span>
+            </div>
+            <div class="rs-row">
+              <span class="rs-label">Estudiante:</span>
+              <span class="rs-value">{{ sesion.estudiante_nombres }} (RU: {{ sesion.registro_estudiante }})</span>
+            </div>
+            <div class="rs-row">
+              <span class="rs-label">Carrera:</span>
+              <span class="rs-value">{{ sesion.carrera_nombre }}</span>
+            </div>
+            <div class="rs-row">
+              <span class="rs-label">Hora de Inicio:</span>
+              <span class="rs-value font-monospace">{{ sesion.fecha_hora_inicio | date:'HH:mm:ss' }}</span>
+            </div>
+            <div class="rs-row highlight-row">
+              <span class="rs-label">Tiempo Total de Permanencia:</span>
+              <span class="rs-value font-monospace time-highlight">
+                <i class="bi bi-clock-history"></i> {{ sesion.minutos_transcurridos }} minutos
+              </span>
+            </div>
+          </div>
+        }
+
+        <div class="form-group mt-3">
+          <label for="obsLiberar">Novedades o Estado al Entregar Puesto (Opcional)</label>
+          <input
+            id="obsLiberar"
+            type="text"
+            class="form-control"
+            placeholder="Ej: Equipo devuelto en óptimas condiciones"
+            [ngModel]="observacionesLiberar()"
+            (ngModelChange)="observacionesLiberar.set($event)"
+          />
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-cancel" (click)="modalLiberarVisible.set(false)">
+          <i class="bi bi-x-circle"></i> Cancelar
+        </button>
+        <button
+          class="btn-confirm-release"
+          [disabled]="guardandoLiberacion()"
+          (click)="confirmarLiberacion()"
+        >
+          @if (guardandoLiberacion()) {
+            <i class="bi bi-arrow-repeat spin"></i> Procesando Checkout...
+          } @else {
+            <i class="bi bi-check2-circle"></i> Concluir Sesión y Liberar
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ================= MODAL COLA DE ESPERA M/M/c ================= -->
+@if (modalColaVisible()) {
+  <div class="modal-backdrop" (click)="modalColaVisible.set(false)">
+    <div class="modal-card modal-lg" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>
+          <i class="bi bi-people-fill"></i> Cola de Espera — Modelo Estocástico M/M/c
+        </h2>
+        <button class="btn-close-modal" (click)="modalColaVisible.set(false)" title="Cerrar">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <app-modal-alert
+          [mensaje]="errorCola()"
+          tipo="danger"
+          (cerrar)="errorCola.set(null)"
+        ></app-modal-alert>
+
+        <!-- Indicador Teórico M/M/c -->
+        <div class="queue-theory-card">
+          <div class="qt-header">
+            <h4><i class="bi bi-calculator"></i> Estimación de Demora (Teoría de Colas)</h4>
+            <span class="badge-wq font-monospace">
+              Wq Estimado: ~{{ estadoSala()?.kpis?.wq_estimado_min }} min
+            </span>
+          </div>
+          <p>
+            En periodos de alta concurrencia, los turnos se ordenan por orden de llegada (FIFO).
+            El tiempo de espera es proyectado en función del número de servidores operativos (c = {{ estadoSala()?.kpis?.total_puestos }})
+            y la tasa de atención promedio.
+          </p>
+        </div>
+
+        <!-- Formulario para Encolar Nuevo Estudiante -->
+        <div class="add-to-queue-form">
+          <div class="form-group flex-grow-1">
+            <label for="inputColaReg">Encolar Alumno por RU:</label>
+            <input
+              id="inputColaReg"
+              type="text"
+              class="form-control"
+              placeholder="Digite el Registro Universitario (Ej: 220011504)"
+              [ngModel]="nuevoRegistroCola()"
+              (ngModelChange)="nuevoRegistroCola.set($event)"
+              (keydown.enter)="agregarACola()"
+            />
+          </div>
+          <button
+            class="btn-enqueue"
+            [disabled]="guardandoCola() || !nuevoRegistroCola().trim()"
+            (click)="agregarACola()"
+          >
+            @if (guardandoCola()) {
+              <i class="bi bi-arrow-repeat spin"></i> Encolando...
+            } @else {
+              <i class="bi bi-plus-circle-fill"></i> Agregar a Fila
+            }
+          </button>
+        </div>
+
+        <!-- Tabla de la Fila de Espera -->
+        <div class="table-responsive mt-3">
+          <table class="citef-table">
+            <thead>
+              <tr>
+                <th style="width: 50px;">#</th>
+                <th>Estudiante</th>
+                <th>RU</th>
+                <th>Carrera</th>
+                <th>Hora de Llegada</th>
+                <th>Demora Proyectada</th>
+                <th class="text-center" style="width: 130px;">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of listaCola(); track item.id_cola; let idx = $index) {
+                <tr>
+                  <td class="font-monospace text-center font-bold">{{ idx + 1 }}</td>
+                  <td>
+                    <strong>{{ item.estudiante.nombres }} {{ item.estudiante.apellidos }}</strong>
+                  </td>
+                  <td><span class="badge-code font-monospace">{{ item.registro_estudiante }}</span></td>
+                  <td>{{ item.estudiante.carrera?.nombre || 'General' }}</td>
+                  <td class="font-monospace">{{ item.fecha_hora_llegada | date:'HH:mm:ss' }}</td>
+                  <td class="font-monospace text-amber">
+                    <i class="bi bi-clock"></i> ~{{ item.tiempo_espera_estimado_min }}m
+                  </td>
+                  <td class="text-center">
+                    <div class="queue-btn-group">
+                      <button
+                        type="button"
+                        class="btn-queue-assign"
+                        (click)="asignarInmediatoDesdeCola(item)"
+                        title="Asignar puesto disponible inmediatamente a este estudiante"
+                      >
+                        <i class="bi bi-check-lg"></i> Asignar
+                      </button>
+                      <button
+                        type="button"
+                        class="btn-queue-cancel"
+                        (click)="cancelarTurnoCola(item)"
+                        title="Cancelar turno / Desistió de la fila"
+                      >
+                        <i class="bi bi-trash3"></i>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="7" class="text-center py-4 text-muted">
+                    <i class="bi bi-check2-circle" style="font-size: 1.5rem; color: #16a34a;"></i>
+                    <p class="mt-2 mb-0">No hay estudiantes esperando en la fila de este laboratorio.</p>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-cancel" (click)="modalColaVisible.set(false)">
+          <i class="bi bi-x-circle"></i> Cerrar
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ================= MODAL DETALLE SESIÓN ================= -->
+@if (modalDetalleVisible()) {
+  <div class="modal-backdrop" (click)="modalDetalleVisible.set(false)">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>
+          <i class="bi bi-info-circle-fill"></i> Detalle de Sesión en Vivo
+        </h2>
+        <button class="btn-close-modal" (click)="modalDetalleVisible.set(false)" title="Cerrar">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        @if (computadoraDetalle(); as pc) {
+          @if (pc.sesion_activa; as sesion) {
+            <div class="session-detail-list">
+              <div class="detail-item">
+                <span class="detail-label">Puesto de Cómputo:</span>
+                <span class="detail-value font-monospace">{{ pc.codigo_equipo }} (Fila {{ pc.posicion_fila }}, Columna {{ pc.posicion_columna }})</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Dirección IP:</span>
+                <span class="detail-value font-monospace">{{ pc.ip_red || 'No asignada' }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Estudiante:</span>
+                <span class="detail-value font-bold">{{ sesion.estudiante_nombres }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Registro Universitario:</span>
+                <span class="detail-value font-monospace">{{ sesion.registro_estudiante }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Carrera Facultativa:</span>
+                <span class="detail-value">{{ sesion.carrera_nombre }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Motivo de Asistencia:</span>
+                <span class="detail-value">{{ sesion.motivo_descrip }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Auxiliar Operador:</span>
+                <span class="detail-value">{{ sesion.auxiliar_nombre }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Hora de Inicio:</span>
+                <span class="detail-value font-monospace">{{ sesion.fecha_hora_inicio | date:'dd/MM/yyyy HH:mm:ss' }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Tiempo Transcurrido:</span>
+                <span class="detail-value font-monospace text-blue font-bold">
+                  {{ sesion.minutos_transcurridos }} minutos
+                </span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Tipo de Asignación:</span>
+                <span class="detail-value">
+                  {{ sesion.asignacion_automatica ? 'Automática (Balanceo de Hardware)' : 'Manual por Operador' }}
+                </span>
+              </div>
+            </div>
+          }
+        }
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-cancel" (click)="modalDetalleVisible.set(false)">
+          <i class="bi bi-x-circle"></i> Cerrar
+        </button>
+      </div>
+    </div>
+  </div>
+}

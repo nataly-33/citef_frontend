@@ -1,0 +1,323 @@
+<div class="asistencias-container">
+  <!-- Tarjeta de Filtros Avanzados -->
+  <div class="filter-card">
+    <div class="filter-header">
+      <h2><i class="bi bi-funnel-fill"></i> Filtros de Asistencia</h2>
+      <button class="btn-export-csv" (click)="exportarCsv()" title="Exportar reporte a Excel/CSV">
+        <i class="bi bi-file-earmark-spreadsheet-fill"></i> Exportar CSV
+      </button>
+    </div>
+
+    <div class="filter-row">
+      <!-- Búsqueda por texto (RU, CI, Nombre) -->
+      <div class="filter-group col-search">
+        <label for="filtroTexto">Buscar Estudiante o Puesto:</label>
+        <div class="search-input-wrapper">
+          <i class="bi bi-search search-icon"></i>
+          <input
+            id="filtroTexto"
+            type="text"
+            class="form-control search-input"
+            placeholder="RU, CI, nombre de alumno o puesto (L1-PC01)..."
+            [ngModel]="filtroTermino()"
+            (ngModelChange)="filtroTermino.set($event)"
+            (keydown.enter)="buscar()"
+          />
+        </div>
+      </div>
+
+      <!-- Filtro Laboratorio -->
+      <div class="filter-group">
+        <label for="selectFiltroSala">Laboratorio:</label>
+        <select
+          id="selectFiltroSala"
+          class="form-control"
+          [ngModel]="filtroSala()"
+          (ngModelChange)="filtroSala.set($event)"
+        >
+          <option [ngValue]="undefined">Todos los laboratorios</option>
+          @for (s of salas(); track s.id_sala) {
+            <option [ngValue]="s.id_sala">{{ s.codigo_sala }} — {{ s.nombre }}</option>
+          }
+        </select>
+      </div>
+
+      <!-- Filtro Carrera -->
+      <div class="filter-group">
+        <label for="selectFiltroCarrera">Carrera:</label>
+        <select
+          id="selectFiltroCarrera"
+          class="form-control"
+          [ngModel]="filtroCarrera()"
+          (ngModelChange)="filtroCarrera.set($event)"
+        >
+          <option [ngValue]="undefined">Todas las carreras</option>
+          @for (c of carreras(); track c.id_carrera) {
+            <option [ngValue]="c.id_carrera">{{ c.codigo }} — {{ c.nombre }}</option>
+          }
+        </select>
+      </div>
+
+      <!-- Filtro Motivo -->
+      <div class="filter-group">
+        <label for="selectFiltroMotivo">Motivo de Asistencia:</label>
+        <select
+          id="selectFiltroMotivo"
+          class="form-control"
+          [ngModel]="filtroMotivo()"
+          (ngModelChange)="filtroMotivo.set($event)"
+        >
+          <option [ngValue]="undefined">Todos los motivos</option>
+          @for (m of motivos(); track m.id_motivo) {
+            <option [ngValue]="m.id_motivo">{{ m.descrip }}</option>
+          }
+        </select>
+      </div>
+    </div>
+
+    <div class="filter-row mt-2">
+      <!-- Rango de Fechas -->
+      <div class="filter-group">
+        <label for="fechaDesde">Fecha Desde:</label>
+        <input
+          id="fechaDesde"
+          type="date"
+          class="form-control"
+          [ngModel]="filtroFechaInicio()"
+          (ngModelChange)="filtroFechaInicio.set($event)"
+        />
+      </div>
+
+      <div class="filter-group">
+        <label for="fechaHasta">Fecha Hasta:</label>
+        <input
+          id="fechaHasta"
+          type="date"
+          class="form-control"
+          [ngModel]="filtroFechaFin()"
+          (ngModelChange)="filtroFechaFin.set($event)"
+        />
+      </div>
+
+      <!-- Filtro Estado -->
+      <div class="filter-group">
+        <label for="selectFiltroEstado">Estado de Sesión:</label>
+        <select
+          id="selectFiltroEstado"
+          class="form-control"
+          [ngModel]="filtroEstado()"
+          (ngModelChange)="filtroEstado.set($event)"
+        >
+          <option [ngValue]="undefined">Todos los estados</option>
+          <option value="EN_CURSO">En Curso (Activa)</option>
+          <option value="CONCLUIDA">Concluida (Finalizada)</option>
+        </select>
+      </div>
+
+      <!-- Botones de Acción -->
+      <div class="filter-buttons">
+        <button class="btn-filter-search" (click)="buscar()" title="Buscar asistencias">
+          <i class="bi bi-search"></i> Buscar
+        </button>
+        <button class="btn-filter-clear" (click)="limpiarFiltros()" title="Limpiar filtros">
+          <i class="bi bi-x-circle"></i> Limpiar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Alerta de Error si ocurre -->
+  @if (errorGeneral()) {
+    <div class="alert alert-danger mt-3">
+      <i class="bi bi-exclamation-triangle-fill"></i> {{ errorGeneral() }}
+    </div>
+  }
+
+  <!-- TABLA DE ASISTENCIAS CON PAGINACIÓN A 15 REGISTROS -->
+  <app-table-card
+    title="Registro Histórico de Asistencias"
+    [subtitle]="'Total registrado: ' + total() + ' sesiones de estudiantes'"
+  >
+    <div class="table-responsive">
+      <table class="citef-table">
+        <thead>
+          <tr>
+            <th style="width: 150px;">Fecha y Hora</th>
+            <th class="text-center" style="width: 90px;">Duración</th>
+            <th style="width: 140px;">Puesto / Lab</th>
+            <th>Estudiante</th>
+            <th style="width: 100px;">RU</th>
+            <th>Carrera</th>
+            <th>Motivo de Uso</th>
+            <th>Operador</th>
+            <th class="text-center" style="width: 120px;">Estado</th>
+            <th class="text-center" style="width: 70px;">Acción</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of asistencias(); track item.id_asignacion) {
+            <tr>
+              <td>
+                <div class="datetime-pill font-monospace">
+                  <span class="date-part">{{ item.fecha_hora_inicio | date:'dd/MM/yyyy' }}</span>
+                  <span class="time-part">{{ item.fecha_hora_inicio | date:'HH:mm:ss' }}</span>
+                </div>
+              </td>
+              <td class="text-center">
+                @if (item.estado === 'EN_CURSO') {
+                  <span class="badge-running font-monospace" title="Sesión activa">
+                    <i class="bi bi-clock-history spin"></i> En Curso
+                  </span>
+                } @else {
+                  <span class="badge-duration font-monospace" title="Minutos totales de permanencia">
+                    {{ item.minutos_permanencia || 0 }} min
+                  </span>
+                }
+              </td>
+              <td>
+                <div class="workstation-pill">
+                  <span class="font-monospace text-blue font-bold">{{ item.computadora.codigo_equipo }}</span>
+                  <span class="lab-tag font-monospace">{{ item.sala.codigo_sala }}</span>
+                </div>
+              </td>
+              <td>
+                <strong class="student-name-text">{{ item.estudiante.nombre_completo }}</strong>
+              </td>
+              <td>
+                <span class="badge-ru font-monospace">{{ item.estudiante.registro }}</span>
+              </td>
+              <td>
+                <span class="career-text">{{ item.estudiante.carrera }}</span>
+              </td>
+              <td>
+                <span class="reason-text">{{ item.motivo }}</span>
+              </td>
+              <td>
+                <span class="operator-text">{{ item.auxiliar }}</span>
+              </td>
+              <td class="text-center">
+                @if (item.estado === 'EN_CURSO') {
+                  <span class="citef-badge citef-badge-success">
+                    <i class="bi bi-play-circle-fill"></i> En Curso
+                  </span>
+                } @else {
+                  <span class="citef-badge citef-badge-neutral">
+                    <i class="bi bi-check2-circle"></i> Concluida
+                  </span>
+                }
+              </td>
+              <td class="text-center">
+                <button
+                  class="btn-icon btn-view-detail"
+                  (click)="verDetalle(item)"
+                  title="Ver detalle completo de la sesión"
+                >
+                  <i class="bi bi-eye"></i>
+                </button>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="10" class="text-center py-4 text-muted">
+                @if (cargando()) {
+                  <i class="bi bi-arrow-repeat spin" style="font-size: 1.5rem;"></i>
+                  <p class="mt-2 mb-0">Cargando asistencias históricas...</p>
+                } @else {
+                  <i class="bi bi-inbox" style="font-size: 1.5rem;"></i>
+                  <p class="mt-2 mb-0">No se encontraron registros de asistencias con los filtros aplicados.</p>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Paginación Estándar de 15 Filas a la Derecha -->
+    <div class="mt-3">
+      <app-pagination
+        [totalRegistros]="total()"
+        [paginaActual]="page()"
+        [tamanoPagina]="limit()"
+        (paginaCambiada)="onCambioPagina($event)"
+      ></app-pagination>
+    </div>
+  </app-table-card>
+</div>
+
+<!-- ================= MODAL DETALLE DE ASISTENCIA ================= -->
+@if (modalDetalleVisible()) {
+  <div class="modal-backdrop" (click)="modalDetalleVisible.set(false)">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>
+          <i class="bi bi-card-checklist"></i> Detalle de Sesión #{{ sesionSeleccionada()?.id_asignacion }}
+        </h2>
+        <button class="btn-close-modal" (click)="modalDetalleVisible.set(false)" title="Cerrar">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        @if (sesionSeleccionada(); as s) {
+          <div class="detail-grid">
+            <div class="detail-row">
+              <span class="lbl">Laboratorio / Puesto:</span>
+              <span class="val font-monospace">{{ s.sala.codigo_sala }} ({{ s.sala.nombre }}) — {{ s.computadora.codigo_equipo }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="lbl">Estudiante:</span>
+              <span class="val font-bold">{{ s.estudiante.nombre_completo }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="lbl">RU / Cédula:</span>
+              <span class="val font-monospace">RU: {{ s.estudiante.registro }} | CI: {{ s.estudiante.ci }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="lbl">Carrera Facultativa:</span>
+              <span class="val">{{ s.estudiante.carrera }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="lbl">Motivo Declarado:</span>
+              <span class="val">{{ s.motivo }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="lbl">Auxiliar Operador:</span>
+              <span class="val">{{ s.auxiliar }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="lbl">Fecha y Hora Inicio:</span>
+              <span class="val font-monospace">{{ s.fecha_hora_inicio | date:'dd/MM/yyyy HH:mm:ss' }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="lbl">Fecha y Hora Fin:</span>
+              <span class="val font-monospace">{{ s.fecha_hora_fin ? (s.fecha_hora_fin | date:'dd/MM/yyyy HH:mm:ss') : 'En curso' }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="lbl">Duración de Permanencia:</span>
+              <span class="val font-monospace text-blue font-bold">
+                {{ s.minutos_permanencia ? (s.minutos_permanencia + ' minutos') : 'En curso' }}
+              </span>
+            </div>
+            <div class="detail-row">
+              <span class="lbl">Tipo de Asignación:</span>
+              <span class="val">{{ s.asignacion_automatica ? 'Balanceo Automático de Hardware' : 'Manual' }}</span>
+            </div>
+            @if (s.observaciones) {
+              <div class="detail-row">
+                <span class="lbl">Observaciones:</span>
+                <span class="val">{{ s.observaciones }}</span>
+              </div>
+            }
+          </div>
+        }
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-cancel" (click)="modalDetalleVisible.set(false)">
+          <i class="bi bi-x-circle"></i> Cerrar
+        </button>
+      </div>
+    </div>
+  </div>
+}

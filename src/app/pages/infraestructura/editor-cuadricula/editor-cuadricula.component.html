@@ -1,7 +1,8 @@
 <div class="editor-container">
   <!-- Toolbar -->
   <div class="editor-toolbar">
-    <div class="toolbar-left">
+    <div class="toolbar-main-row">
+      <div class="toolbar-left">
       <button class="btn-back" (click)="volverALaboratorios()" title="Volver al Listado">
         <i class="bi bi-arrow-left"></i> Volver a Salas
       </button>
@@ -34,188 +35,62 @@
           <span class="badge-pill">
             <i class="bi bi-pc-display"></i> {{ computadoras().length }} / {{ sala.cant_estudiantes + (sala.maquina_docente ? 1 : 0) }} Equipos
           </span>
-          @if (cambiosPendientes()) {
-            <span class="badge-pill badge-dirty">
-              <i class="bi bi-exclamation-triangle-fill"></i> Cambios sin guardar
-            </span>
-          }
         </div>
       }
-    </div>
+      </div>
 
-    <div class="toolbar-right">
-      <button class="btn-add-pc" (click)="abrirModalNuevaPc()" title="Agregar Equipo">
-        <i class="bi bi-plus-circle"></i> Nueva PC
-      </button>
-
-      @if (cambiosPendientes()) {
-        <button class="btn-discard" (click)="descartarCambios()" title="Descartar Cambios">
-          <i class="bi bi-arrow-counterclockwise"></i> Descartar
+      <div class="toolbar-right">
+        <button class="btn-add-pc" (click)="abrirModalNuevaPc()" title="Agregar Equipo">
+          <i class="bi bi-plus-circle"></i> Nueva PC
         </button>
-      }
 
-      <button
-        class="btn-save-positions"
-        [disabled]="!cambiosPendientes() || guardandoPosiciones()"
-        (click)="guardarDistribucion()"
-        title="Guardar Coordenadas en Base de Datos"
-      >
-        @if (guardandoPosiciones()) {
-          <i class="bi bi-arrow-repeat spin"></i> Guardando...
-        } @else {
-          <i class="bi bi-check2-circle"></i> Guardar Distribución
+        @if (cambiosPendientes()) {
+          <button class="btn-discard" (click)="descartarCambios()" title="Descartar Cambios">
+            <i class="bi bi-arrow-counterclockwise"></i> Descartar
+          </button>
         }
-      </button>
+
+        <button
+          class="btn-save-positions"
+          [disabled]="!cambiosPendientes() || guardandoPosiciones()"
+          (click)="guardarDistribucion()"
+          title="Guardar Coordenadas en Base de Datos"
+        >
+          @if (guardandoPosiciones()) {
+            <i class="bi bi-arrow-repeat spin"></i> Guardando...
+          } @else {
+            <i class="bi bi-check2-circle"></i> Guardar Distribución
+          }
+        </button>
+      </div>
     </div>
+
+    @if (cambiosPendientes()) {
+      <div class="toolbar-status-row">
+        <span class="badge-pill badge-dirty">
+          <i class="bi bi-exclamation-triangle-fill"></i> Cambios sin guardar
+        </span>
+      </div>
+    }
   </div>
 
-  <!-- Stage Area -->
+  <!-- Stage Area (Shared Component) -->
   @if (salaActual(); as sala) {
-    <div class="room-stage">
-      <!-- Pizarra / Pódium Frontal -->
-      <div class="podium-banner">
-        <span><i class="bi bi-projector"></i> PIZARRA DIGITAL Y PROYECCIÓN AUDIOVISUAL</span>
-        <span>•</span>
-        <span><i class="bi bi-door-open"></i> FRENTE DE SALA</span>
-      </div>
-
-      <!-- Leyenda de Estados -->
-      <div class="legend-bar">
-        <div class="legend-item">
-          <span class="legend-dot dot-disp"></span>
-          <span>Disponible</span>
-        </div>
-        <div class="legend-item">
-          <span class="legend-dot dot-ocup"></span>
-          <span>Ocupada en Turno</span>
-        </div>
-        <div class="legend-item">
-          <span class="legend-dot dot-res"></span>
-          <span>Reservada</span>
-        </div>
-        <div class="legend-item">
-          <span class="legend-dot dot-mant"></span>
-          <span><i class="bi bi-wrench-adjustable"></i> En Mantenimiento</span>
-        </div>
-        <div class="legend-item">
-          <span class="legend-dot dot-doc"></span>
-          <span><i class="bi bi-person-workspace"></i> Estación Docente</span>
-        </div>
-        <div class="legend-item" style="color: #64748b; font-style: italic;">
-          <i class="bi bi-hand-index-thumb"></i> Arrastre o haga clic para reubicar puestos
-        </div>
-      </div>
-
-      <!-- Matriz 2D de la Cuadrícula -->
-      <div class="grid-scroll-wrapper">
-        <div
-          class="grid-matrix"
-          [style.gridTemplateColumns]="'repeat(' + sala.columnas_cuadricula + ', minmax(110px, 1fr))'"
-          [style.gridTemplateRows]="'repeat(' + sala.filas_cuadricula + ', 115px)'"
-        >
-          @for (fila of filasArray(); track fila) {
-            @for (col of columnasArray(); track col) {
-              @let pc = getPcEnCoordenada(fila, col);
-              @if (pc) {
-                <!-- Celda con Estación de Cómputo -->
-                <div
-                  class="grid-cell"
-                  [class.cell-drop-target]="dragOverCoord() === (fila + '-' + col)"
-                  (dragover)="onDragOver($event, fila, col)"
-                  (dragleave)="onDragLeave()"
-                  (drop)="onDrop($event, fila, col)"
-                >
-                  <div
-                    class="workstation-card"
-                    [class.pc-disp]="pc.estado_actual === 'DISPONIBLE' && !pc.maquina_docente"
-                    [class.pc-ocup]="pc.estado_actual === 'OCUPADA' && !pc.maquina_docente"
-                    [class.pc-res]="pc.estado_actual === 'RESERVADA' && !pc.maquina_docente"
-                    [class.pc-mant]="pc.estado_actual === 'EN_MANTENIMIENTO' && !pc.maquina_docente"
-                    [class.pc-docente]="pc.maquina_docente"
-                    [class.workstation-selected]="pcSeleccionada()?.id_computadora === pc.id_computadora"
-                    draggable="true"
-                    (dragstart)="onDragStart($event, pc)"
-                    (click)="seleccionarPcParaMover(pc)"
-                    [title]="'Fila ' + fila + ', Columna ' + col + ' - Clic para reubicar'"
-                  >
-                    <!-- Icono según tipo -->
-                    <div class="pc-icon">
-                      @if (pc.maquina_docente) {
-                        <i class="bi bi-person-workspace icon-doc"></i>
-                      } @else if (pc.estado_actual === 'DISPONIBLE') {
-                        <i class="bi bi-display icon-disp"></i>
-                      } @else if (pc.estado_actual === 'OCUPADA') {
-                        <i class="bi bi-display icon-ocup"></i>
-                      } @else if (pc.estado_actual === 'RESERVADA') {
-                        <i class="bi bi-calendar-check-fill icon-res"></i>
-                      } @else {
-                        <i class="bi bi-wrench-adjustable-circle-fill icon-mant"></i>
-                      }
-                    </div>
-
-                    <!-- Código del Equipo -->
-                    <div class="pc-code" [title]="pc.codigo_equipo">
-                      {{ pc.codigo_equipo }}
-                    </div>
-
-                    <!-- Metadatos (Horas y Periféricos) -->
-                    <div class="pc-meta">
-                      <span title="Horas acumuladas de uso">
-                        <i class="bi bi-clock-history"></i> {{ pc.horas_uso_acumuladas }}h
-                      </span>
-                      <button
-                        type="button"
-                        class="pc-peripherals-count"
-                        (click)="abrirModalPerifericos(pc)"
-                        [title]="'Ver periféricos asignados a ' + pc.codigo_equipo"
-                      >
-                        <i class="bi bi-cpu"></i> {{ pc.perifericos?.length || 0 }}
-                      </button>
-                    </div>
-
-                    <!-- Acciones rápidas -->
-                    <div class="pc-actions" (click)="$event.stopPropagation()">
-                      <button
-                        class="btn-pc-tool"
-                        (click)="abrirModalEditarPc(pc)"
-                        title="Editar Equipo"
-                      >
-                        <i class="bi bi-pencil"></i>
-                      </button>
-                      <button
-                        class="btn-pc-tool tool-del"
-                        (click)="solicitarRetiroPc(pc)"
-                        title="Desactivar Equipo"
-                      >
-                        <i class="bi bi-trash"></i>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              } @else {
-                <!-- Celda Vacía -->
-                <div
-                  class="grid-cell empty-cell"
-                  [class.cell-drop-target]="dragOverCoord() === (fila + '-' + col)"
-                  [class.cell-relocate-mode]="pcSeleccionada() !== null"
-                  (dragover)="onDragOver($event, fila, col)"
-                  (dragleave)="onDragLeave()"
-                  (drop)="onDrop($event, fila, col)"
-                  (click)="clickCeldaVacia(fila, col)"
-                  [title]="pcSeleccionada() ? 'Haga clic para mover ' + pcSeleccionada()?.codigo_equipo + ' a esta posición' : 'Clic para registrar nueva PC en (' + fila + ', ' + col + ')'"
-                >
-                  <i class="bi bi-plus-lg"></i>
-                  <span>({{ fila }}, {{ col }})</span>
-                  @if (pcSeleccionada()) {
-                    <span style="font-size: 0.68rem; font-weight: 700; color: #a81124;">Mover aquí</span>
-                  }
-                </div>
-              }
-            }
-          }
-        </div>
-      </div>
-    </div>
+    <app-lab-cuadricula
+      [modo]="'editor'"
+      [filas]="sala.filas_cuadricula"
+      [columnas]="sala.columnas_cuadricula"
+      [computadoras]="computadoras()"
+      [pcSeleccionada]="pcSeleccionada()"
+      [dragOverCoord]="dragOverCoord()"
+      (celdaVaciaClick)="clickCeldaVacia($event.fila, $event.col)"
+      (moverPc)="onMoverPc($event)"
+      (editarPc)="abrirModalEditarPc($event)"
+      (eliminarPc)="solicitarRetiroPc($event)"
+      (verPerifericos)="abrirModalPerifericos($event)"
+      (seleccionarPc)="seleccionarPcParaMover($event)"
+      (dragOverChange)="dragOverCoord.set($event)"
+    ></app-lab-cuadricula>
   }
 
   <!-- Modal Crear/Editar Computadora -->
@@ -430,6 +305,59 @@
         <div class="modal-footer">
           <button type="button" class="btn-modal-cancel" (click)="cerrarModalPerifericos()">
             Cerrar
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ================= MODAL ADVERTENCIA SESIÓN ACTIVA ================= -->
+  @if (modalAdvertenciaSesionVisible()) {
+    <div class="modal-backdrop" (click)="modalAdvertenciaSesionVisible.set(false)">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <div class="modal-header header-warning">
+          <h2>
+            <i class="bi bi-exclamation-triangle-fill"></i> Sesión en Curso Detectada
+          </h2>
+          <button class="btn-close-modal" (click)="modalAdvertenciaSesionVisible.set(false)" title="Cerrar">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+
+        <div class="modal-body">
+          <div class="session-warning-card">
+            <p>
+              El puesto <strong>{{ advertenciaSesionActivaData()?.pcCodigo }}</strong> está siendo utilizado actualmente por:
+            </p>
+            <div class="session-student-info">
+              <i class="bi bi-person-circle"></i>
+              <div>
+                <strong>{{ advertenciaSesionActivaData()?.estudianteNombre }}</strong>
+                <span>RU: {{ advertenciaSesionActivaData()?.registro }}</span>
+              </div>
+            </div>
+            <p class="time-active-note">
+              <i class="bi bi-clock-history"></i> Tiempo de uso activo en curso:
+              <strong>{{ advertenciaSesionActivaData()?.minutosActivo }} minutos</strong>.
+            </p>
+          </div>
+
+          <div class="alert-inline alert-warning">
+            <i class="bi bi-info-circle-fill"></i>
+            <div>
+              Si confirma el cambio de estado a <strong>{{ advertenciaSesionActivaData()?.nuevoEstado }}</strong>,
+              la sesión se <strong>concluirá y liberará automáticamente en este instante</strong>,
+              acumulando el tiempo de uso en el equipo y guardando la asistencia como completada.
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn-modal-cancel" (click)="modalAdvertenciaSesionVisible.set(false)">
+            <i class="bi bi-x-circle"></i> Cancelar
+          </button>
+          <button type="button" class="btn-modal-save" (click)="confirmarCambioEstadoConSesion()">
+            <i class="bi bi-check-circle-fill"></i> Aceptar y Concluir Sesión
           </button>
         </div>
       </div>

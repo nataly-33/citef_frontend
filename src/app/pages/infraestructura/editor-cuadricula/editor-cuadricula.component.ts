@@ -10,6 +10,7 @@ import {
 import {
   ModalAlertComponent,
   ConfirmModalComponent,
+  LabCuadriculaComponent,
 } from '../../../shared/components';
 
 export interface ErroresPc {
@@ -26,6 +27,7 @@ export interface ErroresPc {
     FormsModule,
     ModalAlertComponent,
     ConfirmModalComponent,
+    LabCuadriculaComponent,
   ],
   templateUrl: './editor-cuadricula.component.html',
   styleUrls: ['./editor-cuadricula.component.css'],
@@ -78,6 +80,17 @@ export class EditorCuadriculaComponent implements OnInit {
   pcARetirar = signal<ComputadoraItem | null>(null);
   perifericosModalVisible = signal<boolean>(false);
   pcPerifericosSeleccionada = signal<ComputadoraItem | null>(null);
+
+  // Modal Advertencia de Sesión Activa al cambiar estado de PC
+  modalAdvertenciaSesionVisible = signal<boolean>(false);
+  advertenciaSesionActivaData = signal<{
+    pcCodigo: string;
+    estudianteNombre: string;
+    registro: string;
+    minutosActivo: number;
+    nuevoEstado: string;
+  } | null>(null);
+  private cambioEstadoSesionConfirmado = false;
 
   // Arreglos de índices para el render de la matriz
   filasArray = computed(() => {
@@ -181,22 +194,13 @@ export class EditorCuadriculaComponent implements OnInit {
 
   // ================= MOVIMIENTO DE EQUIPOS =================
   seleccionarPcParaMover(pc: ComputadoraItem): void {
-    if (Number(this.pcSeleccionada()?.id_computadora) === Number(pc.id_computadora)) {
-      this.pcSeleccionada.set(null);
-    } else {
-      this.pcSeleccionada.set(pc);
-    }
+    // La reubicación se realiza exclusivamente mediante Drag and Drop
+    this.pcSeleccionada.set(null);
   }
 
   clickCeldaVacia(fila: number, col: number): void {
-    const seleccionada = this.pcSeleccionada();
-    if (seleccionada) {
-      this.reubicarPc(seleccionada, fila, col);
-      this.pcSeleccionada.set(null);
-    } else {
-      // Si no hay equipo en modo traslado, abre directamente el modal para crear PC en esa coordenada
-      this.abrirModalNuevaPcEnCoordenada(fila, col);
-    }
+    // Clic en celda vacía con '+' abre directamente el modal de registro en esa coordenada
+    this.abrirModalNuevaPcEnCoordenada(fila, col);
   }
 
   onDragStart(event: DragEvent, pc: ComputadoraItem): void {
@@ -246,6 +250,23 @@ export class EditorCuadriculaComponent implements OnInit {
     }
 
     this.reubicarPc(pc, fila, col);
+  }
+
+  onMoverPc(event: { pc: any; fila: number; col: number }): void {
+    const pc = this.computadoras().find(
+      (c) => Number(c.id_computadora) === Number(event.pc.id_computadora),
+    );
+    if (!pc) return;
+
+    const ocupada = this.getPcEnCoordenada(event.fila, event.col);
+    if (ocupada && Number(ocupada.id_computadora) !== Number(pc.id_computadora)) {
+      alert(
+        `La celda (${event.fila}, ${event.col}) ya está ocupada por el equipo "${ocupada.codigo_equipo}". No se permiten colisiones.`,
+      );
+      return;
+    }
+
+    this.reubicarPc(pc, event.fila, event.col);
   }
 
   private reubicarPc(pc: ComputadoraItem, fila: number, col: number): void {
@@ -445,6 +466,31 @@ export class EditorCuadriculaComponent implements OnInit {
     const sala = this.salaActual();
     if (!sala) return;
 
+    // Verificar si se está editando una PC que estaba OCUPADA y se le cambia el estado
+    if (this.modoEdicionPc() && this.formPc.id_computadora) {
+      const pcActual = this.computadoras().find(
+        (c) => Number(c.id_computadora) === Number(this.formPc.id_computadora),
+      );
+
+      const teniaSesion = pcActual?.estado_actual === 'OCUPADA' || !!(pcActual as any)?.sesion_activa;
+      if (
+        teniaSesion &&
+        this.formPc.estado_actual !== 'OCUPADA' &&
+        !this.cambioEstadoSesionConfirmado
+      ) {
+        const sesion = (pcActual as any)?.sesion_activa;
+        this.advertenciaSesionActivaData.set({
+          pcCodigo: pcActual?.codigo_equipo || this.formPc.codigo_equipo,
+          estudianteNombre: sesion?.estudiante_nombres || 'un estudiante universitario',
+          registro: sesion?.registro_estudiante || 'En curso',
+          minutosActivo: sesion?.minutos_transcurridos ?? 1,
+          nuevoEstado: this.formPc.estado_actual,
+        });
+        this.modalAdvertenciaSesionVisible.set(true);
+        return;
+      }
+    }
+
     this.guardandoPc.set(true);
     this.errorModalPc.set(null);
 
@@ -491,6 +537,13 @@ export class EditorCuadriculaComponent implements OnInit {
         },
       });
     }
+  }
+
+  confirmarCambioEstadoConSesion(): void {
+    this.cambioEstadoSesionConfirmado = true;
+    this.modalAdvertenciaSesionVisible.set(false);
+    this.guardarPc();
+    this.cambioEstadoSesionConfirmado = false;
   }
 
   solicitarRetiroPc(pc: ComputadoraItem): void {

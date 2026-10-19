@@ -1,0 +1,238 @@
+<div class="room-stage">
+  <!-- Pizarra / Pódium Frontal -->
+  <div class="podium-banner">
+    <span><i class="bi bi-projector"></i> {{ tituloPodium }}</span>
+    <span>•</span>
+    <span><i class="bi bi-door-open"></i> {{ subtituloPodium }}</span>
+  </div>
+
+  <!-- Leyenda Cromática Formal Institucional -->
+  <div class="legend-bar">
+    <div class="legend-item">
+      <span class="legend-dot dot-disp"></span>
+      <span>Disponible</span>
+    </div>
+    <div class="legend-item">
+      <span class="legend-dot dot-ocup"></span>
+      <span>Ocupada en Turno</span>
+    </div>
+    <div class="legend-item">
+      <span class="legend-dot dot-res"></span>
+      <span>Reservada Académica</span>
+    </div>
+    <div class="legend-item">
+      <span class="legend-dot dot-mant"></span>
+      <span><i class="bi bi-wrench-adjustable"></i> En Mantenimiento</span>
+    </div>
+    <div class="legend-item">
+      <span class="legend-dot dot-doc"></span>
+      <span><i class="bi bi-person-workspace"></i> Estación Docente</span>
+    </div>
+    @if (modo === 'editor') {
+      <div class="legend-item legend-hint">
+        <i class="bi bi-hand-index-thumb"></i> Arrastre o haga clic para reubicar puestos
+      </div>
+    }
+  </div>
+
+  <!-- Matriz 2D de la Cuadrícula -->
+  <div class="grid-scroll-wrapper">
+    <div
+      class="grid-matrix"
+      [style.gridTemplateColumns]="'repeat(' + columnas + ', minmax(110px, 1fr))'"
+      [style.gridTemplateRows]="'repeat(' + filas + ', 115px)'"
+    >
+      @for (fila of filasArray(); track fila) {
+        @for (col of columnasArray(); track col) {
+          @let pc = getPc(fila, col);
+          @if (pc) {
+            <!-- Celda con Estación de Cómputo -->
+            <div
+              class="grid-cell"
+              [class.cell-drop-target]="dragOverCoord === (fila + '-' + col)"
+              (dragover)="onDragOver($event, fila, col)"
+              (dragleave)="onDragLeave()"
+              (drop)="onDrop($event, fila, col)"
+            >
+              <div
+                class="workstation-card"
+                [class.pc-disp]="pc.estado_actual === 'DISPONIBLE' && !pc.maquina_docente"
+                [class.pc-ocup]="pc.estado_actual === 'OCUPADA' && !pc.maquina_docente"
+                [class.pc-res]="pc.estado_actual === 'RESERVADA' && !pc.maquina_docente"
+                [class.pc-mant]="pc.estado_actual === 'EN_MANTENIMIENTO' && !pc.maquina_docente"
+                [class.pc-docente]="pc.maquina_docente"
+                [class.workstation-selected]="pcSeleccionada?.id_computadora === pc.id_computadora"
+                [attr.draggable]="modo === 'editor' ? 'true' : null"
+                (dragstart)="onDragStart($event, pc)"
+                (click)="onCardClick(pc)"
+                [title]="modo === 'editor' ? 'Fila ' + fila + ', Columna ' + col + ' - Clic para reubicar' : pc.codigo_equipo + ' (' + pc.estado_actual + ')'"
+              >
+                <!-- ================= MODO EDITOR ================= -->
+                @if (modo === 'editor') {
+                  <!-- Icono según tipo -->
+                  <div class="pc-icon">
+                    @if (pc.maquina_docente) {
+                      <i class="bi bi-person-workspace icon-doc"></i>
+                    } @else if (pc.estado_actual === 'DISPONIBLE') {
+                      <i class="bi bi-display icon-disp"></i>
+                    } @else if (pc.estado_actual === 'OCUPADA') {
+                      <i class="bi bi-display icon-ocup"></i>
+                    } @else if (pc.estado_actual === 'RESERVADA') {
+                      <i class="bi bi-calendar-check-fill icon-res"></i>
+                    } @else {
+                      <i class="bi bi-wrench-adjustable-circle-fill icon-mant"></i>
+                    }
+                  </div>
+
+                  <!-- Código del Equipo -->
+                  <div class="pc-code" [title]="pc.codigo_equipo">
+                    {{ pc.codigo_equipo }}
+                  </div>
+
+                  <!-- Metadatos (Horas y Periféricos) -->
+                  <div class="pc-meta">
+                    <span [title]="tooltipHorasUso(pc.horas_uso_acumuladas)">
+                      <i class="bi bi-clock-history"></i> {{ formatHorasUso(pc.horas_uso_acumuladas) }}
+                    </span>
+                    <button
+                      type="button"
+                      class="pc-peripherals-count"
+                      (click)="verPerifericos.emit(pc); $event.stopPropagation()"
+                      [title]="'Ver periféricos asignados a ' + pc.codigo_equipo"
+                    >
+                      <i class="bi bi-cpu"></i> {{ pc.perifericos_conteo ?? pc.perifericos?.length ?? 0 }}
+                    </button>
+                  </div>
+
+                  <!-- Acciones rápidas -->
+                  <div class="pc-actions" (click)="$event.stopPropagation()">
+                    <button
+                      class="btn-pc-tool"
+                      (click)="editarPc.emit(pc)"
+                      title="Editar Equipo"
+                    >
+                      <i class="bi bi-pencil"></i>
+                    </button>
+                    <button
+                      class="btn-pc-tool tool-del"
+                      (click)="eliminarPc.emit(pc)"
+                      title="Desactivar Equipo"
+                    >
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </div>
+                }
+
+                <!-- ================= MODO MONITOR ================= -->
+                @if (modo === 'monitor') {
+                  <!-- Header: Código y Badge -->
+                  <div class="mon-header">
+                    <span class="mon-code" [title]="pc.codigo_equipo">
+                      {{ pc.codigo_equipo }}
+                    </span>
+                    @if (pc.maquina_docente) {
+                      <span class="badge-tag tag-doc" title="Estación de Docente">DOC</span>
+                    } @else if (pc.estado_actual === 'OCUPADA' && pc.sesion_activa) {
+                      <span class="badge-tag tag-timer font-monospace" title="Minutos de uso transcurridos">
+                        <i class="bi bi-clock-history"></i> {{ pc.sesion_activa.minutos_transcurridos ?? 1 }}m
+                      </span>
+                    } @else if (pc.estado_actual === 'DISPONIBLE') {
+                      <span class="badge-tag tag-disp">DISP</span>
+                    } @else if (pc.estado_actual === 'RESERVADA') {
+                      <span class="badge-tag tag-res">RES</span>
+                    } @else if (pc.estado_actual === 'EN_MANTENIMIENTO') {
+                      <span class="badge-tag tag-mant" title="En Mantenimiento"><i class="bi bi-wrench-adjustable"></i></span>
+                    }
+                  </div>
+
+                  <!-- Body: Estado / Datos de Estudiante / Asignar -->
+                  <div class="mon-body">
+                    @if (pc.maquina_docente) {
+                      <div class="status-center doc-center">
+                        <i class="bi bi-person-workspace"></i>
+                        <span>Docente</span>
+                      </div>
+                    } @else if (pc.estado_actual === 'DISPONIBLE') {
+                      <div class="disp-center">
+                        <button
+                          class="btn-mon-assign"
+                          (click)="asignar.emit(pc); $event.stopPropagation()"
+                          title="Asignar puesto a estudiante"
+                        >
+                          <i class="bi bi-person-plus-fill"></i> Asignar
+                        </button>
+                        <span class="hours-hint font-monospace" [title]="tooltipHorasUso(pc.horas_uso_acumuladas)">
+                          {{ formatHorasUso(pc.horas_uso_acumuladas) }} uso
+                        </span>
+                      </div>
+                    } @else if (pc.estado_actual === 'OCUPADA' && pc.sesion_activa) {
+                      @let s = pc.sesion_activa;
+                      <div
+                        class="occupied-center"
+                        [title]="'Estudiante: ' + s.estudiante_nombres + (s.motivo_descrip ? ' | Motivo: ' + s.motivo_descrip : '')"
+                      >
+                        <div class="student-ru font-monospace">
+                          <i class="bi bi-person-badge"></i> {{ s.registro_estudiante }}
+                        </div>
+                      </div>
+                    } @else if (pc.estado_actual === 'RESERVADA') {
+                      <div class="status-center res-center">
+                        <i class="bi bi-calendar-check-fill"></i>
+                        <span>Reservada</span>
+                      </div>
+                    } @else if (pc.estado_actual === 'EN_MANTENIMIENTO') {
+                      <div class="status-center mant-center">
+                        <i class="bi bi-wrench-adjustable-circle-fill"></i>
+                        <span>En Taller</span>
+                      </div>
+                    }
+                  </div>
+
+                  <!-- Footer: Botones de Liberación / Detalle en modo Monitor -->
+                  @if (pc.estado_actual === 'OCUPADA' && pc.sesion_activa) {
+                    <div class="mon-footer" (click)="$event.stopPropagation()">
+                      <button
+                        class="btn-mon-release"
+                        (click)="liberar.emit(pc)"
+                        title="Liberar puesto (Finalizar sesión)"
+                      >
+                        <i class="bi bi-box-arrow-right"></i> Liberar
+                      </button>
+                      <button
+                        class="btn-mon-detail"
+                        (click)="verDetalle.emit(pc)"
+                        title="Ver detalle del estudiante"
+                      >
+                        <i class="bi bi-info-circle"></i>
+                      </button>
+                    </div>
+                  }
+                }
+              </div>
+            </div>
+          } @else {
+            <!-- Celda Vacía -->
+            <div
+              class="grid-cell empty-cell"
+              [class.cell-drop-target]="dragOverCoord === (fila + '-' + col)"
+              [class.empty-cell-editor]="modo === 'editor'"
+              [class.empty-cell-monitor]="modo === 'monitor'"
+              (dragover)="onDragOver($event, fila, col)"
+              (dragleave)="onDragLeave()"
+              (drop)="onDrop($event, fila, col)"
+              (click)="onCellClick(fila, col)"
+              [title]="modo === 'editor' ? 'Clic para registrar nueva PC en (' + fila + ', ' + col + ')' : 'Espacio libre (' + fila + ', ' + col + ')'"
+            >
+              @if (modo === 'editor') {
+                <i class="bi bi-plus-lg"></i>
+                <span class="coord-label">({{ fila }}, {{ col }})</span>
+              } @else {
+                <span class="coord-label font-monospace">({{ fila }}, {{ col }})</span>
+              }
+            </div>
+          }
+        }
+      }
+    </div>
+  </div>
+</div>
