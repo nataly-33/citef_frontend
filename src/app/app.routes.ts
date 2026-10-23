@@ -15,6 +15,8 @@ import { InventarioPerifericosComponent } from './pages/infraestructura/inventar
 import { MonitorSalaComponent } from './pages/ocupacion/monitor-sala/monitor-sala.component';
 import { AsistenciasComponent } from './pages/ocupacion/asistencias/asistencias.component';
 import { InicioComponent } from './pages/inicio/inicio.component';
+import { CalendarioReservasComponent } from './pages/reservas/calendario/calendario-reservas.component';
+import { BandejaGestionReservasComponent } from './pages/reservas/gestion/bandeja-gestion-reservas.component';
 import { authGuard } from './core/guards/auth.guard';
 import { permissionGuard } from './core/guards/permission.guard';
 
@@ -108,6 +110,28 @@ export const routes: Routes = [
         component: AsistenciasComponent,
         canActivate: [permissionGuard(['TIEMPOREAL_ASISTENCIAS'])],
       },
+      // MÓDULO 5: Reservas Académicas y Disponibilidad
+      {
+        path: 'reservas/calendario',
+        component: CalendarioReservasComponent,
+        canActivate: [
+          permissionGuard([
+            'RESERVAS_CONSULTAR',
+            'RESERVAS_SOLICITAR',
+            'RESERVAS_GESTIONAR',
+          ]),
+        ],
+      },
+      {
+        path: 'reservas/gestion',
+        component: BandejaGestionReservasComponent,
+        canActivate: [permissionGuard(['RESERVAS_GESTIONAR'])],
+      },
+      {
+        path: 'reservas',
+        redirectTo: 'reservas/calendario',
+        pathMatch: 'full',
+      },
       // Aliases directos para facilidad de navegación
       { path: 'academicos', redirectTo: 'catalogos/academicos', pathMatch: 'full' },
       { path: 'operativos', redirectTo: 'catalogos/operativos', pathMatch: 'full' },
@@ -118,6 +142,8 @@ export const routes: Routes = [
       { path: 'perifericos', redirectTo: 'infraestructura/perifericos', pathMatch: 'full' },
       { path: 'monitoreo', redirectTo: 'ocupacion/monitoreo', pathMatch: 'full' },
       { path: 'asistencias', redirectTo: 'ocupacion/asistencias', pathMatch: 'full' },
+      { path: 'calendario', redirectTo: 'reservas/calendario', pathMatch: 'full' },
+      { path: 'gestion-reservas', redirectTo: 'reservas/gestion', pathMatch: 'full' },
       { path: '', redirectTo: 'inicio', pathMatch: 'full' },
     ],
   },
@@ -126,6 +152,9 @@ export const routes: Routes = [
   { path: 'infraestructura/perifericos', redirectTo: 'admin/infraestructura/perifericos', pathMatch: 'full' },
   { path: 'ocupacion/monitoreo', redirectTo: 'admin/ocupacion/monitoreo', pathMatch: 'full' },
   { path: 'ocupacion/asistencias', redirectTo: 'admin/ocupacion/asistencias', pathMatch: 'full' },
+  { path: 'reservas/calendario', redirectTo: 'admin/reservas/calendario', pathMatch: 'full' },
+  { path: 'reservas/gestion', redirectTo: 'admin/reservas/gestion', pathMatch: 'full' },
+  { path: 'reservas', redirectTo: 'admin/reservas/calendario', pathMatch: 'full' },
   { path: '', redirectTo: 'login', pathMatch: 'full' },
   { path: '**', redirectTo: 'login' },
 ];

@@ -1,0 +1,1119 @@
+<div class="bandeja-container">
+  <!-- ENCABEZADO Y KPIS RESUMEN -->
+  <div class="page-header">
+    <div class="header-left">
+      <h1>
+        <i class="bi bi-inbox-fill"></i> Bandeja de Solicitudes de Reserva
+      </h1>
+      <p class="subtitle">
+        Gestión y dictamen formal de solicitudes docentes para aulas de cómputo (CU20)
+      </p>
+    </div>
+    <div class="header-right">
+      <button class="btn-primary" (click)="abrirModalNueva()" title="Registrar nueva reserva">
+        <i class="bi bi-plus-circle-fill"></i> Nueva Solicitud
+      </button>
+    </div>
+  </div>
+
+  <!-- BANNERS DE ALERTA GLOBAL -->
+  @if (mensajeExito()) {
+    <div class="alert-banner alert-success">
+      <i class="bi bi-check-circle-fill"></i>
+      <span>{{ mensajeExito() }}</span>
+      <button class="btn-close-alert" (click)="mensajeExito.set(null)" title="Cerrar">
+        <i class="bi bi-x"></i>
+      </button>
+    </div>
+  }
+
+  @if (mensajeError()) {
+    <div class="alert-banner alert-danger">
+      <i class="bi bi-exclamation-triangle-fill"></i>
+      <span>{{ mensajeError() }}</span>
+      <button class="btn-close-alert" (click)="mensajeError.set(null)" title="Cerrar">
+        <i class="bi bi-x"></i>
+      </button>
+    </div>
+  }
+
+  <!-- KPIS DE GESTIÓN -->
+  <div class="kpi-strip">
+    <div class="kpi-box box-total">
+      <div class="kpi-icon"><i class="bi bi-journal-text"></i></div>
+      <div class="kpi-info">
+        <span class="kpi-val">{{ totalRegistros() }}</span>
+        <span class="kpi-lbl">Total Solicitudes</span>
+      </div>
+    </div>
+
+    <div class="kpi-box box-pending" [class.box-highlight]="conteoPendientes() > 0">
+      <div class="kpi-icon"><i class="bi bi-hourglass-split"></i></div>
+      <div class="kpi-info">
+        <span class="kpi-val">{{ conteoPendientes() }}</span>
+        <span class="kpi-lbl">Pendientes de Dictamen</span>
+      </div>
+    </div>
+
+    <div class="kpi-box box-approved">
+      <div class="kpi-icon"><i class="bi bi-check2-circle"></i></div>
+      <div class="kpi-info">
+        <span class="kpi-val">{{ conteoAprobadas() }}</span>
+        <span class="kpi-lbl">Aprobadas</span>
+      </div>
+    </div>
+
+    <div class="kpi-box box-rejected">
+      <div class="kpi-icon"><i class="bi bi-x-octagon"></i></div>
+      <div class="kpi-info">
+        <span class="kpi-val">{{ conteoRechazadas() }}</span>
+        <span class="kpi-lbl">Rechazadas / Canceladas</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- BARRA DE FILTROS AVANZADOS (REGLA 4) -->
+  <div class="filter-card">
+    <div class="filter-row">
+      <!-- Búsqueda textual -->
+      <div class="filter-col col-search">
+        <label for="filtroTexto">Buscar Solicitud:</label>
+        <div class="search-input-wrapper">
+          <i class="bi bi-search search-icon"></i>
+          <input
+            id="filtroTexto"
+            type="text"
+            class="form-control"
+            placeholder="Docente, materia, sigla o tema..."
+            [ngModel]="filtroBusqueda()"
+            (ngModelChange)="filtroBusqueda.set($event)"
+            (keydown.enter)="buscar()"
+          />
+        </div>
+      </div>
+
+      <!-- Filtro Sala -->
+      <div class="filter-col">
+        <label for="filtroSalaSel">Laboratorio:</label>
+        <select
+          id="filtroSalaSel"
+          class="form-control"
+          [ngModel]="filtroSala()"
+          (ngModelChange)="filtroSala.set($event)"
+        >
+          <option [ngValue]="undefined">Todos los laboratorios</option>
+          @for (s of salas(); track s.id_sala) {
+            <option [ngValue]="s.id_sala">{{ s.codigo_sala }} (Piso {{ s.piso }})</option>
+          }
+        </select>
+      </div>
+
+      <!-- Filtro Estado -->
+      <div class="filter-col">
+        <label for="filtroEstadoSel">Estado:</label>
+        <select
+          id="filtroEstadoSel"
+          class="form-control"
+          [ngModel]="filtroEstado()"
+          (ngModelChange)="filtroEstado.set($event)"
+        >
+          <option [ngValue]="undefined">Todos los estados</option>
+          <option value="PENDIENTE">PENDIENTE</option>
+          <option value="APROBADA">APROBADA</option>
+          <option value="RECHAZADA">RECHAZADA</option>
+          <option value="CANCELADA">CANCELADA</option>
+        </select>
+      </div>
+
+      <!-- Fecha Desde -->
+      <div class="filter-col">
+        <label for="filtroFecDesde">Desde:</label>
+        <input
+          id="filtroFecDesde"
+          type="date"
+          class="form-control"
+          [ngModel]="filtroFechaDesde()"
+          (ngModelChange)="filtroFechaDesde.set($event)"
+        />
+      </div>
+
+      <!-- Fecha Hasta -->
+      <div class="filter-col">
+        <label for="filtroFecHasta">Hasta:</label>
+        <input
+          id="filtroFecHasta"
+          type="date"
+          class="form-control"
+          [ngModel]="filtroFechaHasta()"
+          (ngModelChange)="filtroFechaHasta.set($event)"
+        />
+      </div>
+
+      <!-- Botones Buscar y Limpiar -->
+      <div class="filter-actions">
+        <button type="button" class="btn-filter-search" (click)="buscar()" title="Ejecutar búsqueda">
+          <i class="bi bi-search"></i> Buscar
+        </button>
+        <button type="button" class="btn-filter-clear" (click)="limpiarFiltros()" title="Limpiar todos los filtros">
+          <i class="bi bi-arrow-counterclockwise"></i> Limpiar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TABLA DE SOLICITUDES FORMAL -->
+  <div class="table-card">
+    <div class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th class="th-id"># ID</th>
+            <th class="th-fecha">Fecha y Horario</th>
+            <th class="th-sala">Sala</th>
+            <th class="th-docente">Docente Titular</th>
+            <th class="th-materia">Materia / Práctica</th>
+            <th class="th-alumnos">Alumnos</th>
+            <th class="th-estado">Estado</th>
+            <th class="th-acciones text-center">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          @if (cargando()) {
+            <tr>
+              <td colspan="8" class="text-center py-4 text-muted">
+                <i class="bi bi-arrow-repeat spin"></i> Cargando solicitudes de reserva...
+              </td>
+            </tr>
+          } @else if (reservas().length === 0) {
+            <tr>
+              <td colspan="8" class="text-center py-4 text-muted">
+                <i class="bi bi-inbox"></i> No se encontraron solicitudes que coincidan con los criterios de búsqueda.
+              </td>
+            </tr>
+          } @else {
+            @for (item of reservas(); track item.id_reserva) {
+              <tr [class.row-pending]="item.estado === 'PENDIENTE'">
+                <td class="font-monospace font-bold text-center">#{{ item.id_reserva }}</td>
+                <td>
+                  <div class="date-cell">
+                    <span class="date-day font-bold">{{ item.fecha_reserva }}</span>
+                    <span class="date-time font-monospace text-muted">
+                      <i class="bi bi-clock"></i> {{ item.hora_inicio }} - {{ item.hora_fin }}
+                    </span>
+                  </div>
+                </td>
+                <td>
+                  <span class="room-pill font-monospace" [title]="item.sala?.nombre">
+                    {{ item.sala?.codigo_sala }}
+                  </span>
+                </td>
+                <td>
+                  <div class="docente-cell">
+                    <strong class="docente-name">
+                      {{ getNombreDocenteReserva(item) }}
+                    </strong>
+                  </div>
+                </td>
+                <td>
+                  <div class="materia-cell">
+                    <div>
+                      @if (item.tipo_reserva === 'EXAMEN') {
+                        <span class="badge-tag-examen me-1"><i class="bi bi-file-earmark-text-fill"></i> EXAMEN</span>
+                      }
+                      <strong class="materia-sigla">{{ item.materia?.sigla }}</strong> — {{ item.materia?.nombre }}
+                    </div>
+                    <span class="practice-topic text-muted" [title]="item.tema_practica">
+                      {{ item.tema_practica }}
+                    </span>
+                  </div>
+                </td>
+                <td class="text-center">
+                  <span class="badge-alumnos-count">
+                    <i class="bi bi-people"></i> {{ item.cant_estimada_alumnos }}
+                  </span>
+                </td>
+                <td>
+                  <div class="status-cell-wrap">
+                    <span class="badge-status" [class]="'badge-status-' + item.estado.toLowerCase()">
+                      {{ item.estado }}
+                    </span>
+                    @if (item.editada) {
+                      <span class="dot-editada-table" title="Solicitud modificada pendiente de dictamen formal"></span>
+                    }
+                  </div>
+                </td>
+                <td class="text-center">
+                  <div class="action-buttons-group">
+                    <!-- Ver Detalle -->
+                    <button
+                      type="button"
+                      class="btn-row-action btn-view"
+                      (click)="abrirModalDetalle(item)"
+                      title="Ver detalle completo"
+                    >
+                      <i class="bi bi-eye"></i>
+                    </button>
+
+                    <!-- Aprobar / Rechazar (Jefatura) -->
+                    @if (item.estado === 'PENDIENTE' && authService.hasPermission('RESERVAS_GESTIONAR')) {
+                      <button
+                        type="button"
+                        class="btn-row-action btn-approve"
+                        (click)="abrirModalDictamen(item, 'APROBAR')"
+                        title="Aprobar solicitud de reserva"
+                      >
+                        <i class="bi bi-check-lg"></i>
+                      </button>
+
+                      <button
+                        type="button"
+                        class="btn-row-action btn-reject"
+                        (click)="abrirModalDictamen(item, 'RECHAZAR')"
+                        title="Rechazar solicitud de reserva"
+                      >
+                        <i class="bi bi-x-lg"></i>
+                      </button>
+                    }
+
+                    <!-- Editar (Docente Titular o Administrador) -->
+                    @if (puedeEditarReserva(item)) {
+                      <button
+                        type="button"
+                        class="btn-row-action btn-edit-table"
+                        (click)="abrirModalEditar(item)"
+                        title="Modificar reserva"
+                      >
+                        <i class="bi bi-pencil"></i>
+                      </button>
+                    }
+
+                    <!-- Cancelar (Solo Docente Titular) -->
+                    @if (puedeCancelarReserva(item)) {
+                      <button
+                        type="button"
+                        class="btn-row-action btn-cancel-row"
+                        (click)="abrirModalCancelar(item)"
+                        title="Cancelar reserva"
+                      >
+                        <i class="bi bi-slash-circle"></i>
+                      </button>
+                    }
+                  </div>
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <!-- PAGINACIÓN COMPARTIDA DE 15 FILAS A LA DERECHA (REGLA 8) -->
+    <div class="table-pagination-footer">
+      <app-pagination
+        [totalRegistros]="totalRegistros()"
+        [tamanoPagina]="limitePagina"
+        [paginaActual]="paginaActual()"
+        (paginaCambiada)="cambiarPagina($event)"
+      ></app-pagination>
+    </div>
+  </div>
+</div>
+
+<!-- ================= MODAL DETALLE ================= -->
+@if (modalDetalleVisible()) {
+  <div class="modal-backdrop" (click)="cerrarModalDetalle()">
+    <div class="modal-card modal-lg" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>
+          <i class="bi bi-info-circle-fill"></i> Detalle de Reserva Académica #{{ reservaSeleccionada()?.id_reserva }}
+        </h2>
+        <button class="btn-close-modal" (click)="cerrarModalDetalle()" title="Cerrar">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        @if (reservaSeleccionada(); as r) {
+          <div class="detail-grid">
+            <div class="detail-row">
+              <span class="detail-label">Estado de la Solicitud:</span>
+              <div class="d-flex align-items-center gap-2">
+                <span class="badge-status" [class]="'badge-status-' + r.estado.toLowerCase()">
+                  {{ r.estado }}
+                </span>
+                @if (r.editada) {
+                  <span class="badge-editada-alert">
+                    <i class="bi bi-exclamation-circle-fill"></i> Modificada (Requiere Revisión)
+                  </span>
+                }
+              </div>
+            </div>
+
+            <div class="detail-row">
+              <span class="detail-label">Tipo de Actividad:</span>
+              <span class="detail-value">
+                @if (r.tipo_reserva === 'EXAMEN') {
+                  <span class="badge-tipo-examen-detail">
+                    <i class="bi bi-file-earmark-text-fill"></i> Examen / Evaluación (Prioritaria)
+                  </span>
+                } @else {
+                  <span class="badge-tipo-clase-detail">
+                    <i class="bi bi-mortarboard-fill"></i> Cátedra Curricular Ordinaria
+                  </span>
+                }
+              </span>
+            </div>
+
+            <div class="detail-row">
+              <span class="detail-label">Laboratorio / Aula:</span>
+              <span class="detail-value font-bold text-primary">
+                {{ r.sala?.codigo_sala }} — {{ r.sala?.nombre }} (Piso {{ r.sala?.piso }})
+              </span>
+            </div>
+
+            <div class="detail-row">
+              <span class="detail-label">Fecha y Horario:</span>
+              <span class="detail-value font-monospace">
+                <i class="bi bi-calendar-event"></i> {{ r.fecha_reserva }} |
+                <i class="bi bi-clock"></i> {{ r.hora_inicio }} a {{ r.hora_fin }}
+              </span>
+            </div>
+
+            <div class="detail-row">
+              <span class="detail-label">Docente Responsable:</span>
+              <span class="detail-value">
+                <strong>{{ getNombreDocenteReserva(r) }}</strong>
+              </span>
+            </div>
+
+            <div class="detail-row">
+              <span class="detail-label">Materia Curricular:</span>
+              <span class="detail-value">
+                {{ r.materia?.sigla }} — {{ r.materia?.nombre }}
+              </span>
+            </div>
+
+            <div class="detail-row">
+              <span class="detail-label">Tema / Justificación:</span>
+              <span class="detail-value">{{ r.tema_practica }}</span>
+            </div>
+
+            <div class="detail-row">
+              <span class="detail-label">Alumnos Estimados:</span>
+              <span class="detail-value">
+                {{ r.cant_estimada_alumnos }} alumnos (Capacidad de aula: {{ r.sala?.cant_estudiantes }} puestos)
+              </span>
+            </div>
+
+            @if (r.obs_resolucion) {
+              <div class="detail-row resolution-box">
+                <span class="detail-label">Dictamen de Jefatura:</span>
+                <span class="detail-value">{{ r.obs_resolucion }}</span>
+              </div>
+            }
+
+            @if (r.notificacion_docente) {
+              <div class="detail-row notice-box">
+                <span class="detail-label"><i class="bi bi-bell-fill text-warning"></i> Nota / Notificación:</span>
+                <span class="detail-value font-bold text-dark">{{ r.notificacion_docente }}</span>
+              </div>
+            }
+
+            @if (r.administrador) {
+              <div class="detail-row">
+                <span class="detail-label">Dictaminado Por:</span>
+                <span class="detail-value">
+                  {{ r.administrador.nombres }} {{ r.administrador.apellidos }} ({{ r.administrador.correo_institucional }})
+                </span>
+              </div>
+            }
+
+            <div class="detail-row">
+              <span class="detail-label">Fecha de Solicitud:</span>
+              <span class="detail-value font-monospace text-muted">
+                {{ r.creado_en | date:'dd/MM/yyyy HH:mm:ss' }}
+              </span>
+            </div>
+          </div>
+        }
+      </div>
+
+      <div class="modal-footer modal-footer-spaced">
+        <div class="footer-left">
+          @if (reservaSeleccionada(); as r) {
+            @if (r.estado === 'PENDIENTE' && authService.hasPermission('RESERVAS_GESTIONAR')) {
+              <button class="btn-action-reject" (click)="cerrarModalDetalle(); abrirModalDictamen(r, 'RECHAZAR')">
+                <i class="bi bi-x-circle-fill"></i> Rechazar
+              </button>
+              <button class="btn-action-approve" (click)="cerrarModalDetalle(); abrirModalDictamen(r, 'APROBAR')">
+                <i class="bi bi-check-circle-fill"></i> Aprobar Solicitud
+              </button>
+            }
+
+            @if (puedeEditarReserva(r)) {
+              <button class="btn-action-edit-res" (click)="cerrarModalDetalle(); abrirModalEditar(r)">
+                <i class="bi bi-pencil-square"></i> Editar Reserva
+              </button>
+            }
+
+            @if (puedeCancelarReserva(r) && (r.estado === 'PENDIENTE' || r.estado === 'APROBADA')) {
+              <button class="btn-action-cancel-res" (click)="cerrarModalDetalle(); abrirModalCancelar(r)">
+                <i class="bi bi-slash-circle"></i> Cancelar Reserva
+              </button>
+            }
+          }
+        </div>
+        <div class="footer-right">
+          <button class="btn-modal-close" (click)="cerrarModalDetalle()">
+            Cerrar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ================= MODAL DICTAMEN (APROBAR / RECHAZAR) ================= -->
+@if (modalDictamenVisible()) {
+  <div class="modal-backdrop" (click)="modalDictamenVisible.set(false)">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-header" [class.header-danger]="accionDictamen() === 'RECHAZAR'">
+        <h2>
+          <i class="bi" [class.bi-check-circle-fill]="accionDictamen() === 'APROBAR'" [class.bi-x-circle-fill]="accionDictamen() === 'RECHAZAR'"></i>
+          {{ accionDictamen() === 'APROBAR' ? 'Aprobar Reserva #' + reservaSeleccionada()?.id_reserva : 'Rechazar Reserva #' + reservaSeleccionada()?.id_reserva }}
+        </h2>
+        <button class="btn-close-modal" (click)="modalDictamenVisible.set(false)">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <app-modal-alert
+          [mensaje]="errorDictamen()"
+          tipo="danger"
+          (cerrar)="errorDictamen.set(null)"
+        ></app-modal-alert>
+
+        <p class="dictamen-prompt">
+          @if (accionDictamen() === 'APROBAR') {
+            ¿Está seguro de autorizar el uso de la sala
+            <strong>{{ reservaSeleccionada()?.sala?.codigo_sala }}</strong> para el docente
+            <strong>{{ reservaSeleccionada()?.codigo_docente }}</strong> el día
+            <strong>{{ reservaSeleccionada()?.fecha_reserva }}</strong> ({{ reservaSeleccionada()?.hora_inicio }} a {{ reservaSeleccionada()?.hora_fin }})?
+          } @else {
+            Indique la justificación formal obligatoria para el rechazo de la solicitud:
+          }
+        </p>
+
+        <div class="form-group">
+          <label for="inputDictamenGestion">
+            {{ accionDictamen() === 'APROBAR' ? 'Observaciones o Instrucciones (Opcional):' : 'Motivo del Rechazo *:' }}
+          </label>
+          <textarea
+            id="inputDictamenGestion"
+            class="form-control"
+            rows="3"
+            [class.input-error]="errorDictamen() && accionDictamen() === 'RECHAZAR'"
+            placeholder="Ingrese el dictamen institucional..."
+            [ngModel]="dictamenObs()"
+            (ngModelChange)="dictamenObs.set($event)"
+          ></textarea>
+          @if (errorDictamen() && accionDictamen() === 'RECHAZAR') {
+            <span class="field-error-text">{{ errorDictamen() }}</span>
+          }
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-modal-cancel" (click)="modalDictamenVisible.set(false)">
+          Cancelar
+        </button>
+        <button
+          class="btn-modal-save"
+          [class.btn-danger]="accionDictamen() === 'RECHAZAR'"
+          [disabled]="guardandoDictamen()"
+          (click)="confirmarDictamen()"
+        >
+          @if (guardandoDictamen()) {
+            <i class="bi bi-arrow-repeat spin"></i> Procesando...
+          } @else {
+            <i class="bi" [class.bi-check-lg]="accionDictamen() === 'APROBAR'" [class.bi-x-lg]="accionDictamen() === 'RECHAZAR'"></i>
+            {{ accionDictamen() === 'APROBAR' ? 'Confirmar Aprobación' : 'Confirmar Rechazo' }}
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ================= MODAL CANCELAR ================= -->
+@if (modalCancelarVisible()) {
+  <div class="modal-backdrop" (click)="modalCancelarVisible.set(false)">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-header header-warning">
+        <h2>
+          <i class="bi bi-exclamation-triangle-fill"></i> Cancelar Reserva #{{ reservaSeleccionada()?.id_reserva }}
+        </h2>
+        <button class="btn-close-modal" (click)="modalCancelarVisible.set(false)">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <app-modal-alert
+          [mensaje]="errorCancelar()"
+          tipo="danger"
+          (cerrar)="errorCancelar.set(null)"
+        ></app-modal-alert>
+
+        <p>
+          ¿Desea cancelar esta reserva programada para el día
+          <strong>{{ reservaSeleccionada()?.fecha_reserva }}</strong>? El horario quedará disponible de inmediato.
+        </p>
+
+        <div class="form-group">
+          <label for="inputCancelMotivo">Motivo de Cancelación:</label>
+          <input
+            id="inputCancelMotivo"
+            type="text"
+            class="form-control"
+            placeholder="Ej: Cancelación solicitada por docente titular..."
+            [ngModel]="motivoCancelacion()"
+            (ngModelChange)="motivoCancelacion.set($event)"
+          />
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-modal-cancel" (click)="modalCancelarVisible.set(false)">
+          Volver
+        </button>
+        <button
+          class="btn-modal-save btn-danger"
+          [disabled]="guardandoCancelar()"
+          (click)="confirmarCancelar()"
+        >
+          @if (guardandoCancelar()) {
+            <i class="bi bi-arrow-repeat spin"></i> Cancelando...
+          } @else {
+            <i class="bi bi-trash"></i> Confirmar Cancelación
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ================= MODAL NUEVA RESERVA DIRECTA ================= -->
+@if (modalNuevaVisible()) {
+  <div class="modal-backdrop" (click)="modalNuevaVisible.set(false)">
+    <div class="modal-card modal-lg" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>
+          <i class="bi bi-calendar-plus-fill"></i> Registrar Nueva Reserva de Laboratorio
+        </h2>
+        <button class="btn-close-modal" (click)="modalNuevaVisible.set(false)">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <app-modal-alert
+          [mensaje]="errorNueva()"
+          tipo="danger"
+          (cerrar)="errorNueva.set(null)"
+        ></app-modal-alert>
+
+        @if (resultadoDisponibilidad(); as disp) {
+          <div
+            class="availability-feedback-box"
+            [class.feedback-available]="disp.disponible"
+            [class.feedback-conflict]="!disp.disponible"
+          >
+            <div class="feedback-icon">
+              <i class="bi" [class.bi-check-circle-fill]="disp.disponible" [class.bi-exclamation-octagon-fill]="!disp.disponible"></i>
+            </div>
+            <div class="feedback-text">
+              <strong>{{ disp.disponible ? 'Disponibilidad Confirmada' : 'Conflicto Horario Detectado' }}</strong>
+              <p>{{ disp.mensaje }}</p>
+            </div>
+          </div>
+        }
+
+        <div class="form-grid">
+          <!-- Sala(s) con soporte multi-sala -->
+          <div class="form-group full-width">
+            <label>Laboratorio(s) a Reservar <span class="req">*</span></label>
+            <div class="salas-pill-container">
+              @for (s of salas(); track s.id_sala) {
+                <button
+                  type="button"
+                  class="sala-pill"
+                  [class.pill-active]="esSalaSeleccionada(s.id_sala)"
+                  (click)="toggleSala(s.id_sala)"
+                >
+                  <i class="bi" [class.bi-check-circle-fill]="esSalaSeleccionada(s.id_sala)" [class.bi-circle]="!esSalaSeleccionada(s.id_sala)"></i>
+                  {{ s.codigo_sala }} (Cap: {{ s.cant_estudiantes }})
+                </button>
+              }
+            </div>
+            <div class="sala-selection-hint">
+              <span>Capacidad conjunta seleccionada: <strong>{{ capacidadTotalSeleccionada() }} puestos</strong></span>
+              @if (salasSeleccionadas().length > 1) {
+                <span class="multi-sala-notice">
+                  <i class="bi bi-info-circle"></i> Cátedra multi-sala activa (se generará una solicitud por cada sala seleccionada).
+                </span>
+              }
+            </div>
+            @if (erroresForm()['id_sala']) {
+              <span class="field-error-text">{{ erroresForm()['id_sala'] }}</span>
+            }
+          </div>
+
+          <!-- Docente Titular -->
+          <div class="form-group">
+            <label for="nuevoDocente">Docente Titular <span class="req">*</span></label>
+            @if (esUsuarioDocente()) {
+              <div class="docente-autofill-box">
+                <i class="bi bi-person-badge-fill"></i>
+                <div class="docente-autofill-info">
+                  <strong>{{ docenteActual() ? getNombreDocente(docenteActual()!) : (authService.currentUser()?.nombres + ' ' + authService.currentUser()?.apellidos) }}</strong>
+                  <span class="autofill-tag">Docente Titular (Asignado automáticamente)</span>
+                </div>
+              </div>
+            } @else {
+              <select
+                id="nuevoDocente"
+                class="form-control"
+                [class.input-error]="erroresForm()['codigo_docente']"
+                [ngModel]="formCodigoDocente()"
+                (ngModelChange)="formCodigoDocente.set($event)"
+              >
+                <option value="" disabled>Seleccione docente titular...</option>
+                @for (d of docentes(); track d.codigo) {
+                  <option [value]="d.codigo">
+                    {{ getNombreDocente(d) }}
+                  </option>
+                }
+              </select>
+            }
+            @if (erroresForm()['codigo_docente']) {
+              <span class="field-error-text">{{ erroresForm()['codigo_docente'] }}</span>
+            }
+          </div>
+
+          <!-- Materia Curricular con Buscador en Vivo -->
+          <div class="form-group">
+            <label for="nuevaMateria">Materia Curricular <span class="req">*</span></label>
+            <div class="materia-search-wrapper">
+              <div class="materia-input-box" (click)="dropdownMateriaAbierto.set(!dropdownMateriaAbierto())">
+                <i class="bi bi-search search-ico"></i>
+                <input
+                  id="nuevaMateria"
+                  type="text"
+                  class="form-control materia-search-input"
+                  [class.input-error]="erroresForm()['id_materia']"
+                  placeholder="Escriba sigla o nombre de materia..."
+                  [ngModel]="buscadorMateria()"
+                  (ngModelChange)="buscadorMateria.set($event); dropdownMateriaAbierto.set(true)"
+                  (focus)="dropdownMateriaAbierto.set(true)"
+                />
+                <i class="bi bi-chevron-down arrow-ico"></i>
+              </div>
+
+              @if (dropdownMateriaAbierto()) {
+                <div class="materia-dropdown-menu">
+                  @for (m of materiasFiltradas(); track m.id_materia) {
+                    <div
+                      class="materia-dropdown-item"
+                      [class.item-selected]="formMateriaId() === m.id_materia"
+                      (click)="seleccionarMateria(m)"
+                    >
+                      <span class="sigla-badge">{{ m.sigla }}</span>
+                      <span class="materia-name">{{ m.nombre }}</span>
+                    </div>
+                  }
+                  @if (materiasFiltradas().length === 0) {
+                    <div class="materia-dropdown-empty">
+                      No se encontraron materias que coincidan con la búsqueda.
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+            @if (erroresForm()['id_materia']) {
+              <span class="field-error-text">{{ erroresForm()['id_materia'] }}</span>
+            }
+          </div>
+
+          <div class="form-group">
+            <label for="nuevaFecha">Fecha Programada <span class="req">*</span></label>
+            <input
+              id="nuevaFecha"
+              type="date"
+              class="form-control"
+              [min]="fechaMinimaHoy"
+              [class.input-error]="erroresForm()['fecha_reserva']"
+              [ngModel]="formFecha()"
+              (ngModelChange)="formFecha.set($event); verificarDisponibilidadReactiva()"
+            />
+            @if (erroresForm()['fecha_reserva']) {
+              <span class="field-error-text">{{ erroresForm()['fecha_reserva'] }}</span>
+            }
+          </div>
+
+          <div class="form-group-horario">
+            <div class="horario-col">
+              <label for="nuevaHIni">Hora Inicio <span class="req">*</span></label>
+              <input
+                id="nuevaHIni"
+                type="time"
+                class="form-control font-monospace"
+                [ngModel]="formHoraInicio()"
+                (ngModelChange)="formHoraInicio.set($event); verificarDisponibilidadReactiva()"
+              />
+            </div>
+            <div class="horario-col">
+              <label for="nuevaHFin">Hora Fin <span class="req">*</span></label>
+              <input
+                id="nuevaHFin"
+                type="time"
+                class="form-control font-monospace"
+                [ngModel]="formHoraFin()"
+                (ngModelChange)="formHoraFin.set($event); verificarDisponibilidadReactiva()"
+              />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="nuevaAlumnos">Alumnos Estimados <span class="req">*</span></label>
+            <input
+              id="nuevaAlumnos"
+              type="number"
+              min="1"
+              max="60"
+              class="form-control"
+              [class.input-error]="erroresForm()['cant_estimada_alumnos']"
+              [ngModel]="formCantAlumnos()"
+              (ngModelChange)="formCantAlumnos.set($event); verificarDisponibilidadReactiva()"
+            />
+            @if (erroresForm()['cant_estimada_alumnos']) {
+              <span class="field-error-text">{{ erroresForm()['cant_estimada_alumnos'] }}</span>
+            }
+          </div>
+
+          <div class="form-group full-width">
+            <label for="nuevoTema">Tema Curricular / Práctica <span class="req">*</span></label>
+            <input
+              id="nuevoTema"
+              type="text"
+              class="form-control"
+              maxlength="150"
+              placeholder="Ej: Examen de Métricas y Regresión con Stata"
+              [class.input-error]="erroresForm()['tema_practica']"
+              [ngModel]="formTema()"
+              (ngModelChange)="formTema.set($event)"
+            />
+            @if (erroresForm()['tema_practica']) {
+              <span class="field-error-text">{{ erroresForm()['tema_practica'] }}</span>
+            }
+          </div>
+
+          <!-- Tipo de Reserva (Clase vs Examen) -->
+          <div class="form-group full-width">
+            <label>Tipo de Reserva Académica <span class="req">*</span></label>
+            <div class="tipo-reserva-selector">
+              <label class="radio-pill" [class.radio-pill-active]="formTipoReserva() === 'CLASE'">
+                <input
+                  type="radio"
+                  name="tipoReservaNueva"
+                  value="CLASE"
+                  [ngModel]="formTipoReserva()"
+                  (ngModelChange)="formTipoReserva.set($event)"
+                />
+                <i class="bi bi-mortarboard"></i>
+                <div class="radio-pill-content">
+                  <strong>Cátedra Ordinaria</strong>
+                  <small>Clase semanal regular de la asignatura</small>
+                </div>
+              </label>
+
+              <label class="radio-pill radio-pill-examen" [class.radio-pill-active]="formTipoReserva() === 'EXAMEN'">
+                <input
+                  type="radio"
+                  name="tipoReservaNueva"
+                  value="EXAMEN"
+                  [ngModel]="formTipoReserva()"
+                  (ngModelChange)="formTipoReserva.set($event)"
+                />
+                <i class="bi bi-file-earmark-text-fill"></i>
+                <div class="radio-pill-content">
+                  <strong>Evaluación / Examen</strong>
+                  <small>Prioridad alta: desplaza clases ordinarias de ser necesario</small>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- Recurrencia para todo el semestre -->
+          <div class="form-group full-width recurrence-panel">
+            <label class="checkbox-container">
+              <input
+                type="checkbox"
+                [ngModel]="formProgramarSemestre()"
+                (ngModelChange)="formProgramarSemestre.set($event)"
+              />
+              <span class="checkmark"></span>
+              <strong><i class="bi bi-repeat"></i> Programar recurrentemente para todo el semestre</strong>
+            </label>
+
+            @if (formProgramarSemestre()) {
+              <div class="recurrence-fields mt-3">
+                <div class="form-grid">
+                  <div class="form-group">
+                    <label>Fecha Conclusión del Semestre <span class="req">*</span></label>
+                    <input
+                      type="date"
+                      class="form-control"
+                      [min]="formFecha() || fechaMinimaHoy"
+                      [class.input-error]="erroresForm()['fecha_fin_semestre']"
+                      [ngModel]="formFechaFinSemestre()"
+                      (ngModelChange)="formFechaFinSemestre.set($event)"
+                    />
+                    @if (erroresForm()['fecha_fin_semestre']) {
+                      <span class="field-error-text">{{ erroresForm()['fecha_fin_semestre'] }}</span>
+                    }
+                  </div>
+
+                  <div class="form-group">
+                    <label>Días de Clase Semanal <span class="req">*</span></label>
+                    <div class="days-pills">
+                      <button
+                        type="button"
+                        class="btn-day-pill"
+                        [class.active]="formDiasSemana().includes(1)"
+                        (click)="toggleDiaSemana(1)"
+                      >Lun</button>
+                      <button
+                        type="button"
+                        class="btn-day-pill"
+                        [class.active]="formDiasSemana().includes(2)"
+                        (click)="toggleDiaSemana(2)"
+                      >Mar</button>
+                      <button
+                        type="button"
+                        class="btn-day-pill"
+                        [class.active]="formDiasSemana().includes(3)"
+                        (click)="toggleDiaSemana(3)"
+                      >Mié</button>
+                      <button
+                        type="button"
+                        class="btn-day-pill"
+                        [class.active]="formDiasSemana().includes(4)"
+                        (click)="toggleDiaSemana(4)"
+                      >Jue</button>
+                      <button
+                        type="button"
+                        class="btn-day-pill"
+                        [class.active]="formDiasSemana().includes(5)"
+                        (click)="toggleDiaSemana(5)"
+                      >Vie</button>
+                      <button
+                        type="button"
+                        class="btn-day-pill"
+                        [class.active]="formDiasSemana().includes(6)"
+                        (click)="toggleDiaSemana(6)"
+                      >Sáb</button>
+                    </div>
+                    @if (erroresForm()['dias_semana']) {
+                      <span class="field-error-text">{{ erroresForm()['dias_semana'] }}</span>
+                    }
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-modal-cancel" (click)="modalNuevaVisible.set(false)">
+          Cancelar
+        </button>
+        <button
+          class="btn-modal-save"
+          [disabled]="guardandoNueva() || (resultadoDisponibilidad() && !resultadoDisponibilidad()?.disponible)"
+          (click)="guardarNueva()"
+        >
+          @if (guardandoNueva()) {
+            <i class="bi bi-arrow-repeat spin"></i> Guardando...
+          } @else {
+            <i class="bi bi-check-circle-fill"></i> Registrar Reserva
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ================= MODAL EDITAR RESERVA ================= -->
+@if (modalEditarVisible()) {
+  <div class="modal-backdrop" (click)="modalEditarVisible.set(false)">
+    <div class="modal-card modal-lg" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>
+          <i class="bi bi-pencil-square"></i> Modificar Reserva #{{ editandoReservaId() }}
+        </h2>
+        <button class="btn-close-modal" (click)="modalEditarVisible.set(false)" title="Cerrar">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <app-modal-alert
+          [mensaje]="errorEdicion()"
+          tipo="danger"
+          (cerrar)="errorEdicion.set(null)"
+        ></app-modal-alert>
+
+        <div class="form-grid">
+          <!-- Sala -->
+          <div class="form-group">
+            <label for="editSalaGestion">Laboratorio / Sala <span class="req">*</span></label>
+            <select
+              id="editSalaGestion"
+              class="form-control"
+              [ngModel]="editSalaId()"
+              (ngModelChange)="editSalaId.set(+$event)"
+            >
+              @for (s of salas(); track s.id_sala) {
+                <option [value]="s.id_sala">
+                  {{ s.codigo_sala }} — {{ s.nombre }} ({{ s.cant_estudiantes }} puestos)
+                </option>
+              }
+            </select>
+          </div>
+
+          <!-- Tipo Reserva -->
+          <div class="form-group">
+            <label for="editTipoGestion">Tipo de Actividad <span class="req">*</span></label>
+            <select
+              id="editTipoGestion"
+              class="form-control"
+              [ngModel]="editTipoReserva()"
+              (ngModelChange)="editTipoReserva.set($event)"
+            >
+              <option value="CLASE">Cátedra Ordinaria</option>
+              <option value="EXAMEN">Evaluación / Examen</option>
+            </select>
+          </div>
+
+          <!-- Fecha -->
+          <div class="form-group">
+            <label for="editFechaGestion">Fecha <span class="req">*</span></label>
+            <input
+              id="editFechaGestion"
+              type="date"
+              class="form-control"
+              [ngModel]="editFecha()"
+              (ngModelChange)="editFecha.set($event)"
+            />
+          </div>
+
+          <!-- Horario Inicio y Fin -->
+          <div class="form-group-horario">
+            <div class="horario-col">
+              <label for="editHIniGestion">Hora Inicio <span class="req">*</span></label>
+              <input
+                id="editHIniGestion"
+                type="time"
+                class="form-control font-monospace"
+                [ngModel]="editHoraInicio()"
+                (ngModelChange)="editHoraInicio.set($event)"
+              />
+            </div>
+            <div class="horario-col">
+              <label for="editHFinGestion">Hora Fin <span class="req">*</span></label>
+              <input
+                id="editHFinGestion"
+                type="time"
+                class="form-control font-monospace"
+                [ngModel]="editHoraFin()"
+                (ngModelChange)="editHoraFin.set($event)"
+              />
+            </div>
+          </div>
+
+          <!-- Alumnos -->
+          <div class="form-group">
+            <label for="editCantGestion">Cantidad Estimada de Alumnos <span class="req">*</span></label>
+            <input
+              id="editCantGestion"
+              type="number"
+              min="1"
+              max="60"
+              class="form-control"
+              [ngModel]="editCantAlumnos()"
+              (ngModelChange)="editCantAlumnos.set(+$event)"
+            />
+          </div>
+
+          <!-- Tema -->
+          <div class="form-group full-width">
+            <label for="editTemaGestion">Tema / Justificación <span class="req">*</span></label>
+            <input
+              id="editTemaGestion"
+              type="text"
+              class="form-control"
+              maxlength="150"
+              [ngModel]="editTema()"
+              (ngModelChange)="editTema.set($event)"
+            />
+          </div>
+
+          <!-- Observación de la edición / Notificación al docente -->
+          <div class="form-group full-width">
+            <label for="editObsGestion">
+              @if (authService.hasRole('ADMINISTRADOR')) {
+                <span>Motivo del Cambio (Se notificará formalmente al docente titular)</span>
+              } @else {
+                <span>Motivo de la Modificación</span>
+              }
+            </label>
+            <input
+              id="editObsGestion"
+              type="text"
+              class="form-control"
+              placeholder="Ej: Modificación de aula o ajuste de horario convenido"
+              [ngModel]="editObs()"
+              (ngModelChange)="editObs.set($event)"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button
+          type="button"
+          class="btn-modal-cancel"
+          (click)="modalEditarVisible.set(false)"
+          [disabled]="guardandoEdicion()"
+        >
+          Cancelar
+        </button>
+        <button
+          type="button"
+          class="btn-modal-save"
+          (click)="guardarEdicion()"
+          [disabled]="guardandoEdicion()"
+        >
+          @if (guardandoEdicion()) {
+            <i class="bi bi-arrow-repeat spin"></i> Guardando...
+          } @else {
+            <i class="bi bi-check-circle-fill"></i> Guardar Cambios
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+}

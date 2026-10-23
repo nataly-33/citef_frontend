@@ -11,6 +11,7 @@ import {
 } from '../../../core/services/ocupacion.service';
 import { InfraestructuraService, SalaItem } from '../../../core/services/infraestructura.service';
 import { CatalogosService } from '../../../core/services/catalogos.service';
+import { ReservasService, ReservaSala } from '../../../core/services/reservas.service';
 import { ModalAlertComponent } from '../../../shared/components/modal-alert/modal-alert.component';
 import { ConfirmModalComponent } from '../../../shared/components/confirm-modal/confirm-modal.component';
 import { LabCuadriculaComponent } from '../../../shared/components/lab-cuadricula/lab-cuadricula.component';
@@ -104,10 +105,18 @@ export class MonitorSalaComponent implements OnInit, OnDestroy {
   modalDetalleVisible = signal<boolean>(false);
   computadoraDetalle = signal<ComputadoraOcupacionItem | null>(null);
 
+  // Cátedra Programada Hoy y Liberación Automática
+  reservaCatedraHoy = signal<ReservaSala | null>(null);
+  modalConfirmarCatedraVisible = signal<boolean>(false);
+  procesandoLiberacionCatedra = signal<boolean>(false);
+  modalFinalizarCatedraVisible = signal<boolean>(false);
+  procesandoFinalizacionCatedra = signal<boolean>(false);
+
   constructor(
     private ocupacionService: OcupacionService,
     private infraestructuraService: InfraestructuraService,
     private catalogosService: CatalogosService,
+    private reservasService: ReservasService,
   ) {}
 
   ngOnInit(): void {
@@ -124,6 +133,15 @@ export class MonitorSalaComponent implements OnInit, OnDestroy {
       this.ocupacionService.onEstadoSalaActualizado().subscribe((nuevoEstado) => {
         if (nuevoEstado && nuevoEstado.sala.id_sala === this.salaSeleccionadaId()) {
           this.estadoSala.set(nuevoEstado);
+        }
+      }),
+    );
+
+    // Escuchar actualizaciones de reservas en tiempo real vía WebSocket
+    this.subscriptions.add(
+      this.reservasService.onReservasActualizadas().subscribe(() => {
+        if (this.salaSeleccionadaId()) {
+          this.verificarCatedraHoy(this.salaSeleccionadaId());
         }
       }),
     );
@@ -215,6 +233,109 @@ export class MonitorSalaComponent implements OnInit, OnDestroy {
         this.errorGeneral.set(err?.error?.message || 'Error al obtener ocupación del laboratorio');
       },
     });
+
+    this.verificarCatedraHoy(idSala);
+  }
+
+  verificarCatedraHoy(idSala: number) {
+    const d = new Date();
+    const hoyIso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+    this.reservasService
+      .listar({
+        id_sala: idSala,
+        fecha_desde: hoyIso,
+        fecha_hasta: hoyIso,
+        limite: 20,
+      })
+      .subscribe({
+        next: (res) => {
+          if (res.data && res.data.length > 0) {
+            // Priorizar una reserva que esté EN_CURSO, sino una APROBADA
+            const enCurso = res.data.find((r) => r.estado === 'EN_CURSO');
+            const aprobada = res.data.find((r) => r.estado === 'APROBADA');
+            this.reservaCatedraHoy.set(enCurso || aprobada || null);
+          } else {
+            this.reservaCatedraHoy.set(null);
+          }
+        },
+        error: () => {
+          this.reservaCatedraHoy.set(null);
+        },
+      });
+  }
+
+  abrirModalConfirmarCatedra() {
+    this.modalConfirmarCatedraVisible.set(true);
+  }
+
+  confirmarLlegadaDocente() {
+    const res = this.reservaCatedraHoy();
+    const idSala = this.salaSeleccionadaId();
+    this.procesandoLiberacionCatedra.set(true);
+
+    const motivo = res
+      ? `Llegada de cátedra programada: ${res.materia?.sigla || ''} - ${this.getNombreDocenteCatedra(res)}`
+      : 'Inicio de cátedra docente';
+
+    this.ocupacionService.liberarSalaPorCatedra(idSala, motivo).subscribe({
+      next: (resp) => {
+        this.procesandoLiberacionCatedra.set(false);
+        this.modalConfirmarCatedraVisible.set(false);
+        this.mensajeExito.set(
+          `Cátedra iniciada: se liberaron ${resp.sesiones_liberadas || 0} puestos ocupados en la sala exitosamente.`,
+        );
+        this.verificarCatedraHoy(idSala);
+        this.cargarEstadoSala(idSala);
+        setTimeout(() => this.mensajeExito.set(null), 5000);
+      },
+      error: (err) => {
+        this.procesandoLiberacionCatedra.set(false);
+        this.errorGeneral.set(err?.error?.message || 'Error al liberar puestos para la cátedra');
+      },
+    });
+  }
+
+  abrirModalFinalizarCatedra() {
+    this.modalFinalizarCatedraVisible.set(true);
+  }
+
+  finalizarCatedraDocente() {
+    const res = this.reservaCatedraHoy();
+    const idSala = this.salaSeleccionadaId();
+    this.procesandoFinalizacionCatedra.set(true);
+
+    const motivo = res
+      ? `Finalización normal de cátedra: ${res.materia?.sigla || ''} - ${this.getNombreDocenteCatedra(res)}`
+      : 'Conclusión de cátedra docente';
+
+    this.ocupacionService.finalizarCatedra(idSala, motivo).subscribe({
+      next: (resp) => {
+        this.procesandoFinalizacionCatedra.set(false);
+        this.modalFinalizarCatedraVisible.set(false);
+        this.mensajeExito.set(
+          `Cátedra finalizada: se restauraron ${resp.equipos_restaurados || 0} puestos a disponible.`,
+        );
+        this.verificarCatedraHoy(idSala);
+        this.cargarEstadoSala(idSala);
+        setTimeout(() => this.mensajeExito.set(null), 5000);
+      },
+      error: (err) => {
+        this.procesandoFinalizacionCatedra.set(false);
+        this.errorGeneral.set(err?.error?.message || 'Error al finalizar la cátedra');
+      },
+    });
+  }
+
+  getNombreDocenteCatedra(r: ReservaSala): string {
+    if (!r) return '';
+    if (r.docente) {
+      const nom = r.docente.nombres
+        ? `${r.docente.apellidos || ''} ${r.docente.nombres}`.trim()
+        : (r.docente.usuario ? `${r.docente.usuario.apellidos || ''} ${r.docente.usuario.nombres}`.trim() : '');
+      if (nom) return `${nom} (${r.codigo_docente})`;
+    }
+    return r.codigo_docente;
   }
 
   refrescarEstadoSilencioso(idSala: number) {

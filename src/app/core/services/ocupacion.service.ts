@@ -32,7 +32,7 @@ export interface ComputadoraOcupacionItem {
   codigo_equipo: string;
   posicion_fila: number;
   posicion_columna: number;
-  estado_actual: 'DISPONIBLE' | 'OCUPADA' | 'RESERVADA' | 'EN_MANTENIMIENTO';
+  estado_actual: 'DISPONIBLE' | 'OCUPADA' | 'RESERVADA' | 'EN_MANTENIMIENTO' | 'EN_CLASE';
   maquina_docente: boolean;
   ip_red?: string | null;
   horas_uso_acumuladas: number;
@@ -45,6 +45,7 @@ export interface KpisSalaOcupacion {
   disponibles: number;
   ocupadas: number;
   reservadas: number;
+  en_clase?: number;
   mantenimiento: number;
   porcentaje_ocupacion: number;
   saturada: boolean;
@@ -276,5 +277,13 @@ export class OcupacionService {
 
     const url = `${this.apiUrl}/asistencias/exportar?${params.toString()}`;
     window.open(url, '_blank');
+  }
+
+  liberarSalaPorCatedra(idSala: number, motivo?: string): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/salas/${idSala}/liberar-por-catedra`, { motivo });
+  }
+
+  finalizarCatedra(idSala: number, motivo?: string): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/salas/${idSala}/finalizar-catedra`, { motivo });
   }
 }

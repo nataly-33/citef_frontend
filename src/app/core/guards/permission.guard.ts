@@ -29,6 +29,10 @@ export const permissionGuard = (requiredPermisos: string[]): CanActivateFn => {
       router.navigate(['/admin/catalogos/docentes']);
     } else if (authService.hasPermission('CAT_ASIGNAR_TURNOS')) {
       router.navigate(['/admin/catalogos/turnos']);
+    } else if (authService.hasAnyPermission(['RESERVAS_CONSULTAR', 'RESERVAS_SOLICITAR'])) {
+      router.navigate(['/admin/reservas/calendario']);
+    } else if (authService.hasPermission('RESERVAS_GESTIONAR')) {
+      router.navigate(['/admin/reservas/gestion']);
     } else {
       router.navigate(['/admin/inicio']);
     }

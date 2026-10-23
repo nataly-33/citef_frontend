@@ -175,6 +175,29 @@ export class ShellComponent implements OnInit {
       });
     }
 
+    // MÓDULO 5: Reservas Académicas y Disponibilidad
+    if (
+      this.authService.hasAnyPermission([
+        'RESERVAS_CONSULTAR',
+        'RESERVAS_SOLICITAR',
+        'RESERVAS_GESTIONAR',
+      ])
+    ) {
+      items.push({
+        ruta: '/admin/reservas/calendario',
+        texto: 'Calendario Reservas',
+        icono: 'bi-calendar3',
+      });
+    }
+
+    if (this.authService.hasPermission('RESERVAS_GESTIONAR')) {
+      items.push({
+        ruta: '/admin/reservas/gestion',
+        texto: 'Gestión Reservas',
+        icono: 'bi-inbox-fill',
+      });
+    }
+
     return items;
   });
 
