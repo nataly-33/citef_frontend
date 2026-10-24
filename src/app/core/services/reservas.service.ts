@@ -50,6 +50,15 @@ export interface ReservaSala {
   editada?: boolean;
   notificacion_docente?: string | null;
   id_lote_recurrente?: string | null;
+  id_grupo_multisala?: string | null;
+  cant_total_alumnos?: number | null;
+  salas_grupo?: Array<{
+    id_sala: number;
+    codigo_sala: string;
+    nombre: string;
+    capacidad: number;
+    cant_asignada: number;
+  }> | null;
   obs_resolucion?: string | null;
   creado_en: string;
   actualizado_en: string;
@@ -66,6 +75,7 @@ export interface ReservaSala {
 
 export interface SolicitarReservaDto {
   id_sala: number;
+  ids_salas?: number[];
   codigo_docente: string;
   id_materia: number;
   fecha_reserva: string;
@@ -80,6 +90,7 @@ export interface SolicitarReservaDto {
 
 export interface EditarReservaDto {
   id_sala?: number;
+  ids_salas?: number[];
   fecha_reserva?: string;
   hora_inicio?: string;
   hora_fin?: string;
@@ -92,6 +103,7 @@ export interface EditarReservaDto {
 export interface ResponderReservaDto {
   accion: 'APROBAR' | 'RECHAZAR';
   obs_resolucion?: string;
+  aprobar_todas_recurrentes?: boolean;
 }
 
 export interface ConsultarReservasFiltroDto {
@@ -248,6 +260,13 @@ export class ReservasService {
    */
   gestionar(id: number, dto: ResponderReservaDto): Observable<ReservaSala> {
     return this.http.patch<ReservaSala>(`${this.apiUrl}/${id}/gestionar`, dto);
+  }
+
+  /**
+   * Marcar notificación o aviso de modificación como leído
+   */
+  marcarLeida(id: number): Observable<ReservaSala> {
+    return this.http.patch<ReservaSala>(`${this.apiUrl}/${id}/marcar-leida`, {});
   }
 
   /**

@@ -46,6 +46,30 @@ export class BandejaGestionReservasComponent implements OnInit {
   cargando = signal<boolean>(false);
   mensajeExito = signal<string | null>(null);
   mensajeError = signal<string | null>(null);
+  private timeoutMensajeExito: any = null;
+  private timeoutMensajeError: any = null;
+
+  mostrarMensajeExito(msg: string, duracionMs = 4500): void {
+    if (this.timeoutMensajeExito) {
+      clearTimeout(this.timeoutMensajeExito);
+    }
+    this.mensajeExito.set(msg);
+    this.timeoutMensajeExito = setTimeout(() => {
+      this.mensajeExito.set(null);
+      this.timeoutMensajeExito = null;
+    }, duracionMs);
+  }
+
+  mostrarMensajeError(msg: string, duracionMs = 5000): void {
+    if (this.timeoutMensajeError) {
+      clearTimeout(this.timeoutMensajeError);
+    }
+    this.mensajeError.set(msg);
+    this.timeoutMensajeError = setTimeout(() => {
+      this.mensajeError.set(null);
+      this.timeoutMensajeError = null;
+    }, duracionMs);
+  }
 
   // Paginación estándar de 15 filas
   paginaActual = signal<number>(1);
@@ -68,6 +92,7 @@ export class BandejaGestionReservasComponent implements OnInit {
   dictamenObs = signal<string>('');
   errorDictamen = signal<string | null>(null);
   guardandoDictamen = signal<boolean>(false);
+  aprobarTodasRecurrentes = signal<boolean>(false);
 
   modalCancelarVisible = signal<boolean>(false);
   motivoCancelacion = signal<string>('');
@@ -99,6 +124,8 @@ export class BandejaGestionReservasComponent implements OnInit {
   errorEdicion = signal<string | null>(null);
   editandoReservaId = signal<number | null>(null);
   editSalaId = signal<number>(1);
+  editSalasSeleccionadas = signal<number[]>([1]);
+  editEsMultiSala = signal<boolean>(false);
   editFecha = signal<string>('');
   editHoraInicio = signal<string>('08:00');
   editHoraFin = signal<string>('10:00');
@@ -106,6 +133,97 @@ export class BandejaGestionReservasComponent implements OnInit {
   editCantAlumnos = signal<number>(25);
   editTipoReserva = signal<'CLASE' | 'EXAMEN'>('CLASE');
   editObs = signal<string>('');
+
+  salaSeleccionadaEdicion = computed<SalaSimple | null>(() => {
+    const id = this.editSalaId();
+    return this.salas().find((s) => s.id_sala === id) || null;
+  });
+
+  salasSeleccionadasEdicion = computed<SalaSimple[]>(() => {
+    const ids = this.editSalasSeleccionadas();
+    return this.salas().filter((s) => ids.includes(s.id_sala));
+  });
+
+  capacidadTotalEdicion = computed<number>(() => {
+    if (this.editEsMultiSala() || this.editSalasSeleccionadas().length > 1) {
+      return this.salasSeleccionadasEdicion().reduce(
+        (acc, s) => acc + (s.cant_estudiantes || 0),
+        0,
+      );
+    }
+    const sala = this.salaSeleccionadaEdicion();
+    return sala ? sala.cant_estudiantes || 0 : 0;
+  });
+
+  capacidadExcedidaEdicion = computed<boolean>(() => {
+    const cap = this.capacidadTotalEdicion();
+    if (cap <= 0) return false;
+    const cant = this.editCantAlumnos() || 0;
+    return cant > cap;
+  });
+
+  toggleEditSalaSeleccionada(idSala: number): void {
+    if (!this.editEsMultiSala()) {
+      // Modo individual: un clic selecciona exclusivamente esa sala
+      this.editSalaId.set(idSala);
+      this.editSalasSeleccionadas.set([idSala]);
+      this.errorEdicion.set(null);
+      return;
+    }
+    const current = this.editSalasSeleccionadas();
+    let nuevos: number[];
+    if (current.includes(idSala)) {
+      if (current.length > 1) {
+        nuevos = current.filter((x) => x !== idSala);
+      } else {
+        nuevos = current;
+      }
+    } else {
+      nuevos = [...current, idSala];
+    }
+    this.editSalasSeleccionadas.set(nuevos);
+    this.editSalaId.set(nuevos[0]);
+    this.errorEdicion.set(null);
+  }
+
+  toggleModoMultiSalaEdit(): void {
+    const multi = !this.editEsMultiSala();
+    this.editEsMultiSala.set(multi);
+    if (!multi) {
+      const primera = this.editSalasSeleccionadas()[0] || this.editSalaId() || 1;
+      this.editSalaId.set(primera);
+      this.editSalasSeleccionadas.set([primera]);
+    }
+    this.errorEdicion.set(null);
+  }
+
+  onEditCantAlumnosChange(val: number): void {
+    this.editCantAlumnos.set(val);
+    this.errorEdicion.set(null);
+  }
+
+  onEditSalaChange(val: number | string): void {
+    const num = Number(val);
+    this.editSalaId.set(num);
+    this.editSalasSeleccionadas.set([num]);
+    this.editEsMultiSala.set(false);
+    this.errorEdicion.set(null);
+  }
+
+  onEditFechaChange(val: string): void {
+    this.editFecha.set(val);
+    this.errorEdicion.set(null);
+  }
+
+  onEditHoraInicioChange(val: string): void {
+    this.editHoraInicio.set(val);
+    this.errorEdicion.set(null);
+  }
+
+  onEditHoraFinChange(val: string): void {
+    this.editHoraFin.set(val);
+    this.errorEdicion.set(null);
+  }
 
   // Buscador de materias
   buscadorMateria = signal<string>('');
@@ -269,6 +387,7 @@ export class BandejaGestionReservasComponent implements OnInit {
     this.dictamenObs.set(
       accion === 'APROBAR' ? 'Aprobada formalmente por Jefatura' : '',
     );
+    this.aprobarTodasRecurrentes.set(false);
     this.errorDictamen.set(null);
     this.modalDictamenVisible.set(true);
   }
@@ -291,13 +410,15 @@ export class BandejaGestionReservasComponent implements OnInit {
     const dto: ResponderReservaDto = {
       accion: this.accionDictamen(),
       obs_resolucion: this.dictamenObs().trim(),
+      aprobar_todas_recurrentes:
+        this.accionDictamen() === 'APROBAR' && this.aprobarTodasRecurrentes(),
     };
 
     this.reservasService.gestionar(r.id_reserva, dto).subscribe({
       next: (actualizada) => {
         this.guardandoDictamen.set(false);
         this.modalDictamenVisible.set(false);
-        this.mensajeExito.set(
+        this.mostrarMensajeExito(
           `Reserva #${actualizada.id_reserva} ha sido ${actualizada.estado.toLowerCase()} exitosamente`,
         );
         this.cargarDatos();
@@ -328,7 +449,7 @@ export class BandejaGestionReservasComponent implements OnInit {
       next: (actualizada) => {
         this.guardandoCancelar.set(false);
         this.modalCancelarVisible.set(false);
-        this.mensajeExito.set(`Reserva #${actualizada.id_reserva} cancelada exitosamente`);
+        this.mostrarMensajeExito(`Reserva #${actualizada.id_reserva} cancelada exitosamente`);
         this.cargarDatos();
       },
       error: (err) => {
@@ -419,7 +540,11 @@ export class BandejaGestionReservasComponent implements OnInit {
     this.formSalaId.set(salaDefecto);
     this.salasSeleccionadas.set([salaDefecto]);
 
-    this.formFecha.set(this.formatDateIso(new Date()));
+    const fBase = this.formatDateIso(new Date());
+    this.formFecha.set(fBase);
+    const dSem = new Date(fBase + 'T12:00:00').getDay();
+    this.formDiasSemana.set([dSem === 0 ? 1 : dSem]);
+
     this.formHoraInicio.set('08:00');
     this.formHoraFin.set('10:00');
     this.formTema.set('');
@@ -427,7 +552,6 @@ export class BandejaGestionReservasComponent implements OnInit {
     this.formTipoReserva.set('CLASE');
     this.formProgramarSemestre.set(false);
     this.formFechaFinSemestre.set('');
-    this.formDiasSemana.set([3]);
 
     this.preseleccionarDocenteSiAplica();
 
@@ -442,6 +566,18 @@ export class BandejaGestionReservasComponent implements OnInit {
 
     this.dropdownMateriaAbierto.set(false);
     this.modalNuevaVisible.set(true);
+    this.verificarDisponibilidadReactiva();
+  }
+
+  onFechaChange(nuevaFecha: string): void {
+    this.formFecha.set(nuevaFecha);
+    if (nuevaFecha) {
+      const d = new Date(nuevaFecha + 'T12:00:00').getDay();
+      const dSem = d === 0 ? 1 : d;
+      if (this.formDiasSemana().length <= 1) {
+        this.formDiasSemana.set([dSem]);
+      }
+    }
     this.verificarDisponibilidadReactiva();
   }
 
@@ -468,10 +604,16 @@ export class BandejaGestionReservasComponent implements OnInit {
       return;
     }
 
-    const alumnosPorSala = Math.max(1, Math.ceil(cantTotal / salas.length));
+    const salaActual = this.salas().find((s) => s.id_sala === idSala);
+    const cuotaSala = salaActual
+      ? Math.min(
+          salaActual.cant_estudiantes,
+          Math.max(1, Math.round(cantTotal * (salaActual.cant_estudiantes / Math.max(1, capTotal)))),
+        )
+      : Math.min(cantTotal, 20);
 
     this.reservasService
-      .validarDisponibilidad(idSala, fecha, hIni, hFin, alumnosPorSala)
+      .validarDisponibilidad(idSala, fecha, hIni, hFin, cuotaSala)
       .subscribe({
         next: (res) => this.resultadoDisponibilidad.set(res),
         error: (err) => {
@@ -524,76 +666,37 @@ export class BandejaGestionReservasComponent implements OnInit {
     this.guardandoNueva.set(true);
     this.errorNueva.set(null);
 
-    const alumnosPorSala = Math.max(1, Math.ceil(Number(this.formCantAlumnos()) / salas.length));
+    const dto: SolicitarReservaDto = {
+      id_sala: Number(salas[0]),
+      ids_salas: salas.length > 1 ? salas : undefined,
+      codigo_docente: this.formCodigoDocente(),
+      id_materia: Number(this.formMateriaId()),
+      fecha_reserva: this.formFecha(),
+      hora_inicio: this.formHoraInicio(),
+      hora_fin: this.formHoraFin(),
+      tema_practica: this.formTema().trim(),
+      cant_estimada_alumnos: Number(this.formCantAlumnos()),
+      tipo_reserva: this.formTipoReserva(),
+      fecha_fin_semestre: this.formProgramarSemestre() ? this.formFechaFinSemestre() : undefined,
+      dias_semana: this.formProgramarSemestre() ? this.formDiasSemana() : undefined,
+    };
 
-    if (salas.length === 1) {
-      const dto: SolicitarReservaDto = {
-        id_sala: Number(salas[0]),
-        codigo_docente: this.formCodigoDocente(),
-        id_materia: Number(this.formMateriaId()),
-        fecha_reserva: this.formFecha(),
-        hora_inicio: this.formHoraInicio(),
-        hora_fin: this.formHoraFin(),
-        tema_practica: this.formTema().trim(),
-        cant_estimada_alumnos: Number(this.formCantAlumnos()),
-        tipo_reserva: this.formTipoReserva(),
-        fecha_fin_semestre: this.formProgramarSemestre() ? this.formFechaFinSemestre() : undefined,
-        dias_semana: this.formProgramarSemestre() ? this.formDiasSemana() : undefined,
-      };
-
-      this.reservasService.solicitar(dto).subscribe({
-        next: (creada) => {
-          this.guardandoNueva.set(false);
-          this.modalNuevaVisible.set(false);
-          this.mensajeExito.set(
-            `Solicitud #${creada.id_reserva} registrada exitosamente en estado PENDIENTE`,
-          );
-          this.cargarDatos();
-        },
-        error: (err) => {
-          this.guardandoNueva.set(false);
-          this.errorNueva.set(err?.error?.message || 'Error al registrar solicitud');
-        },
-      });
-    } else {
-      let completadas = 0;
-      let errorOcurrido: string | null = null;
-
-      for (const idSala of salas) {
-        const dto: SolicitarReservaDto = {
-          id_sala: idSala,
-          codigo_docente: this.formCodigoDocente(),
-          id_materia: Number(this.formMateriaId()),
-          fecha_reserva: this.formFecha(),
-          hora_inicio: this.formHoraInicio(),
-          hora_fin: this.formHoraFin(),
-          tema_practica: `${this.formTema().trim()} (Cátedra multi-sala)`,
-          cant_estimada_alumnos: alumnosPorSala,
-          tipo_reserva: this.formTipoReserva(),
-          fecha_fin_semestre: this.formProgramarSemestre() ? this.formFechaFinSemestre() : undefined,
-          dias_semana: this.formProgramarSemestre() ? this.formDiasSemana() : undefined,
-        };
-
-        this.reservasService.solicitar(dto).subscribe({
-          next: () => {
-            completadas++;
-            if (completadas === salas.length) {
-              this.guardandoNueva.set(false);
-              this.modalNuevaVisible.set(false);
-              this.mensajeExito.set(
-                `Se registraron exitosamente las solicitudes para las ${salas.length} salas seleccionadas en estado PENDIENTE.`,
-              );
-              this.cargarDatos();
-            }
-          },
-          error: (err) => {
-            errorOcurrido = err?.error?.message || 'Error al solicitar una de las salas';
-            this.guardandoNueva.set(false);
-            this.errorNueva.set(errorOcurrido);
-          },
-        });
-      }
-    }
+    this.reservasService.solicitar(dto).subscribe({
+      next: (creada) => {
+        this.guardandoNueva.set(false);
+        this.modalNuevaVisible.set(false);
+        const tipoLabel = this.formTipoReserva() === 'EXAMEN' ? 'Examen' : 'Cátedra';
+        const multiLabel = salas.length > 1 ? ' Multi-Sala' : '';
+        this.mostrarMensajeExito(
+          `Solicitud de ${tipoLabel}${multiLabel} (#${creada.id_reserva}) registrada exitosamente en estado PENDIENTE.`,
+        );
+        this.cargarDatos();
+      },
+      error: (err) => {
+        this.guardandoNueva.set(false);
+        this.errorNueva.set(err?.error?.message || 'Error al registrar solicitud');
+      },
+    });
   }
 
   // Edición y Control de Permisos
@@ -627,12 +730,28 @@ export class BandejaGestionReservasComponent implements OnInit {
 
   abrirModalEditar(reserva: ReservaSala): void {
     this.editandoReservaId.set(reserva.id_reserva);
-    this.editSalaId.set(reserva.id_sala);
+
+    // Verificar si es multi-sala combinada
+    const esGrupo = !!(
+      reserva.id_grupo_multisala ||
+      (reserva.salas_grupo && reserva.salas_grupo.length > 1)
+    );
+    this.editEsMultiSala.set(esGrupo);
+
+    if (esGrupo && reserva.salas_grupo && reserva.salas_grupo.length > 0) {
+      const ids = reserva.salas_grupo.map((sg) => sg.id_sala);
+      this.editSalasSeleccionadas.set(ids);
+      this.editSalaId.set(ids[0]);
+    } else {
+      this.editSalasSeleccionadas.set([reserva.id_sala]);
+      this.editSalaId.set(reserva.id_sala);
+    }
+
     this.editFecha.set(String(reserva.fecha_reserva).slice(0, 10));
     this.editHoraInicio.set(String(reserva.hora_inicio).slice(0, 5));
     this.editHoraFin.set(String(reserva.hora_fin).slice(0, 5));
     this.editTema.set(reserva.tema_practica || '');
-    this.editCantAlumnos.set(reserva.cant_estimada_alumnos || 25);
+    this.editCantAlumnos.set(reserva.cant_total_alumnos || reserva.cant_estimada_alumnos || 25);
     this.editTipoReserva.set((reserva.tipo_reserva as any) || 'CLASE');
     this.editObs.set('');
     this.errorEdicion.set(null);
@@ -653,11 +772,28 @@ export class BandejaGestionReservasComponent implements OnInit {
       return;
     }
 
+    const cap = this.capacidadTotalEdicion();
+    if (cap > 0 && this.editCantAlumnos() > cap) {
+      const salasNombres = this.editEsMultiSala()
+        ? this.salasSeleccionadasEdicion().map((s) => s.codigo_sala).join(' + ')
+        : (this.salaSeleccionadaEdicion()?.codigo_sala || 'la sala');
+      this.errorEdicion.set(
+        `La cantidad estimada (${this.editCantAlumnos()} alumnos) excede la capacidad combinada de ${salasNombres} (${cap} puestos)`,
+      );
+      return;
+    }
+
     this.guardandoEdicion.set(true);
     this.errorEdicion.set(null);
 
+    const idsSalas =
+      this.editEsMultiSala() && this.editSalasSeleccionadas().length > 0
+        ? this.editSalasSeleccionadas()
+        : [Number(this.editSalaId())];
+
     const dto: EditarReservaDto = {
-      id_sala: Number(this.editSalaId()),
+      id_sala: Number(idsSalas[0]),
+      ids_salas: idsSalas,
       fecha_reserva: this.editFecha(),
       hora_inicio: this.editHoraInicio(),
       hora_fin: this.editHoraFin(),
@@ -674,7 +810,7 @@ export class BandejaGestionReservasComponent implements OnInit {
         if (this.reservaSeleccionada() && this.reservaSeleccionada()?.id_reserva === id) {
           this.reservaSeleccionada.set(actualizada);
         }
-        this.mensajeExito.set(`Reserva #${id} modificada exitosamente`);
+        this.mostrarMensajeExito(`Reserva #${id} modificada exitosamente`);
         this.cargarDatos();
       },
       error: (err) => {
@@ -682,6 +818,23 @@ export class BandejaGestionReservasComponent implements OnInit {
         this.errorEdicion.set(err?.error?.message || 'Error al actualizar la reserva');
       },
     });
+  }
+
+  marcarComoLeida(r: ReservaSala): void {
+    this.reservasService.marcarLeida(r.id_reserva).subscribe({
+      next: (act) => {
+        this.reservaSeleccionada.set(act);
+        this.cargarDatos();
+      },
+      error: () => {},
+    });
+  }
+
+  getCapacidadTotalGrupo(r: ReservaSala): number {
+    if (r.salas_grupo && r.salas_grupo.length > 0) {
+      return r.salas_grupo.reduce((acc, s) => acc + (s.capacidad || 0), 0);
+    }
+    return r.sala?.cant_estudiantes || 0;
   }
 
   private formatDateIso(d: Date): string {

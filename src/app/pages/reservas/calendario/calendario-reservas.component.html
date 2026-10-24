@@ -97,8 +97,12 @@
   <!-- Leyenda Cromática Institucional de Estados -->
   <div class="legend-bar">
     <div class="legend-item">
-      <span class="legend-dot dot-aprobada"></span>
-      <span>Aprobada</span>
+      <span class="legend-dot dot-clase-aprobada"></span>
+      <span>Clase Aprobada</span>
+    </div>
+    <div class="legend-item">
+      <span class="legend-dot dot-examen-aprobado"></span>
+      <span>Examen Aprobado</span>
     </div>
     <div class="legend-item">
       <span class="legend-dot dot-pendiente"></span>
@@ -157,7 +161,7 @@
                   }
                 </td>
                 @for (dia of diasSemana(); track dia.fechaStr) {
-                  @let r = getReservaQueIniciaEnSlot(dia.fechaStr, slot);
+                  @let reservasSlot = getReservasQueInicianEnSlot(dia.fechaStr, slot);
                   <td
                     class="calendar-cell"
                     [class.cell-hoy]="dia.esHoy"
@@ -165,9 +169,11 @@
                     (click)="abrirModalSolicitar(dia.fechaStr, slot)"
                     [title]="'Haga clic para solicitar reserva el ' + dia.fechaStr + ' a las ' + slot"
                   >
-                    @if (r) {
+                    @for (r of reservasSlot; track r.id_reserva) {
+                      @let pos = getPosicionReserva(r.id_reserva);
                       <div
                         class="reservation-card"
+                        [class.card-particionada]="pos.esParticionada"
                         [class.res-aprobada]="r.estado === 'APROBADA'"
                         [class.res-en-curso]="r.estado === 'EN_CURSO'"
                         [class.res-pendiente]="r.estado === 'PENDIENTE'"
@@ -176,18 +182,20 @@
                         [class.res-tipo-clase]="r.tipo_reserva === 'CLASE'"
                         [class.res-tipo-examen]="r.tipo_reserva === 'EXAMEN'"
                         [style.height.px]="calcularAlturaTarjetaPx(r)"
+                        [style.width]="pos.width"
+                        [style.left]="pos.left"
                         (click)="abrirModalDetalle(r); $event.stopPropagation()"
-                        [title]="(r.tipo_reserva === 'EXAMEN' ? '[EXAMEN] ' : '') + r.tema_practica + ' - ' + (r.docente?.usuario ? (r.docente?.usuario?.nombres + ' ' + r.docente?.usuario?.apellidos) : (r.docente?.nombres ? (r.docente?.apellidos + ' ' + r.docente?.nombres) : r.codigo_docente))"
+                        [title]="(r.tipo_reserva === 'EXAMEN' ? '[EXAMEN] ' : '') + r.tema_practica + ' - ' + (getNombreDocente(r.docente) || r.codigo_docente)"
                       >
                         <!-- Puntito rojo de advertencia cuando la reserva fue editada y está pendiente -->
                         @if (r.editada) {
                           <span class="dot-editada" title="Solicitud modificada pendiente de dictamen formal"></span>
                         }
-                        <div class="res-card-header">
-                          <span class="res-time font-monospace">
-                            <i class="bi bi-clock"></i> {{ r.hora_inicio.slice(0, 5) }} - {{ r.hora_fin.slice(0, 5) }}
-                          </span>
+                        <div class="res-card-top-row">
                           <span class="res-sala-badge">{{ r.sala?.codigo_sala }}</span>
+                          <span class="res-time font-monospace">
+                            <i class="bi bi-clock"></i> {{ r.hora_inicio.slice(0, 5) }}-{{ r.hora_fin.slice(0, 5) }}
+                          </span>
                         </div>
                         <div class="res-materia font-bold">
                           @if (r.tipo_reserva === 'EXAMEN') {
@@ -198,12 +206,12 @@
                         <div class="res-docente">
                           <i class="bi bi-person"></i>
                           <span>
-                            {{ r.docente?.usuario ? (r.docente?.usuario?.nombres + ' ' + r.docente?.usuario?.apellidos) : (r.docente?.nombres ? (r.docente?.apellidos + ' ' + r.docente?.nombres) : r.codigo_docente) }}
+                            {{ getNombreDocente(r.docente) || r.codigo_docente }}
                           </span>
                         </div>
                         <div class="res-footer-badges">
                           <span class="badge-alumnos">
-                            <i class="bi bi-people"></i> {{ r.cant_estimada_alumnos }} est.
+                            <i class="bi bi-people"></i> {{ r.cant_total_alumnos || r.cant_estimada_alumnos }} est.
                           </span>
                           <span class="badge-estado" [class]="'badge-st-' + r.estado.toLowerCase()">
                             {{ r.estado }}
@@ -221,70 +229,97 @@
     </div>
   }
 
-  <!-- ================= VISTA POR DÍA (AGENDA COMPACTA) ================= -->
+  <!-- ================= VISTA POR DÍA (LÍNEA DE TIEMPO DINÁMICA / PARTICIÓN AUTOMÁTICA ESTILO GOOGLE CALENDAR) ================= -->
   @if (modoVista() === 'dia') {
-    <div class="agenda-dia-wrapper">
-      <div class="agenda-dia-header">
-        <h3>
-          <i class="bi bi-clock-history"></i> Programación del día: {{ formatearFechaEspanol(formatDateIso(fechaReferencia())) }}
-        </h3>
-      </div>
-      <div class="agenda-timeline">
-        @for (slot of slotsMediaHora; track slot) {
-          @let fechaIso = formatDateIso(fechaReferencia());
-          @let r = getReservaQueIniciaEnSlot(fechaIso, slot);
-          <div class="timeline-slot" [class.slot-half-hour]="!esHoraEnPunto(slot)">
-            <div class="slot-time font-monospace">{{ slot }}</div>
-            <div class="slot-content">
-              @if (!r) {
-                <div class="slot-empty" (click)="abrirModalSolicitar(fechaIso, slot)">
-                  <span><i class="bi bi-plus"></i> Sin reservas. Clic para solicitar</span>
+    <div class="calendar-workspace">
+      <div class="calendar-table-wrapper">
+        <table class="calendar-table table-vista-dia">
+          <thead>
+            <tr>
+              <th class="col-hora-header">Hora</th>
+              <th class="col-dia-header" [class.col-dia-hoy]="formatDateIso(fechaReferencia()) === formatDateIso(hoyDate)">
+                <div class="dia-header-flex">
+                  <i class="bi bi-calendar-check-fill text-primary"></i>
+                  <span class="dia-nombre-largo">{{ getNombreDiaEspanol(fechaReferencia()) }}</span>
+                  <span class="dia-nro dia-nro-badge" [class.dia-nro-hoy]="formatDateIso(fechaReferencia()) === formatDateIso(hoyDate)">
+                    {{ fechaReferencia().getDate() }}
+                  </span>
                 </div>
-              } @else {
-                <div class="slot-cards-row">
-                  <div
-                    class="reservation-card card-horizontal"
-                    [class.res-aprobada]="r.estado === 'APROBADA'"
-                    [class.res-en-curso]="r.estado === 'EN_CURSO'"
-                    [class.res-pendiente]="r.estado === 'PENDIENTE'"
-                    [class.res-rechazada]="r.estado === 'RECHAZADA'"
-                    [class.res-cancelada]="r.estado === 'CANCELADA'"
-                    [class.res-tipo-clase]="r.tipo_reserva === 'CLASE'"
-                    [class.res-tipo-examen]="r.tipo_reserva === 'EXAMEN'"
-                    (click)="abrirModalDetalle(r)"
-                  >
-                    @if (r.editada) {
-                      <span class="dot-editada" title="Solicitud modificada pendiente de dictamen formal"></span>
-                    }
-                    <div class="card-left">
-                      <span class="res-sala-badge">{{ r.sala?.codigo_sala }}</span>
-                      <span class="res-time font-monospace">{{ r.hora_inicio }} - {{ r.hora_fin }}</span>
-                    </div>
-                    <div class="card-center">
-                      <strong class="res-materia">
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (slot of slotsMediaHora; track slot) {
+              @let fechaIso = formatDateIso(fechaReferencia());
+              @let reservasSlot = getReservasQueInicianEnSlot(fechaIso, slot);
+              <tr [class.tr-hora-en-punto]="esHoraEnPunto(slot)" [class.tr-media-hora]="!esHoraEnPunto(slot)">
+                <td class="col-hora font-monospace" [class.col-hora-punto]="esHoraEnPunto(slot)">
+                  @if (esHoraEnPunto(slot)) {
+                    <span class="hora-principal font-bold">{{ slot }}</span>
+                  } @else {
+                    <span class="hora-media text-muted">:30</span>
+                  }
+                </td>
+                <td
+                  class="calendar-cell"
+                  [class.cell-media-hora]="!esHoraEnPunto(slot)"
+                  (click)="abrirModalSolicitar(fechaIso, slot)"
+                  [title]="'Clic para solicitar reserva el ' + fechaIso + ' a las ' + slot"
+                >
+                  @for (r of reservasSlot; track r.id_reserva) {
+                    @let pos = getPosicionReserva(r.id_reserva);
+                    <div
+                      class="reservation-card"
+                      [class.card-particionada]="pos.esParticionada"
+                      [class.res-aprobada]="r.estado === 'APROBADA'"
+                      [class.res-en-curso]="r.estado === 'EN_CURSO'"
+                      [class.res-pendiente]="r.estado === 'PENDIENTE'"
+                      [class.res-rechazada]="r.estado === 'RECHAZADA'"
+                      [class.res-cancelada]="r.estado === 'CANCELADA'"
+                      [class.res-tipo-clase]="r.tipo_reserva === 'CLASE'"
+                      [class.res-tipo-examen]="r.tipo_reserva === 'EXAMEN'"
+                      [style.height.px]="calcularAlturaTarjetaPx(r)"
+                      [style.width]="pos.width"
+                      [style.left]="pos.left"
+                      (click)="abrirModalDetalle(r); $event.stopPropagation()"
+                      [title]="(r.tipo_reserva === 'EXAMEN' ? '[EXAMEN] ' : '') + r.tema_practica + ' - ' + (getNombreDocente(r.docente) || r.codigo_docente)"
+                    >
+                      @if (r.editada) {
+                        <span class="dot-editada" title="Solicitud modificada pendiente de dictamen formal"></span>
+                      }
+                      <div class="res-card-top-row">
+                        <span class="res-sala-badge">{{ r.sala?.codigo_sala }}</span>
+                        <span class="res-time font-monospace">
+                          <i class="bi bi-clock"></i> {{ r.hora_inicio.slice(0, 5) }}-{{ r.hora_fin.slice(0, 5) }}
+                        </span>
+                      </div>
+                      <div class="res-materia font-bold">
                         @if (r.tipo_reserva === 'EXAMEN') {
-                          <span class="badge-tag-examen me-1"><i class="bi bi-file-earmark-text-fill"></i> EXAMEN</span>
+                          <span class="badge-tag-examen"><i class="bi bi-file-earmark-text-fill"></i> EXAMEN</span>
                         }
-                        {{ r.materia?.sigla }} — {{ r.materia?.nombre }}
-                      </strong>
-                      <span class="res-tema">{{ r.tema_practica }}</span>
-                      <span class="res-docente">
-                        <i class="bi bi-person-fill"></i>
-                        {{ getNombreDocente(r.docente) || r.codigo_docente }}
-                      </span>
+                        {{ r.materia?.sigla }} {{ r.materia?.nombre }}
+                      </div>
+                      <div class="res-docente">
+                        <i class="bi bi-person"></i>
+                        <span>
+                          {{ getNombreDocente(r.docente) || r.codigo_docente }}
+                        </span>
+                      </div>
+                      <div class="res-footer-badges">
+                        <span class="badge-alumnos">
+                          <i class="bi bi-people"></i> {{ r.cant_total_alumnos || r.cant_estimada_alumnos }} est.
+                        </span>
+                        <span class="badge-estado" [class]="'badge-st-' + r.estado.toLowerCase()">
+                          {{ r.estado }}
+                        </span>
+                      </div>
                     </div>
-                    <div class="card-right">
-                      <span class="badge-estado" [class]="'badge-st-' + r.estado.toLowerCase()">
-                        {{ r.estado }}
-                      </span>
-                      <span class="badge-alumnos">{{ r.cant_estimada_alumnos }} estudiantes</span>
-                    </div>
-                  </div>
-                </div>
-              }
-            </div>
-          </div>
-        }
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
       </div>
     </div>
   }
@@ -308,14 +343,22 @@
           <div class="detail-grid">
             <div class="detail-row">
               <span class="detail-label">Estado de la Solicitud:</span>
-              <div class="d-flex align-items-center gap-2">
+              <div class="detail-badges-inline">
                 <span class="badge-estado" [class]="'badge-st-' + r.estado.toLowerCase()">
                   {{ r.estado }}
                 </span>
                 @if (r.editada) {
                   <span class="badge-editada-alert">
-                    <i class="bi bi-exclamation-circle-fill"></i> Modificada (Requiere Revisión)
+                    <i class="bi bi-pencil-fill"></i> Solicitud Modificada
                   </span>
+                  <button
+                    type="button"
+                    class="btn-mark-read"
+                    (click)="marcarComoLeida(r)"
+                    title="Marcar cambio como revisado y retirar advertencia"
+                  >
+                    <i class="bi bi-check-circle"></i> Marcar como revisado
+                  </button>
                 }
               </div>
             </div>
@@ -325,11 +368,13 @@
               <span class="detail-value">
                 @if (r.tipo_reserva === 'EXAMEN') {
                   <span class="badge-tipo-examen-detail">
-                    <i class="bi bi-file-earmark-text-fill"></i> Examen / Evaluación (Prioritaria)
+                    <i class="bi bi-file-earmark-text-fill"></i>
+                    {{ (r.salas_grupo && r.salas_grupo.length > 1) ? 'Examen Multi-Sala (Prioritario)' : 'Examen / Evaluación (Prioritaria)' }}
                   </span>
                 } @else {
                   <span class="badge-tipo-clase-detail">
-                    <i class="bi bi-mortarboard-fill"></i> Cátedra Curricular Ordinaria
+                    <i class="bi bi-mortarboard-fill"></i>
+                    {{ (r.salas_grupo && r.salas_grupo.length > 1) ? 'Cátedra Multi-Sala' : 'Cátedra Curricular Ordinaria' }}
                   </span>
                 }
               </span>
@@ -338,7 +383,17 @@
             <div class="detail-row">
               <span class="detail-label">Laboratorio / Sala:</span>
               <span class="detail-value font-bold text-primary">
-                {{ r.sala?.codigo_sala }} — {{ r.sala?.nombre }} (Piso {{ r.sala?.piso }})
+                @if (r.salas_grupo && r.salas_grupo.length > 1) {
+                  <span class="salas-grupo-container">
+                    @for (sg of r.salas_grupo; track sg.id_sala) {
+                      <span class="badge-sala-grupo">
+                        <i class="bi bi-door-open-fill"></i> {{ sg.codigo_sala }} ({{ sg.capacidad }} máquinas)
+                      </span>
+                    }
+                  </span>
+                } @else {
+                  {{ r.sala?.codigo_sala }} — {{ r.sala?.nombre }} (Piso {{ r.sala?.piso }})
+                }
               </span>
             </div>
 
@@ -373,7 +428,12 @@
             <div class="detail-row">
               <span class="detail-label">Alumnos Estimados:</span>
               <span class="detail-value">
-                {{ r.cant_estimada_alumnos }} alumnos (Capacidad aula: {{ r.sala?.cant_estudiantes }} puestos)
+                <strong>{{ r.cant_total_alumnos || r.cant_estimada_alumnos }} alumnos</strong>
+                @if (r.salas_grupo && r.salas_grupo.length > 1) {
+                  <span class="text-muted small"> ({{ r.salas_grupo.length }} laboratorios — Capacidad total: {{ getCapacidadTotalGrupo(r) }} máquinas)</span>
+                } @else {
+                  <span class="text-muted small"> (Capacidad aula: {{ r.sala?.cant_estudiantes }} máquinas)</span>
+                }
               </span>
             </div>
 
@@ -471,6 +531,27 @@
             Indique la justificación formal o motivo de incompatibilidad para el rechazo de la solicitud:
           }
         </p>
+
+        @if (accionDictamen() === 'APROBAR' && reservaDetalle()?.tipo_reserva === 'CLASE') {
+          <div class="batch-approval-card">
+            <label class="checkbox-container">
+              <input
+                type="checkbox"
+                [checked]="aprobarTodasRecurrentes()"
+                (change)="aprobarTodasRecurrentes.set(!aprobarTodasRecurrentes())"
+              />
+              <div class="batch-approval-text">
+                <div class="batch-title">
+                  <i class="bi bi-collection-fill"></i>
+                  <strong>Aprobar en lote todas las clases recurrentes de este semestre</strong>
+                </div>
+                <small class="text-muted">
+                  Aplica automáticamente la aprobación a todas las clases pendientes de este ciclo/semestre para evitar aprobarlas una por una.
+                </small>
+              </div>
+            </label>
+          </div>
+        }
 
         <div class="form-group">
           <label for="inputDictamen">
@@ -618,7 +699,7 @@
                 <label
                   class="sala-pill-checkbox"
                   [class.sala-pill-active]="salasSeleccionadas().includes(s.id_sala)"
-                  [title]="'Capacidad: ' + s.cant_estudiantes + ' puestos'"
+                  [title]="'Capacidad: ' + s.cant_estudiantes + ' máquinas'"
                 >
                   <input
                     type="checkbox"
@@ -626,16 +707,16 @@
                     (change)="toggleSalaSeleccionada(s.id_sala)"
                   />
                   <span class="sala-code">{{ s.codigo_sala }}</span>
-                  <span class="sala-cap text-muted">({{ s.cant_estudiantes }} puestos)</span>
+                  <span class="sala-cap text-muted">({{ s.cant_estudiantes }} máquinas)</span>
                 </label>
               }
             </div>
             <div class="sala-capacity-note">
               <i class="bi bi-info-circle"></i>
-              <span>Capacidad total seleccionada: <strong>{{ capacidadTotalSeleccionada() }}</strong> puestos</span>
+              <span>Capacidad total seleccionada: <strong>{{ capacidadTotalSeleccionada() }}</strong> máquinas</span>
               @if (salasSeleccionadas().length > 1) {
                 <span class="badge-multi-salas">
-                  <i class="bi bi-layers-fill"></i> Cátedra Multi-Sala ({{ salasSeleccionadas().length }} salas combinadas)
+                  <i class="bi bi-layers-fill"></i> {{ formTipoReserva() === 'EXAMEN' ? 'Examen Multi-Sala' : 'Cátedra Multi-Sala' }} ({{ salasSeleccionadas().length }} salas combinadas)
                 </span>
               }
             </div>
@@ -742,7 +823,7 @@
               [min]="fechaMinimaHoy"
               [class.input-error]="erroresForm()['fecha_reserva']"
               [ngModel]="formFecha()"
-              (ngModelChange)="formFecha.set($event); verificarDisponibilidadReactiva()"
+              (ngModelChange)="onFechaChange($event)"
             />
             @if (erroresForm()['fecha_reserva']) {
               <span class="field-error-text">{{ erroresForm()['fecha_reserva'] }}</span>
@@ -971,21 +1052,65 @@
         ></app-modal-alert>
 
         <div class="form-grid">
-          <!-- Sala -->
-          <div class="form-group">
-            <label for="editSala">Laboratorio / Sala <span class="req">*</span></label>
-            <select
-              id="editSala"
-              class="form-control"
-              [ngModel]="editSalaId()"
-              (ngModelChange)="editSalaId.set(+$event)"
-            >
-              @for (s of salas(); track s.id_sala) {
-                <option [value]="s.id_sala">
-                  {{ s.codigo_sala }} — {{ s.nombre }} ({{ s.cant_estudiantes }} puestos)
-                </option>
+          <!-- Salas / Laboratorios (Soporte individual y multi-sala combinada) -->
+          <div class="form-group full-width">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <label class="mb-0">Laboratorio Asignado <span class="req">*</span></label>
+              <button
+                type="button"
+                class="btn-toggle-modo-multisala"
+                (click)="toggleModoMultiSalaEdit()"
+              >
+                @if (editEsMultiSala()) {
+                  <i class="bi bi-box-arrow-in-left"></i> Cambiar a sala individual
+                } @else {
+                  <i class="bi bi-layers-fill"></i> Combinar salas (Multi-Sala)
+                }
+              </button>
+            </div>
+
+            @if (!editEsMultiSala()) {
+              <select
+                id="editSalaSelect"
+                class="form-control"
+                [ngModel]="editSalaId()"
+                (ngModelChange)="onEditSalaChange($event)"
+              >
+                @for (s of salas(); track s.id_sala) {
+                  <option [value]="s.id_sala">
+                    {{ s.codigo_sala }} — {{ s.nombre }} (Capacidad: {{ s.cant_estudiantes }} puestos)
+                  </option>
+                }
+              </select>
+            } @else {
+              <div class="salas-selector-wrap">
+                @for (s of salas(); track s.id_sala) {
+                  <label
+                    class="sala-pill-checkbox"
+                    [class.sala-pill-active]="editSalasSeleccionadas().includes(s.id_sala)"
+                    [title]="'Capacidad: ' + s.cant_estudiantes + ' puestos'"
+                  >
+                    <input
+                      type="checkbox"
+                      [checked]="editSalasSeleccionadas().includes(s.id_sala)"
+                      (change)="toggleEditSalaSeleccionada(s.id_sala)"
+                    />
+                    <span class="sala-code">{{ s.codigo_sala }}</span>
+                    <span class="sala-cap text-muted">({{ s.cant_estudiantes }} puestos)</span>
+                  </label>
+                }
+              </div>
+            }
+
+            <div class="sala-capacity-note">
+              <i class="bi bi-info-circle"></i>
+              <span>Capacidad total: <strong>{{ capacidadTotalEdicion() }}</strong> puestos</span>
+              @if (editEsMultiSala() && editSalasSeleccionadas().length > 1) {
+                <span class="badge-multi-salas">
+                  <i class="bi bi-layers-fill"></i> Reserva Multi-Sala ({{ editSalasSeleccionadas().length }} salas combinadas)
+                </span>
               }
-            </select>
+            </div>
           </div>
 
           <!-- Tipo Reserva -->
@@ -995,7 +1120,7 @@
               id="editTipo"
               class="form-control"
               [ngModel]="editTipoReserva()"
-              (ngModelChange)="editTipoReserva.set($event)"
+              (ngModelChange)="editTipoReserva.set($event); errorEdicion.set(null)"
             >
               <option value="CLASE">Cátedra Ordinaria</option>
               <option value="EXAMEN">Evaluación / Examen</option>
@@ -1010,7 +1135,7 @@
               type="date"
               class="form-control"
               [ngModel]="editFecha()"
-              (ngModelChange)="editFecha.set($event)"
+              (ngModelChange)="onEditFechaChange($event)"
             />
           </div>
 
@@ -1023,7 +1148,7 @@
                 type="time"
                 class="form-control font-monospace"
                 [ngModel]="editHoraInicio()"
-                (ngModelChange)="editHoraInicio.set($event)"
+                (ngModelChange)="onEditHoraInicioChange($event)"
               />
             </div>
             <div class="horario-col">
@@ -1033,23 +1158,38 @@
                 type="time"
                 class="form-control font-monospace"
                 [ngModel]="editHoraFin()"
-                (ngModelChange)="editHoraFin.set($event)"
+                (ngModelChange)="onEditHoraFinChange($event)"
               />
             </div>
           </div>
 
           <!-- Alumnos -->
           <div class="form-group">
-            <label for="editCant">Cantidad Estimada de Alumnos <span class="req">*</span></label>
+            <label for="editCant">
+              Cantidad Estimada de Alumnos <span class="req">*</span>
+              <span class="text-muted small ms-1">(Capacidad combinada: {{ capacidadTotalEdicion() }} puestos)</span>
+            </label>
             <input
               id="editCant"
               type="number"
               min="1"
-              max="60"
+              max="150"
               class="form-control"
+              [class.input-error]="capacidadExcedidaEdicion()"
               [ngModel]="editCantAlumnos()"
-              (ngModelChange)="editCantAlumnos.set(+$event)"
+              (ngModelChange)="onEditCantAlumnosChange(+$event)"
             />
+            @if (capacidadExcedidaEdicion()) {
+              <div class="field-error-text mt-1">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                La cantidad ingresada ({{ editCantAlumnos() }} alumnos) excede la capacidad combinada de
+                @if (editSalasSeleccionadas().length > 1) {
+                  las salas seleccionadas ({{ capacidadTotalEdicion() }} puestos).
+                } @else {
+                  {{ salaSeleccionadaEdicion()?.codigo_sala }} ({{ capacidadTotalEdicion() }} puestos).
+                }
+              </div>
+            }
           </div>
 
           <!-- Tema -->

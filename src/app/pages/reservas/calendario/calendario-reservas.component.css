@@ -188,7 +188,9 @@
   border-radius: 50%;
 }
 
-.dot-aprobada { background-color: #16a34a; }
+.dot-clase-aprobada { background-color: #002855; }
+.dot-examen-aprobado { background-color: #16a34a; }
+.dot-aprobada { background-color: #002855; }
 .dot-pendiente { background-color: #d97706; }
 .dot-rechazada { background-color: #dc2626; }
 .dot-cancelada { background-color: #64748b; }
@@ -361,53 +363,78 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
 }
 
-.res-aprobada {
+/* CLASES APROBADAS: AZUL INSTITUCIONAL (#002855 / #f0f7ff) */
+.res-aprobada.res-tipo-clase,
+.res-en-curso.res-tipo-clase {
+  background-color: #f0f7ff;
+  border-left-color: #002855;
+  color: #002855;
+}
+
+/* EXÁMENES APROBADOS: VERDE (#16a34a / #f0fdf4) */
+.res-aprobada.res-tipo-examen,
+.res-en-curso.res-tipo-examen {
   background-color: #f0fdf4;
   border-left-color: #16a34a;
   color: #14532d;
 }
 
+/* Fallback aprobada general */
+.res-aprobada {
+  background-color: #f0f7ff;
+  border-left-color: #002855;
+  color: #002855;
+}
+
+/* PENDIENTES: AMARILLO (#d97706 / #fffbeb) */
 .res-pendiente {
   background-color: #fffbeb;
   border-left-color: #d97706;
   color: #78350f;
 }
 
+/* RECHAZADAS: ROJO (#dc2626 / #fef2f2) */
 .res-rechazada {
   background-color: #fef2f2;
   border-left-color: #dc2626;
   color: #7f1d1d;
 }
 
+/* CANCELADAS: GRIS (#64748b / #f8fafc) */
 .res-cancelada {
   background-color: #f8fafc;
   border-left-color: #64748b;
   color: #475569;
 }
 
+.res-card-top-row,
 .res-card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 4px;
 }
 
 .res-time {
-  font-size: 0.68rem;
+  font-size: 0.65rem;
   font-weight: 700;
+  white-space: nowrap;
 }
 
 .res-sala-badge {
-  background-color: rgba(0, 40, 85, 0.1);
+  background-color: rgba(0, 40, 85, 0.12);
   color: #002855;
   font-weight: 800;
   font-size: 0.65rem;
-  padding: 0.08rem 0.3rem;
+  padding: 0.08rem 0.35rem;
   border-radius: 3px;
   font-family: monospace;
+  white-space: nowrap;
+  letter-spacing: 0.3px;
 }
 
 .res-materia {
-  font-size: 0.72rem;
+  font-size: 0.70rem;
   line-height: 1.15;
   white-space: nowrap;
   overflow: hidden;
@@ -415,7 +442,7 @@
 }
 
 .res-docente {
-  font-size: 0.65rem;
+  font-size: 0.64rem;
   color: #475569;
   display: flex;
   align-items: center;
@@ -433,9 +460,10 @@
 }
 
 .badge-alumnos {
-  font-size: 0.62rem;
+  font-size: 0.60rem;
   font-weight: 600;
   color: #64748b;
+  white-space: nowrap;
 }
 
 .badge-estado {
@@ -444,6 +472,62 @@
   padding: 0.05rem 0.25rem;
   border-radius: 3px;
   text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* ESTILOS PARTICIONADOS: Cuando 2 o más reservas solapan en un mismo horario */
+.reservation-card.card-particionada {
+  padding: 0.2rem 0.35rem !important;
+  font-size: 0.60rem !important;
+  gap: 0.06rem !important;
+}
+
+.reservation-card.card-particionada .res-card-top-row,
+.reservation-card.card-particionada .res-card-header {
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  gap: 1px !important;
+  margin-bottom: 2px !important;
+}
+
+.reservation-card.card-particionada .res-sala-badge {
+  font-size: 0.58rem !important;
+  padding: 0 4px !important;
+  line-height: 1.2 !important;
+}
+
+.reservation-card.card-particionada .res-time {
+  font-size: 0.58rem !important;
+  white-space: nowrap !important;
+  line-height: 1.2 !important;
+}
+
+.reservation-card.card-particionada .res-materia {
+  font-size: 0.62rem !important;
+  line-height: 1.1 !important;
+}
+
+.reservation-card.card-particionada .badge-tag-examen {
+  font-size: 0.55rem !important;
+  padding: 0 3px !important;
+}
+
+.reservation-card.card-particionada .res-docente {
+  font-size: 0.58rem !important;
+  line-height: 1.1 !important;
+}
+
+.reservation-card.card-particionada .res-footer-badges {
+  margin-top: 0 !important;
+}
+
+.reservation-card.card-particionada .badge-alumnos {
+  font-size: 0.55rem !important;
+}
+
+.reservation-card.card-particionada .badge-estado {
+  font-size: 0.55rem !important;
+  padding: 0 2px !important;
 }
 
 .badge-st-aprobada { background-color: #dcfce7; color: #16a34a; }
@@ -451,85 +535,115 @@
 .badge-st-rechazada { background-color: #fee2e2; color: #dc2626; }
 .badge-st-cancelada { background-color: #e2e8f0; color: #475569; }
 
-/* AGENDA DÍA */
-.agenda-dia-wrapper {
-  background-color: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  padding: 1rem;
+/* BANNER DE VISTA DÍA */
+.day-view-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.65rem 1.25rem;
+  background-color: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
-.agenda-dia-header h3 {
-  font-size: 1rem;
-  font-weight: 700;
+.day-view-date {
+  font-size: 0.92rem;
+  font-weight: 600;
   color: #002855;
-  margin: 0 0 1rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.day-view-date strong {
   text-transform: capitalize;
 }
 
-.timeline-slot {
-  display: flex;
-  gap: 1rem;
-  padding: 0.5rem 0;
-  border-bottom: 1px solid #f1f5f9;
-}
-
-.slot-time {
-  width: 65px;
-  font-weight: 700;
-  font-size: 0.8125rem;
-  color: #64748b;
-  padding-top: 0.35rem;
-}
-
-.slot-content {
-  flex: 1;
-}
-
-.slot-empty {
-  padding: 0.5rem 0.85rem;
-  border: 1px dashed #cbd5e1;
-  border-radius: 6px;
-  color: #94a3b8;
+.day-view-hint {
   font-size: 0.78rem;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+/* TABLA DE VISTA DÍA (ESTILO GOOGLE CALENDAR) */
+.table-vista-dia {
+  width: 100% !important;
+  min-width: 600px !important;
+  table-layout: fixed;
+}
+
+.table-vista-dia thead th.col-dia-header {
+  padding: 0.6rem 1rem;
+}
+
+.dia-header-flex {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.dia-nombre-largo {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #002855;
+  text-transform: capitalize;
+}
+
+.dia-nro-badge {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.detail-badges-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.btn-mark-read {
+  background-color: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  color: #0f172a;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.2rem 0.55rem;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
-.slot-empty:hover {
-  border-color: #002855;
+.btn-mark-read:hover {
+  background-color: #e2e8f0;
+  border-color: #94a3b8;
   color: #002855;
-  background-color: #f0f7ff;
 }
 
-.card-horizontal {
-  display: flex;
+.badge-sala-grupo {
+  background-color: #e0f2fe;
+  color: #0369a1;
+  border: 1px solid #bae6fd;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  display: inline-flex;
   align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  padding: 0.65rem 0.85rem;
-  gap: 1rem;
-}
-
-.card-left {
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-  width: 90px;
-}
-
-.card-center {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-}
-
-.card-right {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
   gap: 0.25rem;
+}
+
+.salas-grupo-container {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: center;
 }
 
 /* MODALS */
@@ -1014,6 +1128,66 @@
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
+}
+
+.btn-toggle-modo-multisala {
+  background: none;
+  border: none;
+  color: #002855;
+  font-size: 0.76rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+}
+
+.btn-toggle-modo-multisala:hover {
+  background-color: #e2e8f0;
+  color: #a81124;
+  text-decoration: underline;
+}
+
+/* OPCIÓN DE APROBACIÓN MASIVA / EN LOTE PARA CLASES RECURRENTES */
+.batch-approval-card {
+  background-color: #eff6ff;
+  border: 1.5px solid #bfdbfe;
+  border-radius: 6px;
+  padding: 0.65rem 0.85rem;
+  margin-bottom: 1rem;
+}
+
+.batch-approval-card .checkbox-container {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  cursor: pointer;
+}
+
+.batch-approval-card input[type="checkbox"] {
+  margin-top: 0.2rem;
+  cursor: pointer;
+  accent-color: #002855;
+}
+
+.batch-approval-text .batch-title {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: #002855;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.batch-approval-text small {
+  font-size: 0.72rem;
+  color: #475569;
+  line-height: 1.25;
+  display: block;
+  margin-top: 0.15rem;
 }
 
 /* BADGE DE DOCENTE TITULAR LOGUEADO */

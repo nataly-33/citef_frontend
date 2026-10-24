@@ -1168,6 +1168,54 @@
   gap: 0.3rem;
 }
 
+.detail-badges-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.btn-mark-read {
+  background-color: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  color: #0f172a;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.2rem 0.55rem;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-mark-read:hover {
+  background-color: #e2e8f0;
+  border-color: #94a3b8;
+  color: #002855;
+}
+
+.badge-sala-grupo {
+  background-color: #e0f2fe;
+  color: #0369a1;
+  border: 1px solid #bae6fd;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.salas-grupo-container {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: center;
+}
+
 .badge-tipo-examen-detail {
   background-color: #fee2e2;
   color: #a81124;
@@ -1353,4 +1401,120 @@
   background-color: #002855;
   color: #ffffff;
   border-color: #002855;
+}
+
+/* SELECTOR MULTI-SALA Y BOTÓN TOGGLE */
+.salas-selector-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.sala-pill-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.65rem;
+  border-radius: 6px;
+  border: 1.5px solid #cbd5e1;
+  background-color: #f8fafc;
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 600;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.sala-pill-checkbox.sala-pill-active {
+  border-color: #002855;
+  background-color: #eff6ff;
+  color: #002855;
+  box-shadow: 0 1px 3px rgba(0, 40, 85, 0.15);
+}
+
+.sala-pill-checkbox input {
+  cursor: pointer;
+}
+
+.sala-capacity-note {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  color: #475569;
+  margin-top: 0.35rem;
+}
+
+.badge-multi-salas {
+  background-color: #fef3c7;
+  color: #92400e;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  border: 1px solid #fde68a;
+  font-size: 0.72rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.btn-toggle-modo-multisala {
+  background: none;
+  border: none;
+  color: #002855;
+  font-size: 0.76rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+}
+
+.btn-toggle-modo-multisala:hover {
+  background-color: #e2e8f0;
+  color: #a81124;
+  text-decoration: underline;
+}
+
+/* OPCIÓN DE APROBACIÓN MASIVA / EN LOTE PARA CLASES RECURRENTES */
+.batch-approval-card {
+  background-color: #eff6ff;
+  border: 1.5px solid #bfdbfe;
+  border-radius: 6px;
+  padding: 0.65rem 0.85rem;
+  margin-bottom: 1rem;
+}
+
+.batch-approval-card .checkbox-container {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  cursor: pointer;
+}
+
+.batch-approval-card input[type="checkbox"] {
+  margin-top: 0.2rem;
+  cursor: pointer;
+  accent-color: #002855;
+}
+
+.batch-approval-text .batch-title {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: #002855;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.batch-approval-text small {
+  font-size: 0.72rem;
+  color: #475569;
+  line-height: 1.25;
+  display: block;
+  margin-top: 0.15rem;
 }
