@@ -280,6 +280,41 @@ export class ShellComponent implements OnInit {
       });
     }
 
+    // MÓDULO: Soporte Técnico y Mantenimiento RAMS (CU24 y CU25)
+    const itemsSoporte: NavSubItem[] = [];
+    if (
+      this.authService.hasAnyPermission([
+        'SOPORTE_MANTENIMIENTO_REGISTRAR',
+        'SOPORTE_RETORNO_CONFIRMAR',
+      ])
+    ) {
+      itemsSoporte.push({
+        ruta: '/admin/soporte/taller',
+        texto: 'Bandeja Taller',
+        icono: 'bi-wrench-adjustable',
+      });
+    }
+    if (
+      this.authService.hasAnyPermission([
+        'SOPORTE_MANTENIMIENTO_REGISTRAR',
+        'REPORTES_DINAMICOS',
+      ])
+    ) {
+      itemsSoporte.push({
+        ruta: '/admin/soporte/rams',
+        texto: 'Métricas RAMS',
+        icono: 'bi-speedometer2',
+      });
+    }
+    if (itemsSoporte.length > 0) {
+      groups.push({
+        id: 'soporte',
+        titulo: 'Soporte',
+        icono: 'bi-tools',
+        items: itemsSoporte,
+      });
+    }
+
     return groups;
   });
 

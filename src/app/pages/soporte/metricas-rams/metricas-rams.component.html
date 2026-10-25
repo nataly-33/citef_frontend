@@ -1,0 +1,422 @@
+<div class="rams-container">
+  <!-- ENCABEZADO DE PÁGINA (Sin emojis, paleta institucional) -->
+  <div class="page-header">
+    <div class="header-left">
+      <h1>
+        <i class="bi bi-speedometer2"></i> Tablero de Métricas RAMS y Confiabilidad Operativa
+      </h1>
+      <p class="header-subtitle">
+        Monitoreo analítico de Confiabilidad (MTBF), Mantenibilidad (MTTR) y Factor de Disponibilidad Inherente A (IEEE 762)
+      </p>
+    </div>
+    <div class="header-right">
+      <button class="citef-btn citef-btn-outline" (click)="mostrarModalFormulas.set(true)" title="Ver fundamentación y formulación matemática">
+        <i class="bi bi-info-circle"></i> Fundamentación RAMS
+      </button>
+      <button class="citef-btn citef-btn-primary" (click)="imprimirTablero()" title="Imprimir informe ejecutivo">
+        <i class="bi bi-printer"></i> Imprimir Informe
+      </button>
+    </div>
+  </div>
+
+  <!-- 4 TARJETAS DE KPIS SUPERIORES (REGLA MODULO 7) -->
+  <div class="kpi-grid">
+    <!-- KPI 1: MTTR Global -->
+    <div class="kpi-card">
+      <div class="kpi-header">
+        <span class="kpi-title">MTTR GLOBAL (TALLER)</span>
+        <div class="kpi-icon-box kpi-icon-orange">
+          <i class="bi bi-wrench"></i>
+        </div>
+      </div>
+      <div class="kpi-value">
+        {{ dashboard()?.kpis?.mttr_promedio_horas || 0 }} <span class="kpi-unit">hrs</span>
+      </div>
+      <div class="kpi-subtitle">
+        Tiempo Medio Para Reparar (Mean Time To Repair)
+      </div>
+      <div class="kpi-footer">
+        <span class="benchmark-pill benchmark-good">
+          <i class="bi bi-shield-check"></i> Meta FCEE: &lt; 3.0 hrs
+        </span>
+      </div>
+    </div>
+
+    <!-- KPI 2: MTBF Global -->
+    <div class="kpi-card">
+      <div class="kpi-header">
+        <span class="kpi-title">MTBF GLOBAL (OPERACIÓN)</span>
+        <div class="kpi-icon-box kpi-icon-blue">
+          <i class="bi bi-clock-history"></i>
+        </div>
+      </div>
+      <div class="kpi-value">
+        {{ dashboard()?.kpis?.mtbf_promedio_horas || 0 }} <span class="kpi-unit">hrs</span>
+      </div>
+      <div class="kpi-subtitle">
+        Tiempo Medio Entre Fallas (Mean Time Between Failures)
+      </div>
+      <div class="kpi-footer">
+        <span class="benchmark-pill benchmark-good">
+          <i class="bi bi-graph-up-arrow"></i> Meta FCEE: &gt; 150 hrs
+        </span>
+      </div>
+    </div>
+
+    <!-- KPI 3: Disponibilidad Inherente A (%) con semáforo formal -->
+    @let dispPorcentaje = dashboard()?.kpis?.disponibilidad_promedio_porcentaje || 0;
+    <div class="kpi-card">
+      <div class="kpi-header">
+        <span class="kpi-title">DISPONIBILIDAD INHERENTE A</span>
+        <div class="kpi-icon-box" [ngClass]="{
+          'kpi-icon-green': dispPorcentaje >= 95,
+          'kpi-icon-blue': dispPorcentaje >= 90 && dispPorcentaje < 95,
+          'kpi-icon-red': dispPorcentaje < 90
+        }">
+          <i class="bi bi-speedometer"></i>
+        </div>
+      </div>
+      <div class="kpi-value">
+        {{ dispPorcentaje }} <span class="kpi-unit">%</span>
+      </div>
+      <div class="kpi-progress-bar-container">
+        <div
+          class="kpi-progress-bar"
+          [style.width.%]="dispPorcentaje"
+          [ngClass]="getSemaforoClase(dispPorcentaje)"
+        ></div>
+      </div>
+      <div class="kpi-footer">
+        <span class="benchmark-pill" [ngClass]="{
+          'benchmark-good': dispPorcentaje >= 95,
+          'benchmark-warning': dispPorcentaje >= 90 && dispPorcentaje < 95,
+          'benchmark-danger': dispPorcentaje < 90
+        }">
+          <i class="bi bi-circle-fill" style="font-size: 0.5rem;"></i>
+          {{ getSemaforoTexto(dispPorcentaje) }}
+        </span>
+      </div>
+    </div>
+
+    <!-- KPI 4: Equipos Operativos vs Taller / Parque -->
+    <div class="kpi-card">
+      <div class="kpi-header">
+        <span class="kpi-title">PARQUE OPERATIVO CITEF</span>
+        <div class="kpi-icon-box kpi-icon-navy">
+          <i class="bi bi-pc-display-horizontal"></i>
+        </div>
+      </div>
+      <div class="kpi-value">
+        {{ dashboard()?.kpis?.total_equipos_operativos || 0 }} <span class="kpi-unit">/ {{ dashboard()?.kpis?.total_equipos_parque || 0 }}</span>
+      </div>
+      <div class="kpi-subtitle">
+        Estaciones operativas en servicio activo
+      </div>
+      <div class="kpi-pills-row">
+        <span class="tag-counter tag-taller" title="Equipos actualmente en banco de trabajo">
+          <i class="bi bi-tools"></i> {{ dashboard()?.kpis?.total_equipos_en_taller || 0 }} taller
+        </span>
+        <span class="tag-counter tag-baja" title="Equipos declarados en baja definitiva">
+          <i class="bi bi-slash-circle"></i> {{ dashboard()?.kpis?.total_equipos_baja || 0 }} baja
+        </span>
+        <span class="tag-counter tag-fallas" title="Total de fallas reportadas en el periodo">
+          <i class="bi bi-exclamation-circle"></i> {{ dashboard()?.kpis?.total_fallas_periodo || 0 }} fallas
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESUMEN COMPARATIVO POR SALA -->
+  @if (dashboard()?.resumen_salas && (dashboard()?.resumen_salas?.length || 0) > 0) {
+    <div class="resumen-salas-section">
+      <div class="section-title">
+        <i class="bi bi-building"></i> Desempeño y Disponibilidad por Laboratorio
+      </div>
+      <div class="salas-cards-grid">
+        @for (s of dashboard()?.resumen_salas; track s.id_sala) {
+          <div class="sala-summary-card">
+            <div class="sala-header">
+              <div>
+                <span class="sala-code">{{ s.codigo_sala }}</span>
+                <div class="sala-name">{{ s.nombre_sala }}</div>
+              </div>
+              <div class="sala-disp-badge" [ngClass]="getSemaforoClase(s.disponibilidad_porcentaje)">
+                {{ s.disponibilidad_porcentaje }}%
+              </div>
+            </div>
+
+            <div class="sala-progress-track">
+              <div
+                class="sala-progress-fill"
+                [style.width.%]="s.disponibilidad_porcentaje"
+                [ngClass]="getSemaforoClase(s.disponibilidad_porcentaje)"
+              ></div>
+            </div>
+
+            <div class="sala-metrics-grid">
+              <div class="sala-metric-item">
+                <span class="m-label">Equipos:</span>
+                <span class="m-val">{{ s.cant_equipos }}</span>
+              </div>
+              <div class="sala-metric-item">
+                <span class="m-label">Averías:</span>
+                <span class="m-val" [class.text-danger]="s.cant_fallas > 2">{{ s.cant_fallas }}</span>
+              </div>
+              <div class="sala-metric-item">
+                <span class="m-label">MTBF:</span>
+                <span class="m-val">{{ s.mtbf_promedio }}h</span>
+              </div>
+              <div class="sala-metric-item">
+                <span class="m-label">MTTR:</span>
+                <span class="m-val">{{ s.mttr_promedio }}h</span>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- BARRA DE FILTROS AVANZADOS (REGLA 4: BUSCAR Y LIMPIAR) -->
+  <div class="filter-card">
+    <div class="filter-row">
+      <div class="filter-col col-search">
+        <label for="filtroBusquedaRams">Búsqueda Textual:</label>
+        <div class="input-with-icon">
+          <i class="bi bi-search"></i>
+          <input
+            id="filtroBusquedaRams"
+            type="text"
+            class="citef-input"
+            placeholder="Buscar por código de equipo o nombre de sala..."
+            [(ngModel)]="filtroBusqueda"
+            (keyup.enter)="aplicarFiltros()"
+          />
+        </div>
+      </div>
+
+      <div class="filter-col">
+        <label for="filtroSalaRams">Laboratorio:</label>
+        <select id="filtroSalaRams" class="citef-select" [(ngModel)]="filtroSala">
+          <option [ngValue]="null">Todos los laboratorios</option>
+          @for (s of salas(); track s.id_sala) {
+            <option [ngValue]="s.id_sala">{{ s.codigo_sala }} - {{ s.nombre }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="filter-col col-mes">
+        <label for="filtroMesRams">Mes Evaluado:</label>
+        <select id="filtroMesRams" class="citef-select" [(ngModel)]="filtroMes">
+          @for (m of meses; track m.valor) {
+            <option [ngValue]="m.valor">{{ m.nombre }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="filter-col col-anio">
+        <label for="filtroAnioRams">Año:</label>
+        <select id="filtroAnioRams" class="citef-select" [(ngModel)]="filtroAnio">
+          @for (a of anios; track a) {
+            <option [ngValue]="a">{{ a }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="filter-col-buttons">
+        <button class="citef-btn citef-btn-primary" (click)="aplicarFiltros()" title="Calcular métricas RAMS">
+          <i class="bi bi-search"></i> Buscar
+        </button>
+        <button class="citef-btn citef-btn-outline" (click)="limpiarFiltros()" title="Restablecer filtros">
+          <i class="bi bi-arrow-counterclockwise"></i> Limpiar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TABLA DESGLOSADA POR COMPUTADORA / ESTACIÓN (REGLA MODULO 7) -->
+  <app-table-card
+    title="Indicadores RAMS Desglosados por Estación de Trabajo"
+    [hasActions]="false"
+  >
+    <div class="citef-table-container">
+      <table class="citef-table">
+        <thead>
+          <tr>
+            <th>Laboratorio / Ubicación</th>
+            <th>Estación (Código)</th>
+            <th class="text-center">Averías Periodo</th>
+            <th class="text-right">Horas Operativas</th>
+            <th class="text-right">MTBF (hrs)</th>
+            <th class="text-right">MTTR (hrs)</th>
+            <th style="min-width: 170px;">Disponibilidad A (%)</th>
+            <th>Estado Operativo</th>
+          </tr>
+        </thead>
+        <tbody>
+          @if (cargando()) {
+            <tr>
+              <td colspan="8" class="text-center py-4">
+                <i class="bi bi-arrow-repeat spin"></i> Calculando indicadores RAMS de confiabilidad y disponibilidad...
+              </td>
+            </tr>
+          } @else if (!dashboard()?.items || dashboard()?.items?.length === 0) {
+            <tr>
+              <td colspan="8" class="text-center py-4 text-muted">
+                <i class="bi bi-info-circle"></i> No se encontraron registros de indicadores para los filtros seleccionados.
+              </td>
+            </tr>
+          } @else {
+            @for (item of dashboard()?.items; track item.id_indicador) {
+              <tr>
+                <td>
+                  <strong>{{ item.nombre_sala }}</strong>
+                  <div class="text-xs text-muted">{{ item.codigo_sala }}</div>
+                </td>
+                <td>
+                  <span class="font-bold text-primary">
+                    <i class="bi bi-pc-display"></i> {{ item.codigo_equipo }}
+                  </span>
+                </td>
+                <td class="text-center">
+                  @if (item.cant_fallas_registradas === 0) {
+                    <span class="citef-badge citef-badge-success">0</span>
+                  } @else if (item.cant_fallas_registradas <= 2) {
+                    <span class="citef-badge citef-badge-warning">{{ item.cant_fallas_registradas }}</span>
+                  } @else {
+                    <span class="citef-badge citef-badge-danger">{{ item.cant_fallas_registradas }}</span>
+                  }
+                </td>
+                <td class="text-right font-medium">
+                  {{ item.horas_operativas_totales | number:'1.1-1' }} hrs
+                </td>
+                <td class="text-right font-medium">
+                  {{ item.mtbf_horas | number:'1.1-2' }} hrs
+                </td>
+                <td class="text-right font-medium">
+                  {{ item.mttr_horas | number:'1.1-2' }} hrs
+                </td>
+                <td>
+                  <div class="disp-bar-cell">
+                    <div class="disp-text-val font-bold" [ngClass]="getSemaforoClase(item.disponibilidad_porcentaje)">
+                      {{ item.disponibilidad_porcentaje | number:'1.2-2' }}%
+                    </div>
+                    <div class="progress-track-sm">
+                      <div
+                        class="progress-fill-sm"
+                        [style.width.%]="item.disponibilidad_porcentaje"
+                        [ngClass]="getSemaforoClase(item.disponibilidad_porcentaje)"
+                      ></div>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  @switch (item.estado_operativo) {
+                    @case ('DISPONIBLE') {
+                      <span class="citef-badge citef-badge-success">
+                        <i class="bi bi-check-circle"></i> Disponible
+                      </span>
+                    }
+                    @case ('OCUPADA') {
+                      <span class="citef-badge citef-badge-primary-alt">
+                        <i class="bi bi-person-fill"></i> En Uso
+                      </span>
+                    }
+                    @case ('EN_MANTENIMIENTO') {
+                      <span class="citef-badge citef-badge-warning">
+                        <i class="bi bi-tools"></i> En Taller
+                      </span>
+                    }
+                    @case ('DE_BAJA') {
+                      <span class="citef-badge citef-badge-danger">
+                        <i class="bi bi-slash-circle"></i> De Baja
+                      </span>
+                    }
+                    @default {
+                      <span class="citef-badge citef-badge-neutral">{{ item.estado_operativo }}</span>
+                    }
+                  }
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <!-- PAGINACIÓN ESTÁNDAR 15 FILAS A LA DERECHA (REGLA 8) -->
+    <div class="pagination-wrapper">
+      <app-pagination
+        [paginaActual]="paginaActual()"
+        [totalRegistros]="totalRegistros()"
+        [tamanoPagina]="limite"
+        etiqueta="estaciones"
+        (paginaCambiada)="cambiarPagina($event)"
+      ></app-pagination>
+    </div>
+  </app-table-card>
+
+  <!-- ================= MODAL EXPLICATIVO DE FÓRMULAS RAMS (IEEE 762) ================= -->
+  @if (mostrarModalFormulas()) {
+    <div class="modal-backdrop">
+      <div class="modal-window modal-lg">
+        <div class="modal-header">
+          <h2>
+            <i class="bi bi-mortarboard-fill text-primary"></i> Fundamentación RAMS e Ingeniería de Confiabilidad
+          </h2>
+          <button class="modal-close" (click)="mostrarModalFormulas.set(false)" title="Cerrar">&times;</button>
+        </div>
+
+        <div class="modal-body">
+          <div class="rams-doc-box">
+            <h3>Estándar Internacional IEEE 762 y Rigor Académico FCEE</h3>
+            <p>
+              El cálculo automatizado de indicadores de <strong>Confiabilidad, Disponibilidad y Mantenibilidad (RAMS)</strong> constituye uno de los aportes disciplinares fundamentales del Sistema CITEF a la Jefatura de Laboratorios de la Facultad de Ciencias Económicas y Empresariales (UAGRM).
+            </p>
+
+            <div class="formula-card">
+              <div class="formula-title">1. MTBF (Mean Time Between Failures) - Confiabilidad</div>
+              <div class="formula-math">
+                MTBF = Horas Operativas Totales / Cantidad de Fallas Registradas
+              </div>
+              <p class="formula-desc">
+                Representa el promedio de horas de funcionamiento continuo que una estación de trabajo se mantiene operativa antes de presentar una avería técnica. A mayor MTBF, mayor confiabilidad del hardware instalado.
+              </p>
+            </div>
+
+            <div class="formula-card mt-3">
+              <div class="formula-title">2. MTTR (Mean Time To Repair) - Mantenibilidad</div>
+              <div class="formula-math">
+                MTTR = Horas Totales en Taller / Cantidad de Reparaciones Concluidas
+              </div>
+              <p class="formula-desc">
+                Mide la celeridad y eficacia del equipo de soporte técnico en diagnosticar, sustituir piezas y poner a punto los equipos en el banco de trabajo. La meta de acreditación FCEE es mantener el MTTR por debajo de las 3.0 horas.
+              </p>
+            </div>
+
+            <div class="formula-card mt-3">
+              <div class="formula-title">3. Factor de Disponibilidad Inherente (A)</div>
+              <div class="formula-math">
+                A = MTBF / (MTBF + MTTR) &times; 100%
+              </div>
+              <p class="formula-desc">
+                Proporción del tiempo en que el recurso computacional está en estado operativo y apto para ser utilizado por estudiantes y docentes. El semáforo oficial se clasifica en:
+              </p>
+              <ul class="semaforo-list">
+                <li><strong class="text-success">&ge; 95.0%:</strong> Estado Óptimo (Verde esmeralda - Alta Confiabilidad).</li>
+                <li><strong class="text-primary">90.0% - 94.9%:</strong> Estado Aceptable (Azul institucional - Monitoreo preventivo).</li>
+                <li><strong class="text-danger">&lt; 90.0%:</strong> Estado Crítico (Rojo carmesí - Requiere renovación o reemplazo de componentes).</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="citef-btn citef-btn-primary" (click)="mostrarModalFormulas.set(false)">
+            Entendido
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

@@ -3,3 +3,4 @@ export * from './pagination/pagination.component';
 export * from './modal-alert/modal-alert.component';
 export * from './table-card/table-card.component';
 export * from './lab-cuadricula/lab-cuadricula.component';
+export * from './selector-computadora-modal/selector-computadora-modal.component';

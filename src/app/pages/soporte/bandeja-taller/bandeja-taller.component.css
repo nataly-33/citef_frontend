@@ -1,0 +1,888 @@
+/* ============================================================================
+   BANDEJA DE TALLER Y SOPORTE TÉCNICO (CU24 y CU25) - ESTILOS INSTITUCIONALES
+   Paleta FCEE UAGRM: Carmesí (#A81124), Marino (#002855), Fondo (#F8FAFC)
+   ============================================================================ */
+
+.taller-container {
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  background-color: var(--citef-bg-main, #f8fafc);
+}
+
+/* ENCABEZADO DE PÁGINA */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.header-left h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--citef-primary, #002855);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.header-subtitle {
+  margin: 0.25rem 0 0 0;
+  font-size: 0.875rem;
+  color: var(--citef-text-secondary, #475569);
+}
+
+/* ALERTAS GLOBALES */
+.alert-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.85rem 1.2rem;
+  border-radius: var(--citef-radius, 8px);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.alert-success {
+  background-color: #dcfce7;
+  color: #166534;
+  border-left: 4px solid #16a34a;
+}
+
+.alert-danger {
+  background-color: #fee2e2;
+  color: #991b1b;
+  border-left: 4px solid var(--citef-secondary, #a81124);
+}
+
+.btn-close-alert {
+  margin-left: auto;
+  background: transparent;
+  border: none;
+  font-size: 1.1rem;
+  cursor: pointer;
+  color: inherit;
+  opacity: 0.7;
+}
+
+.btn-close-alert:hover {
+  opacity: 1;
+}
+
+/* BARRA DE FILTROS AVANZADOS (REGLA 4) */
+.filter-card {
+  background: var(--citef-bg-surface, #ffffff);
+  border: 1px solid var(--citef-border, #e2e8f0);
+  border-radius: var(--citef-radius, 8px);
+  padding: 1rem 1.25rem;
+  box-shadow: var(--citef-shadow, 0 1px 3px rgba(0, 0, 0, 0.05));
+}
+
+.filter-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.filter-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 180px;
+  flex: 1;
+}
+
+.col-search {
+  flex: 2;
+  min-width: 260px;
+}
+
+.filter-col label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--citef-text-secondary, #475569);
+}
+
+.input-with-icon {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-with-icon i {
+  position: absolute;
+  left: 0.75rem;
+  color: var(--citef-text-muted, #94a3b8);
+}
+
+.input-with-icon input {
+  padding-left: 2.25rem;
+}
+
+.filter-col-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* INPUTS Y SELECTS ESTILO CITEF */
+.citef-input,
+.citef-select,
+.citef-textarea {
+  width: 100%;
+  padding: 0.55rem 0.75rem;
+  font-size: 0.875rem;
+  border: 1px solid var(--citef-border, #cbd5e1);
+  border-radius: var(--citef-radius-sm, 6px);
+  background-color: #ffffff;
+  color: var(--citef-text-primary, #0f172a);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  outline: none;
+}
+
+.citef-input:focus,
+.citef-select:focus,
+.citef-textarea:focus {
+  border-color: var(--citef-primary, #002855);
+  box-shadow: 0 0 0 2px rgba(0, 40, 85, 0.15);
+}
+
+.input-error {
+  border-color: var(--citef-danger-strong, #dc2626) !important;
+  background-color: #fffafb;
+}
+
+.field-error-text {
+  font-size: 0.75rem;
+  color: #dc2626;
+  font-weight: 500;
+  margin-top: 0.25rem;
+}
+
+/* BOTONES CITEF */
+.citef-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  padding: 0.55rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  border-radius: var(--citef-radius-sm, 6px);
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.citef-btn-primary {
+  background-color: var(--citef-secondary, #a81124);
+  color: #ffffff;
+}
+
+.citef-btn-primary:hover:not(:disabled) {
+  background-color: var(--citef-secondary-hover, #c5182f);
+}
+
+.citef-btn-outline {
+  background-color: #ffffff;
+  color: var(--citef-primary, #002855);
+  border-color: var(--citef-border, #cbd5e1);
+}
+
+.citef-btn-outline:hover:not(:disabled) {
+  background-color: #f1f5f9;
+  border-color: var(--citef-primary, #002855);
+}
+
+.citef-btn-danger {
+  background-color: #dc2626;
+  color: #ffffff;
+}
+
+.citef-btn-danger:hover:not(:disabled) {
+  background-color: #b91c1c;
+}
+
+.citef-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* TABLA CITEF */
+.citef-table-container {
+  overflow-x: auto;
+}
+
+.citef-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.citef-table thead th {
+  background-color: #f8fafc;
+  color: var(--citef-primary, #002855);
+  font-weight: 600;
+  text-align: left;
+  padding: 0.75rem 1rem;
+  border-bottom: 2px solid var(--citef-border, #e2e8f0);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.citef-table tbody td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--citef-border, #e2e8f0);
+  color: var(--citef-text-primary, #1e293b);
+  vertical-align: middle;
+}
+
+.citef-table tbody tr:hover {
+  background-color: #f8fafc;
+}
+
+.font-bold {
+  font-weight: 700;
+}
+
+.font-medium {
+  font-weight: 500;
+}
+
+.text-primary {
+  color: var(--citef-primary, #002855);
+}
+
+.text-success {
+  color: #16a34a;
+}
+
+.text-muted {
+  color: var(--citef-text-muted, #64748b);
+}
+
+.text-xs {
+  font-size: 0.75rem;
+}
+
+.text-right {
+  text-align: right;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.py-4 {
+  padding-top: 1.5rem !important;
+  padding-bottom: 1.5rem !important;
+}
+
+.mt-1 { margin-top: 0.25rem; }
+.mt-2 { margin-top: 0.5rem; }
+.mt-3 { margin-top: 0.75rem; }
+.mt-4 { margin-top: 1rem; }
+
+/* BADGES DE ESTADO (INSTITUCIONALES) */
+.citef-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.citef-badge-warning {
+  background-color: #fef3c7;
+  color: #b45309;
+  border: 1px solid #fde68a;
+}
+
+.citef-badge-primary-alt {
+  background-color: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+}
+
+.citef-badge-success {
+  background-color: #dcfce7;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+}
+
+.citef-badge-info {
+  background-color: #ccfbf1;
+  color: #0f766e;
+  border: 1px solid #99f6e4;
+}
+
+.citef-badge-danger {
+  background-color: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+.citef-badge-neutral {
+  background-color: #f1f5f9;
+  color: #475569;
+}
+
+/* PRIORIDADES Y TIPOS */
+.tipo-tag {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+  background-color: #f1f5f9;
+  color: #334155;
+  text-transform: uppercase;
+}
+
+.tipo-preventivo {
+  background-color: #e0f2fe;
+  color: #0369a1;
+}
+
+.badge-prioridad {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.725rem;
+  font-weight: 600;
+}
+
+.prioridad-baja { color: #0284c7; }
+.prioridad-media { color: #d97706; }
+.prioridad-alta { color: #ea580c; }
+.prioridad-critica { color: #dc2626; font-weight: 700; }
+
+.desc-text {
+  font-size: 0.8125rem;
+  line-height: 1.35;
+  max-width: 280px;
+}
+
+.diag-text {
+  font-size: 0.75rem;
+  color: #475569;
+  font-style: italic;
+  max-width: 280px;
+}
+
+.sol-text {
+  font-size: 0.75rem;
+  color: #15803d;
+  font-weight: 500;
+  max-width: 280px;
+}
+
+/* BOTONES DE ACCIÓN POR FILA */
+.table-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.35rem;
+}
+
+.action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+  background-color: #ffffff;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-size: 0.95rem;
+}
+
+.action-play {
+  color: #0284c7;
+  border-color: #bae6fd;
+}
+.action-play:hover {
+  background-color: #f0f9ff;
+  border-color: #0284c7;
+}
+
+.action-finish {
+  color: #16a34a;
+  border-color: #bbf7d0;
+}
+.action-finish:hover {
+  background-color: #f0fdf4;
+  border-color: #16a34a;
+}
+
+.action-retorno {
+  color: #0d9488;
+  border-color: #99f6e4;
+}
+.action-retorno:hover {
+  background-color: #f0fdfa;
+  border-color: #0d9488;
+}
+
+.action-baja {
+  color: #dc2626;
+  border-color: #fecaca;
+}
+.action-baja:hover {
+  background-color: #fef2f2;
+  border-color: #dc2626;
+}
+
+.action-view {
+  color: var(--citef-primary, #002855);
+  border-color: #cbd5e1;
+}
+.action-view:hover {
+  background-color: #eff6ff;
+  border-color: var(--citef-primary, #002855);
+}
+
+/* PAGINACIÓN */
+.pagination-wrapper {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0.75rem 1rem;
+  border-top: 1px solid var(--citef-border, #e2e8f0);
+  background-color: #ffffff;
+}
+
+/* ================= MODALES Y BACKDROP ================= */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1050;
+  padding: 1rem;
+}
+
+.modal-window {
+  background-color: #ffffff;
+  border-radius: var(--citef-radius-lg, 12px);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+  width: 100%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: modalFadeIn 0.2s ease-out;
+}
+
+.modal-md {
+  max-width: 580px;
+}
+
+.modal-lg {
+  max-width: 820px;
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-12px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.1rem 1.5rem;
+  border-bottom: 1px solid var(--citef-border, #e2e8f0);
+  background-color: #fafbfc;
+}
+
+.modal-header h2 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--citef-primary, #002855);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.modal-header-danger {
+  border-bottom-color: #fecaca;
+  background-color: #fffafb;
+}
+
+.modal-close {
+  background: transparent;
+  border: none;
+  font-size: 1.5rem;
+  line-height: 1;
+  color: #64748b;
+  cursor: pointer;
+}
+
+.modal-close:hover {
+  color: #0f172a;
+}
+
+.modal-body {
+  padding: 1.25rem 1.5rem;
+  overflow-y: auto;
+}
+
+.modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--citef-border, #e2e8f0);
+  background-color: #fafbfc;
+}
+
+/* FORMULARIOS DE MODAL */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.form-row-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.field-label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--citef-text-secondary, #334155);
+}
+
+.field-label.required::after {
+  content: ' *';
+  color: #dc2626;
+  font-weight: 700;
+}
+
+.info-card-resumen {
+  background-color: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  font-size: 0.8125rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.info-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.info-label {
+  font-weight: 600;
+  color: #64748b;
+  min-width: 120px;
+}
+
+.info-val {
+  color: #0f172a;
+}
+
+.danger-warning-banner {
+  display: flex;
+  gap: 0.75rem;
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  padding: 0.85rem 1rem;
+  color: #991b1b;
+  font-size: 0.875rem;
+}
+
+.danger-warning-banner i {
+  font-size: 1.4rem;
+  color: #dc2626;
+  flex-shrink: 0;
+}
+
+/* CHECKBOX FORMAL RETORNO */
+.retorno-checklist {
+  background-color: #f0fdfa;
+  border: 1px solid #99f6e4;
+  border-radius: 8px;
+  padding: 0.85rem 1rem;
+}
+
+.custom-checkbox-container {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  cursor: pointer;
+}
+
+.custom-checkbox-container input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #0d9488;
+  margin-top: 0.2rem;
+  cursor: pointer;
+}
+
+.checkbox-label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  font-size: 0.875rem;
+  color: #134e4a;
+}
+
+.checkbox-desc {
+  font-size: 0.75rem;
+  color: #0f766e;
+  line-height: 1.35;
+}
+
+/* SELECTOR PC EN MODAL */
+.input-pc-group {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.btn-pc-plano {
+  padding: 0.55rem 0.75rem;
+}
+
+/* ================= FICHA TÉCNICA INSTITUCIONAL ================= */
+.ficha-header-institucional {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  border-bottom: 2px solid var(--citef-primary, #002855);
+  padding-bottom: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.ficha-logo-box {
+  width: 60px;
+  height: 60px;
+  background-color: var(--citef-primary, #002855);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.uagrm-icon {
+  font-size: 2rem;
+  color: #ffffff;
+}
+
+.ficha-header-text {
+  flex: 1;
+}
+
+.inst-uni {
+  font-size: 0.875rem;
+  font-weight: 800;
+  color: var(--citef-primary, #002855);
+  letter-spacing: 0.02em;
+}
+
+.inst-fac {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--citef-secondary, #a81124);
+}
+
+.inst-sub {
+  font-size: 0.725rem;
+  color: #475569;
+}
+
+.inst-doc {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin-top: 0.25rem;
+}
+
+.ficha-folio {
+  border: 1px solid var(--citef-border, #cbd5e1);
+  border-radius: 8px;
+  padding: 0.5rem 0.85rem;
+  text-align: center;
+  background-color: #fafbfc;
+}
+
+.folio-title {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+}
+
+.folio-num {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--citef-primary, #002855);
+}
+
+.folio-estado {
+  font-size: 0.675rem;
+  font-weight: 700;
+  color: var(--citef-secondary, #a81124);
+}
+
+.ficha-seccion-titulo {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--citef-primary, #002855);
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 0.35rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.ficha-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.ficha-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.ficha-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  font-size: 0.8rem;
+}
+
+.ficha-field label {
+  font-size: 0.7rem;
+  color: #64748b;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.ficha-bloque-texto {
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+}
+
+.ficha-bloque-texto label {
+  font-size: 0.7rem;
+  color: #64748b;
+  font-weight: 600;
+  text-transform: uppercase;
+  display: block;
+  margin-bottom: 0.2rem;
+}
+
+.ficha-bloque-texto p {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: #1e293b;
+  line-height: 1.35;
+}
+
+.ficha-firmas {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3rem;
+  padding-top: 2rem;
+}
+
+.firma-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.linea-firma {
+  width: 75%;
+  border-bottom: 1px solid #475569;
+  margin-bottom: 0.4rem;
+}
+
+.firma-nombre {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.firma-cargo {
+  font-size: 0.725rem;
+  color: #64748b;
+}
+
+/* ANIMACIONES */
+.spin {
+  display: inline-block;
+  animation: spinAnimation 1s linear infinite;
+}
+
+@keyframes spinAnimation {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* IMPRESIÓN FORMAL DE FICHA TÉCNICA */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .modal-backdrop {
+    position: static;
+    background: transparent;
+    padding: 0;
+  }
+  .modal-window {
+    box-shadow: none;
+    border: none;
+    max-width: 100%;
+    max-height: none;
+  }
+  .modal-header,
+  .modal-footer {
+    display: none !important;
+  }
+  .modal-printable,
+  .modal-printable * {
+    visibility: visible;
+  }
+  .ficha-tecnica-body {
+    padding: 0;
+  }
+}

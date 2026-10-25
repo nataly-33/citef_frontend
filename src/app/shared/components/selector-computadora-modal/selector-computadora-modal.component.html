@@ -1,0 +1,142 @@
+@if (visible) {
+  <div class="modal-backdrop" (click)="onBackdropClick($event)">
+    <div class="modal-window modal-plano" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>
+          <i class="bi bi-grid-3x3-gap-fill text-primary"></i>
+          Distribución de Sala y Selección de Estación
+        </h2>
+        <button class="btn-close-modal" (click)="cerrarModal()" title="Cerrar">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        @if (errorCarga()) {
+          <div class="alert-error">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            <span>{{ errorCarga() }}</span>
+          </div>
+        }
+
+        <!-- Selector de sala si hay varias disponibles -->
+        @if (salasDisponibles.length > 1) {
+          <div class="room-selector-row">
+            <label for="modalSelectSala" class="lbl-sala">
+              <i class="bi bi-building"></i> Laboratorio:
+            </label>
+            <select
+              id="modalSelectSala"
+              class="citef-select select-compact"
+              [ngModel]="salaSeleccionadaId()"
+              (ngModelChange)="cambiarSala($event)"
+            >
+              @for (s of salasDisponibles; track s.id_sala) {
+                <option [ngValue]="s.id_sala">
+                  {{ s.codigo_sala }} - {{ s.nombre }} (Piso {{ s.piso }})
+                </option>
+              }
+            </select>
+          </div>
+        }
+
+        @if (cargando()) {
+          <div class="loading-state">
+            <i class="bi bi-arrow-repeat spin"></i>
+            <span>Cargando plano visual del laboratorio...</span>
+          </div>
+        } @else {
+          @if (salaActual(); as sala) {
+            <div class="mini-stage-container">
+              <div class="mini-stage-header">
+                <span class="stage-title">
+                  <i class="bi bi-geo-alt-fill text-primary"></i>
+                  {{ sala.codigo_sala }} — {{ sala.nombre }}
+                  <span class="dim-badge">({{ sala.filas_cuadricula }} filas x {{ sala.columnas_cuadricula }} columnas)</span>
+                </span>
+                <span class="stage-instructions">Haga clic en la estación deseada</span>
+              </div>
+
+              <!-- FRENTE DE SALA / PIZARRA -->
+              <div class="stage-podium">
+                <i class="bi bi-projector"></i> FRENTE DE SALA / PIZARRA DIGITAL
+              </div>
+
+              <!-- MATRIZ DE COMPUTADORAS -->
+              <div class="matrix-scroll-wrapper">
+                <div
+                  class="stage-grid"
+                  [style.gridTemplateColumns]="'repeat(' + sala.columnas_cuadricula + ', minmax(64px, 1fr))'"
+                  [style.gridTemplateRows]="'repeat(' + sala.filas_cuadricula + ', 56px)'"
+                >
+                  @for (fila of filasArray(); track fila) {
+                    @for (col of columnasArray(); track col) {
+                      @let pc = getPcEnCoordenada(fila, col);
+                      @if (pc) {
+                        <div
+                          class="pc-cell-card"
+                          [class.pc-selected]="pcSeleccionada()?.id_computadora === pc.id_computadora"
+                          [class.pc-docente]="pc.maquina_docente"
+                          [class.pc-mantenimiento]="pc.estado_actual === 'EN_MANTENIMIENTO'"
+                          [class.pc-ocupada]="pc.estado_actual === 'OCUPADA'"
+                          (click)="seleccionarPc(pc)"
+                          [title]="pc.codigo_equipo + ' (' + pc.estado_actual + ') - Fila ' + fila + ', Col ' + col"
+                        >
+                          <div class="pc-top-icon">
+                            <i [class]="pc.maquina_docente ? 'bi bi-person-workspace' : 'bi bi-display'"></i>
+                            @if (pcSeleccionada()?.id_computadora === pc.id_computadora) {
+                              <i class="bi bi-check-circle-fill check-selected"></i>
+                            }
+                          </div>
+                          <span class="pc-label-code">{{ pc.codigo_equipo }}</span>
+                          <span class="pc-label-coord">({{ fila }},{{ col }})</span>
+                        </div>
+                      } @else {
+                        <div class="empty-cell" [title]="'Espacio libre (' + fila + ', ' + col + ')'">
+                          <span>({{ fila }},{{ col }})</span>
+                        </div>
+                      }
+                    }
+                  }
+                </div>
+              </div>
+
+              <!-- CHIP DE SELECCIÓN ACTUAL -->
+              <div class="selection-status-bar">
+                @if (pcSeleccionada(); as sel) {
+                  <div class="selection-active-chip">
+                    <i class="bi bi-check2-circle text-success"></i>
+                    <span>
+                      Estación seleccionada: <strong>{{ sel.codigo_equipo }}</strong>
+                      (Fila {{ sel.posicion_fila }}, Columna {{ sel.posicion_columna }})
+                      {{ sel.maquina_docente ? '• Estación Docente' : '• Estación Alumno' }}
+                    </span>
+                  </div>
+                } @else {
+                  <div class="selection-empty-chip">
+                    <i class="bi bi-cursor text-muted"></i>
+                    <span>Ninguna estación seleccionada aún. Haga clic sobre una computadora en la cuadrícula.</span>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        }
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="citef-btn citef-btn-outline" (click)="cerrarModal()">
+          Cancelar
+        </button>
+        <button
+          type="button"
+          class="citef-btn citef-btn-primary"
+          [disabled]="!pcSeleccionada()"
+          (click)="confirmar()"
+        >
+          <i class="bi bi-check-lg"></i> Confirmar Estación
+        </button>
+      </div>
+    </div>
+  </div>
+}

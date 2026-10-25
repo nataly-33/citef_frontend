@@ -46,19 +46,58 @@
 
   <!-- CUERPO PRINCIPAL (SIDEBAR + CONTENIDO) -->
   <div class="shell-body">
-    <!-- SIDEBAR -->
+    <!-- SIDEBAR AGRUPADO POR MÓDULOS (ACORDEÓN) -->
     <aside class="sidebar" [class.open]="sidebarAbierto()">
       <nav class="sidebar-nav">
-        <a
-          *ngFor="let item of navItems()"
-          class="nav-link"
-          [routerLink]="item.ruta"
-          routerLinkActive="active"
-          (click)="cerrarSidebarMobile()"
-        >
-          <i class="bi" [class]="item.icono"></i>
-          <span class="link-text">{{ item.texto }}</span>
-        </a>
+        @for (group of navGroups(); track group.id) {
+          @if (group.rutaDirecta) {
+            <!-- ENLACE DIRECTO (INICIO) -->
+            <a
+              class="nav-link nav-group-direct"
+              [routerLink]="group.rutaDirecta"
+              routerLinkActive="active"
+              (click)="cerrarSidebarMobile()"
+            >
+              <i class="bi" [class]="group.icono"></i>
+              <span class="link-text">{{ group.titulo }}</span>
+            </a>
+          } @else {
+            <!-- GRUPO DE MÓDULO CON DESPLEGABLE -->
+            <div class="nav-module-block" [class.has-active]="moduloContieneRutaActiva(group.id)">
+              <button
+                type="button"
+                class="nav-group-header"
+                [class.expanded]="isModuloAbierto(group.id)"
+                (click)="toggleModulo(group.id)"
+              >
+                <div class="header-main">
+                  <i class="bi" [class]="group.icono"></i>
+                  <span class="group-title">{{ group.titulo }}</span>
+                </div>
+                <i
+                  class="bi bi-chevron-down chevron-arrow"
+                  [class.chevron-rotated]="isModuloAbierto(group.id)"
+                ></i>
+              </button>
+
+              @if (isModuloAbierto(group.id)) {
+                <div class="nav-group-subitems">
+                  @for (sub of group.items; track sub.ruta) {
+                    <a
+                      class="nav-sublink"
+                      [routerLink]="sub.ruta"
+                      routerLinkActive="active-sub"
+                      (click)="cerrarSidebarMobile()"
+                    >
+                      <i class="bi" [class]="sub.icono"></i>
+                      <span class="sublink-text">{{ sub.texto }}</span>
+                    </a>
+                  }
+                </div>
+              }
+            </div>
+          }
+        }
       </nav>
     </aside>
 

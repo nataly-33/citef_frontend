@@ -21,6 +21,8 @@ import { ControlGuardiaComponent } from './pages/turnos/control-guardia/control-
 import { ActaRelevoComponent } from './pages/turnos/acta-relevo/acta-relevo.component';
 import { AveriasComponent } from './pages/turnos/averias/averias.component';
 import { ObjetosExtraviadosComponent } from './pages/turnos/objetos-extraviados/objetos-extraviados.component';
+import { BandejaTallerComponent } from './pages/soporte/bandeja-taller/bandeja-taller.component';
+import { MetricasRamsComponent } from './pages/soporte/metricas-rams/metricas-rams.component';
 import { authGuard } from './core/guards/auth.guard';
 import { permissionGuard } from './core/guards/permission.guard';
 
@@ -162,6 +164,32 @@ export const routes: Routes = [
         redirectTo: 'turnos/guardia',
         pathMatch: 'full',
       },
+      // MÓDULO 7: Soporte Técnico y Mantenimiento RAMS (CU24 y CU25)
+      {
+        path: 'soporte/taller',
+        component: BandejaTallerComponent,
+        canActivate: [
+          permissionGuard([
+            'SOPORTE_MANTENIMIENTO_REGISTRAR',
+            'SOPORTE_RETORNO_CONFIRMAR',
+          ]),
+        ],
+      },
+      {
+        path: 'soporte/rams',
+        component: MetricasRamsComponent,
+        canActivate: [
+          permissionGuard([
+            'SOPORTE_MANTENIMIENTO_REGISTRAR',
+            'REPORTES_DINAMICOS',
+          ]),
+        ],
+      },
+      {
+        path: 'soporte',
+        redirectTo: 'soporte/taller',
+        pathMatch: 'full',
+      },
       // Aliases directos para facilidad de navegación
       { path: 'academicos', redirectTo: 'catalogos/academicos', pathMatch: 'full' },
       { path: 'operativos', redirectTo: 'catalogos/operativos', pathMatch: 'full' },
@@ -178,6 +206,8 @@ export const routes: Routes = [
       { path: 'actas', redirectTo: 'turnos/actas', pathMatch: 'full' },
       { path: 'averias', redirectTo: 'turnos/averias', pathMatch: 'full' },
       { path: 'objetos', redirectTo: 'turnos/objetos', pathMatch: 'full' },
+      { path: 'taller', redirectTo: 'soporte/taller', pathMatch: 'full' },
+      { path: 'rams', redirectTo: 'soporte/rams', pathMatch: 'full' },
       { path: '', redirectTo: 'inicio', pathMatch: 'full' },
     ],
   },
@@ -194,6 +224,11 @@ export const routes: Routes = [
   { path: 'turnos/averias', redirectTo: 'admin/turnos/averias', pathMatch: 'full' },
   { path: 'turnos/objetos', redirectTo: 'admin/turnos/objetos', pathMatch: 'full' },
   { path: 'turnos', redirectTo: 'admin/turnos/guardia', pathMatch: 'full' },
+  { path: 'soporte/taller', redirectTo: 'admin/soporte/taller', pathMatch: 'full' },
+  { path: 'soporte/rams', redirectTo: 'admin/soporte/rams', pathMatch: 'full' },
+  { path: 'soporte', redirectTo: 'admin/soporte/taller', pathMatch: 'full' },
+  { path: 'taller', redirectTo: 'admin/soporte/taller', pathMatch: 'full' },
+  { path: 'rams', redirectTo: 'admin/soporte/rams', pathMatch: 'full' },
   { path: 'guardia', redirectTo: 'admin/turnos/guardia', pathMatch: 'full' },
   { path: 'actas', redirectTo: 'admin/turnos/actas', pathMatch: 'full' },
   { path: 'averias', redirectTo: 'admin/turnos/averias', pathMatch: 'full' },
