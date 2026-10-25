@@ -1,0 +1,566 @@
+<div class="actas-container">
+  <!-- ENCABEZADO DE PÁGINA -->
+  <div class="page-header">
+    <div class="header-left">
+      <h1>
+        <i class="bi bi-file-earmark-check"></i> Historial de Actas de Relevo (Handover)
+      </h1>
+      <p class="subtitle">
+        Formalización inalterable de traspaso de guardias y suscripción digital de conformidad (CU21)
+      </p>
+    </div>
+    <div class="header-right">
+      <button class="citef-btn citef-btn-primary" (click)="abrirModalCrear()" title="Emitir acta de relevo">
+        <i class="bi bi-plus-circle-fill"></i> Nueva Acta de Relevo
+      </button>
+    </div>
+  </div>
+
+  <!-- ALERTAS GLOBALES -->
+  @if (mensajeExito()) {
+    <div class="alert-banner alert-success">
+      <i class="bi bi-check-circle-fill"></i>
+      <span>{{ mensajeExito() }}</span>
+      <button class="btn-close-alert" (click)="mensajeExito.set(null)" title="Cerrar">
+        <i class="bi bi-x"></i>
+      </button>
+    </div>
+  }
+
+  @if (mensajeError()) {
+    <div class="alert-banner alert-danger">
+      <i class="bi bi-exclamation-triangle-fill"></i>
+      <span>{{ mensajeError() }}</span>
+      <button class="btn-close-alert" (click)="mensajeError.set(null)" title="Cerrar">
+        <i class="bi bi-x"></i>
+      </button>
+    </div>
+  }
+
+  <!-- BARRA DE FILTROS (REGLA 7) -->
+  <div class="filter-card">
+    <div class="filter-header">
+      <span class="filter-title"><i class="bi bi-funnel"></i> Filtros de Búsqueda de Actas</span>
+    </div>
+    <div class="filter-row">
+      <div class="filter-col col-search">
+        <label for="filtroBusqueda">Búsqueda Rápida:</label>
+        <div class="input-with-icon">
+          <i class="bi bi-search"></i>
+          <input
+            id="filtroBusqueda"
+            type="text"
+            class="citef-input"
+            placeholder="Buscar por auxiliar, novedades..."
+            [(ngModel)]="filtroBusqueda"
+            (keyup.enter)="aplicarFiltros()"
+          />
+        </div>
+      </div>
+
+      <div class="filter-col">
+        <label for="filtroSala">Laboratorio:</label>
+        <select id="filtroSala" class="citef-select" [(ngModel)]="filtroSala">
+          <option [ngValue]="null">Todos los laboratorios</option>
+          @for (s of salas(); track s.id_sala) {
+            <option [ngValue]="s.id_sala">{{ s.codigo_sala }} - {{ s.nombre }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="filter-col">
+        <label for="filtroFecha">Fecha de Relevo:</label>
+        <input
+          id="filtroFecha"
+          type="date"
+          class="citef-input"
+          [(ngModel)]="filtroFecha"
+        />
+      </div>
+
+      <div class="filter-col col-check">
+        <label class="check-inline">
+          <input type="checkbox" [(ngModel)]="filtroSoloPendientes" />
+          <span>Solo pendientes de firma</span>
+        </label>
+      </div>
+
+      <div class="filter-col-buttons">
+        <button class="citef-btn citef-btn-primary" (click)="aplicarFiltros()" title="Buscar actas">
+          <i class="bi bi-search"></i> Buscar
+        </button>
+        <button class="citef-btn citef-btn-outline" (click)="limpiarFiltros()" title="Limpiar filtros">
+          <i class="bi bi-arrow-counterclockwise"></i> Limpiar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TABLA CON APP-TABLE-CARD -->
+  <app-table-card
+    title="Registro Oficial de Actas de Handover"
+    subtitle="Documentos digitales suscritos entre auxiliares para deslinde y traspaso de responsabilidad"
+    [hasActions]="false"
+  >
+    <div class="citef-table-container">
+      <table class="citef-table">
+        <thead>
+          <tr>
+            <th>N° Acta / Fecha</th>
+            <th>Laboratorio</th>
+            <th>Auxiliar Saliente</th>
+            <th>Auxiliar Entrante</th>
+            <th>Equipos / Balances</th>
+            <th>Estado de Conformidad</th>
+            <th class="text-right">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          @if (cargando()) {
+            <tr>
+              <td colspan="7" class="text-center py-4">
+                <i class="bi bi-arrow-repeat spin"></i> Cargando actas de relevo...
+              </td>
+            </tr>
+          } @else if (actas().length === 0) {
+            <tr>
+              <td colspan="7" class="text-center py-4 text-muted">
+                <i class="bi bi-info-circle"></i> No se encontraron actas registradas con los criterios seleccionados.
+              </td>
+            </tr>
+          } @else {
+            @for (acta of actas(); track acta.id_acta_relevo) {
+              <tr>
+                <td>
+                  <span class="font-bold">ACTA-{{ acta.id_acta_relevo }}</span>
+                  <div class="text-xs text-muted">{{ acta.fecha_hora_relevo | date:'dd/MM/yyyy HH:mm' }}</div>
+                </td>
+                <td>
+                  <strong>{{ acta.jornada_saliente?.sala?.nombre || 'Sala Laboratorio' }}</strong>
+                  <div class="text-xs text-muted">{{ acta.jornada_saliente?.sala?.codigo_sala }}</div>
+                </td>
+                <td>
+                  <span class="badge-saliente"><i class="bi bi-person-up"></i> {{ acta.usuario_saliente?.nombres }} {{ acta.usuario_saliente?.apellidos }}</span>
+                </td>
+                <td>
+                  <span class="badge-entrante"><i class="bi bi-person-down"></i> {{ acta.usuario_entrante?.nombres }} {{ acta.usuario_entrante?.apellidos }}</span>
+                </td>
+                <td>
+                  <div class="balance-chips">
+                    <span class="chip-op" title="Equipos Operativos"><i class="bi bi-pc-display"></i> {{ acta.cant_equipos_operativos }}</span>
+                    <span class="chip-av" title="Averías Pendientes"><i class="bi bi-tools"></i> {{ acta.cant_averias_pend }}</span>
+                    <span class="chip-obj" title="Objetos en Custodia"><i class="bi bi-box-seam"></i> {{ acta.cant_objetos_custodia }}</span>
+                  </div>
+                </td>
+                <td>
+                  @if (acta.aceptado_por_entrante) {
+                    @if (acta.obs_discrepancia) {
+                      <span class="citef-badge citef-badge-warning" title="Aceptado con discrepancias">
+                        <i class="bi bi-exclamation-triangle-fill"></i> Con Discrepancia
+                      </span>
+                    } @else {
+                      <span class="citef-badge citef-badge-success" title="Firmado en plena conformidad">
+                        <i class="bi bi-patch-check-fill"></i> Conforme
+                      </span>
+                    }
+                  } @else {
+                    <span class="citef-badge citef-badge-info" title="Pendiente de firma por el auxiliar entrante">
+                      <i class="bi bi-clock-history"></i> Pendiente Firma
+                    </span>
+                  }
+                </td>
+                <td class="text-right table-actions">
+                  <button
+                    class="action-btn action-view"
+                    (click)="verDetalleActa(acta)"
+                    title="Ver acta oficial e imprimir"
+                  >
+                    <i class="bi bi-file-earmark-medical"></i>
+                  </button>
+
+                  @if (!acta.aceptado_por_entrante) {
+                    <button
+                      class="action-btn action-sign"
+                      (click)="abrirModalFirma(acta)"
+                      title="Firmar conformidad de relevo"
+                    >
+                      <i class="bi bi-pen"></i>
+                    </button>
+                  }
+
+                  <button
+                    class="action-btn action-edit"
+                    (click)="abrirModalEditar(acta)"
+                    title="Editar novedades de acta"
+                  >
+                    <i class="bi bi-pencil"></i>
+                  </button>
+
+                  <button
+                    class="action-btn action-delete"
+                    (click)="solicitarEliminar(acta)"
+                    title="Eliminar acta"
+                  >
+                    <i class="bi bi-trash3"></i>
+                  </button>
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <!-- PAGINACIÓN ESTÁNDAR 15 FILAS A LA DERECHA -->
+    <div class="pagination-wrapper">
+      <app-pagination
+        [paginaActual]="paginaActual()"
+        [totalRegistros]="totalRegistros()"
+        [tamanoPagina]="limite"
+        etiqueta="actas"
+        (paginaCambiada)="cambiarPagina($event)"
+      ></app-pagination>
+    </div>
+  </app-table-card>
+
+  <!-- ================= MODAL DETALLE / VISOR ACTA OFICIAL ================= -->
+  @if (mostrarModalDetalle() && actaSeleccionada()) {
+    <div class="modal-backdrop">
+      <div class="modal-window modal-acta-oficial">
+        <div class="modal-header">
+          <h2><i class="bi bi-file-earmark-text"></i> Acta Formal de Relevo de Guardia #{{ actaSeleccionada()?.id_acta_relevo }}</h2>
+          <div class="header-btns">
+            <button class="citef-btn citef-btn-outline citef-btn-sm" (click)="imprimirActa()" title="Imprimir documento oficial">
+              <i class="bi bi-printer"></i> Imprimir Acta
+            </button>
+            <button class="btn-close-modal" (click)="cerrarModalDetalle()" title="Cerrar">
+              <i class="bi bi-x-lg"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="modal-body printable-acta">
+          <!-- CABECERA INSTITUCIONAL FCEE -->
+          <div class="acta-formal-header">
+            <div class="acta-logo-text">
+              <h3>UNIVERSIDAD AUTÓNOMA GABRIEL RENÉ MORENO</h3>
+              <h4>FACULTAD DE CIENCIAS ECONÓMICAS Y EMPRESARIALES</h4>
+              <p>Centro de Cómputo e Infraestructura Tecnológica (CITEF)</p>
+            </div>
+            <div class="acta-title-badge">
+              <span>ACTA DE RELEVO DE GUARDIA</span>
+              <strong>N° {{ actaSeleccionada()?.id_acta_relevo | number:'4.0' }}</strong>
+            </div>
+          </div>
+
+          <div class="acta-grid-info">
+            <div class="info-block">
+              <span class="info-label">Laboratorio / Sala:</span>
+              <span class="info-val">{{ actaSeleccionada()?.jornada_saliente?.sala?.nombre || 'Sala Cómputo' }} ({{ actaSeleccionada()?.jornada_saliente?.sala?.codigo_sala }})</span>
+            </div>
+            <div class="info-block">
+              <span class="info-label">Fecha y Hora de Relevo:</span>
+              <span class="info-val">{{ actaSeleccionada()?.fecha_hora_relevo | date:'dd/MM/yyyy HH:mm:ss' }}</span>
+            </div>
+            <div class="info-block">
+              <span class="info-label">Auxiliar Saliente (Entrega):</span>
+              <span class="info-val">{{ actaSeleccionada()?.usuario_saliente?.nombres }} {{ actaSeleccionada()?.usuario_saliente?.apellidos }}</span>
+            </div>
+            <div class="info-block">
+              <span class="info-label">Auxiliar Entrante (Recibe):</span>
+              <span class="info-val">{{ actaSeleccionada()?.usuario_entrante?.nombres }} {{ actaSeleccionada()?.usuario_entrante?.apellidos }}</span>
+            </div>
+          </div>
+
+          <!-- BALANCES DE LABORATORIO -->
+          <div class="acta-section-title"><i class="bi bi-boxes"></i> Balance Físico y Técnico Transferido</div>
+          <div class="balance-table-box">
+            <div class="bal-item">
+              <span class="lbl">Computadoras Operativas:</span>
+              <span class="val">{{ actaSeleccionada()?.cant_equipos_operativos }}</span>
+            </div>
+            <div class="bal-item">
+              <span class="lbl">Averías Técnicas Pendientes:</span>
+              <span class="val text-danger">{{ actaSeleccionada()?.cant_averias_pend }}</span>
+            </div>
+            <div class="bal-item">
+              <span class="lbl">Bienes / Objetos en Custodia:</span>
+              <span class="val text-primary">{{ actaSeleccionada()?.cant_objetos_custodia }}</span>
+            </div>
+          </div>
+
+          <!-- NOVEDADES REPORTADAS -->
+          <div class="acta-section-title"><i class="bi bi-chat-left-quote"></i> Novedades y Observaciones del Turno Saliente</div>
+          <div class="acta-text-box">
+            {{ actaSeleccionada()?.novedades || 'Sin novedades particulares reportadas por el auxiliar saliente.' }}
+          </div>
+
+          <!-- CERTIFICACIÓN Y FIRMAS DIGITALES -->
+          <div class="acta-section-title"><i class="bi bi-pen"></i> Estado de Conformidad y Firma Digital</div>
+          <div class="acta-signatures">
+            <div class="signature-box">
+              <div class="sig-seal"><i class="bi bi-check-circle-fill text-success"></i></div>
+              <div class="sig-name">{{ actaSeleccionada()?.usuario_saliente?.nombres }} {{ actaSeleccionada()?.usuario_saliente?.apellidos }}</div>
+              <div class="sig-role">Auxiliar Saliente (Entrega Conforme)</div>
+              <div class="sig-time">{{ actaSeleccionada()?.fecha_hora_relevo | date:'dd/MM/yyyy HH:mm:ss' }}</div>
+            </div>
+
+            <div class="signature-box" [class.pending-sign]="!actaSeleccionada()?.aceptado_por_entrante">
+              @if (actaSeleccionada()?.aceptado_por_entrante) {
+                <div class="sig-seal">
+                  <i class="bi bi-check-circle-fill text-success"></i>
+                </div>
+                <div class="sig-name">{{ actaSeleccionada()?.usuario_entrante?.nombres }} {{ actaSeleccionada()?.usuario_entrante?.apellidos }}</div>
+                <div class="sig-role">Auxiliar Entrante (Recepción Conforme)</div>
+                <div class="sig-time">{{ actaSeleccionada()?.fecha_hora_conformidad | date:'dd/MM/yyyy HH:mm:ss' }}</div>
+                @if (actaSeleccionada()?.obs_discrepancia) {
+                  <div class="discrepancy-note">
+                    <strong>Discrepancia Notificada:</strong> {{ actaSeleccionada()?.obs_discrepancia }}
+                  </div>
+                }
+              } @else {
+                <div class="sig-seal"><i class="bi bi-hourglass-split text-warning"></i></div>
+                <div class="sig-name">{{ actaSeleccionada()?.usuario_entrante?.nombres }} {{ actaSeleccionada()?.usuario_entrante?.apellidos }}</div>
+                <div class="sig-role">Pendiente de Firma de Conformidad</div>
+                <button class="citef-btn citef-btn-primary citef-btn-sm mt-2" (click)="abrirModalFirma(actaSeleccionada()!)">
+                  <i class="bi bi-pen"></i> Firmar Ahora
+                </button>
+              }
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="citef-btn citef-btn-outline" (click)="cerrarModalDetalle()">
+            Cerrar Visor
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ================= MODAL FIRMA DE RELEVO ================= -->
+  @if (mostrarModalFirmar() && actaSeleccionada()) {
+    <div class="modal-backdrop">
+      <div class="modal-window">
+        <div class="modal-header">
+          <h2><i class="bi bi-pen-fill"></i> Suscripción Digital de Conformidad (CU21)</h2>
+          <button class="btn-close-modal" (click)="cerrarModalFirma()" title="Cerrar">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+
+        <div class="modal-body">
+          <app-modal-alert
+            [mensaje]="modalAlertFirma()"
+            tipo="danger"
+            (cerrar)="modalAlertFirma.set(null)"
+          ></app-modal-alert>
+
+          <p class="modal-instructions">
+            Al suscribir esta acta, usted asume la responsabilidad operativa del laboratorio indicado.
+            Verifique el estado físico y declare si encuentra discrepancias.
+          </p>
+
+          <div class="form-group">
+            <label class="field-label required">Dictamen de Recepción:</label>
+            <div class="radio-options">
+              <label class="radio-label">
+                <input type="radio" [value]="true" [(ngModel)]="firmaForm.conforme" />
+                <span><i class="bi bi-check2-circle text-success"></i> Acepto en Plena Conformidad (Sin Discrepancias)</span>
+              </label>
+              <label class="radio-label">
+                <input type="radio" [value]="false" [(ngModel)]="firmaForm.conforme" />
+                <span><i class="bi bi-exclamation-triangle-fill text-danger"></i> Acepto con Observaciones de Discrepancia</span>
+              </label>
+            </div>
+          </div>
+
+          @if (!firmaForm.conforme) {
+            <div class="form-group mt-2">
+              <label for="obsDiscrepancia" class="field-label required">Detalle de Discrepancias / Faltantes Detectados:</label>
+              <textarea
+                id="obsDiscrepancia"
+                rows="4"
+                class="citef-input"
+                [(ngModel)]="firmaForm.obs_discrepancia"
+                [class.input-error]="formErrorsFirma()['obs_discrepancia']"
+                placeholder="Indique los daños, equipos no operativos o anomalías que no fueron reportadas por el saliente..."
+              ></textarea>
+              @if (formErrorsFirma()['obs_discrepancia']) {
+                <div class="field-error-text">{{ formErrorsFirma()['obs_discrepancia'] }}</div>
+              }
+            </div>
+          }
+        </div>
+
+        <div class="modal-footer">
+          <button class="citef-btn citef-btn-outline" (click)="cerrarModalFirma()">
+            Cancelar
+          </button>
+          <button class="citef-btn citef-btn-primary" (click)="confirmarFirma()" [disabled]="cargando()">
+            @if (cargando()) {
+              <i class="bi bi-arrow-repeat spin"></i> Firmando...
+            } @else {
+              <i class="bi bi-fingerprint"></i> Certificar Firma Digital
+            }
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ================= MODAL CREAR NUEVA ACTA ================= -->
+  @if (mostrarModalCrear()) {
+    <div class="modal-backdrop">
+      <div class="modal-window">
+        <div class="modal-header">
+          <h2><i class="bi bi-file-earmark-plus"></i> Emitir Acta Oficial de Relevo (Handover)</h2>
+          <button class="btn-close-modal" (click)="cerrarModalCrear()" title="Cerrar">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+
+        <div class="modal-body">
+          <app-modal-alert
+            [mensaje]="modalAlertNueva()"
+            tipo="danger"
+            (cerrar)="modalAlertNueva.set(null)"
+          ></app-modal-alert>
+
+          <div class="form-group">
+            <label for="nuevaJornada" class="field-label required">Jornada de Guardia Saliente:</label>
+            <select
+              id="nuevaJornada"
+              class="citef-select"
+              [(ngModel)]="nuevaActaForm.id_jornada"
+              [class.input-error]="formErrorsNueva()['id_jornada']"
+            >
+              <option [ngValue]="null">-- Seleccione la Jornada --</option>
+              @for (j of jornadasCerradas(); track j.id_jornada) {
+                <option [ngValue]="j.id_jornada">
+                  Jornada #{{ j.id_jornada }} - {{ j.sala?.nombre }} ({{ j.fecha | date:'dd/MM/yyyy' }})
+                </option>
+              }
+            </select>
+            @if (formErrorsNueva()['id_jornada']) {
+              <div class="field-error-text">{{ formErrorsNueva()['id_jornada'] }}</div>
+            }
+          </div>
+
+          <div class="form-group">
+            <label for="nuevoAuxEntrante" class="field-label required">Auxiliar Entrante (Receptor):</label>
+            <select
+              id="nuevoAuxEntrante"
+              class="citef-select"
+              [(ngModel)]="nuevaActaForm.id_usuario_entrante"
+              [class.input-error]="formErrorsNueva()['id_usuario_entrante']"
+            >
+              <option [ngValue]="null">-- Seleccione el Auxiliar Entrante --</option>
+              @for (aux of auxiliares(); track aux.id_usuario) {
+                <option [ngValue]="aux.id_usuario">
+                  {{ aux.nombres }} {{ aux.apellidos }} ({{ aux.correo_institucional }})
+                </option>
+              }
+            </select>
+            @if (formErrorsNueva()['id_usuario_entrante']) {
+              <div class="field-error-text">{{ formErrorsNueva()['id_usuario_entrante'] }}</div>
+            }
+          </div>
+
+          <div class="form-group">
+            <label for="nuevaCantEquipos" class="field-label required">Equipos Operativos Transferidos:</label>
+            <input
+              id="nuevaCantEquipos"
+              type="number"
+              min="0"
+              class="citef-input"
+              [(ngModel)]="nuevaActaForm.cant_equipos_operativos"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="nuevasNovedades" class="field-label">Novedades y Pendientes:</label>
+            <textarea
+              id="nuevasNovedades"
+              rows="4"
+              class="citef-input"
+              [(ngModel)]="nuevaActaForm.novedades"
+              placeholder="Describa el estado del laboratorio y novedades operativas..."
+            ></textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="citef-btn citef-btn-outline" (click)="cerrarModalCrear()">
+            Cancelar
+          </button>
+          <button class="citef-btn citef-btn-primary" (click)="guardarNuevaActa()" [disabled]="cargando()">
+            @if (cargando()) {
+              <i class="bi bi-arrow-repeat spin"></i> Guardando...
+            } @else {
+              <i class="bi bi-file-earmark-check"></i> Emitir Acta Oficial
+            }
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ================= MODAL EDITAR ACTA ================= -->
+  @if (mostrarModalEditar()) {
+    <div class="modal-backdrop">
+      <div class="modal-window">
+        <div class="modal-header">
+          <h2><i class="bi bi-pencil-square"></i> Editar Novedades de Acta #{{ actaSeleccionada()?.id_acta_relevo }}</h2>
+          <button class="btn-close-modal" (click)="cerrarModalEditar()" title="Cerrar">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="editNovedades" class="field-label">Novedades Reportadas:</label>
+            <textarea
+              id="editNovedades"
+              rows="4"
+              class="citef-input"
+              [(ngModel)]="edicionForm.novedades"
+            ></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="editDiscrepancia" class="field-label">Observaciones de Discrepancia:</label>
+            <textarea
+              id="editDiscrepancia"
+              rows="3"
+              class="citef-input"
+              [(ngModel)]="edicionForm.obs_discrepancia"
+            ></textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="citef-btn citef-btn-outline" (click)="cerrarModalEditar()">
+            Cancelar
+          </button>
+          <button class="citef-btn citef-btn-primary" (click)="guardarEdicion()" [disabled]="cargando()">
+            Guardar Cambios
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ================= MODAL CONFIRMAR ELIMINAR ================= -->
+  <app-confirm-modal
+    [visible]="mostrarConfirmEliminar()"
+    title="Eliminar Acta de Relevo"
+    [message]="'¿Está seguro de eliminar el acta de relevo N° ' + (actaAEliminar()?.id_acta_relevo || '') + '? Esta acción revocará la certificación del traspaso.'"
+    confirmBtnText="Eliminar Acta"
+    cancelBtnText="Cancelar"
+    [isDanger]="true"
+    (confirmed)="confirmarEliminar()"
+    (cancelled)="cancelarEliminar()"
+  ></app-confirm-modal>
+</div>

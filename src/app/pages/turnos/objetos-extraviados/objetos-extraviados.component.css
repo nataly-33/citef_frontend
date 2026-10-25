@@ -1,0 +1,455 @@
+/* ==========================================================================
+   ESTILOS INSTITUCIONALES CITEF - OBJETOS EXTRAVIADOS (CU23)
+   Facultad de Ciencias Económicas y Empresariales - UAGRM
+   ========================================================================== */
+
+.objetos-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 0;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.header-left h1 {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--citef-primary, #002855);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+}
+
+.header-left .subtitle {
+  font-size: 0.875rem;
+  color: var(--citef-text-secondary, #475569);
+  margin-top: 0.25rem;
+}
+
+/* ALERTAS */
+.alert-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.85rem 1.25rem;
+  border-radius: var(--citef-radius, 8px);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.alert-success {
+  background-color: var(--citef-success-bg, #dcfce7);
+  color: var(--citef-success, #15803d);
+  border: 1px solid #86efac;
+}
+
+.alert-danger {
+  background-color: var(--citef-danger-bg, #fee2e2);
+  color: var(--citef-danger, #b91c1c);
+  border: 1px solid #fca5a5;
+}
+
+.btn-close-alert {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: inherit;
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+
+/* FILTROS */
+.filter-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 1.25rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+}
+
+.filter-header {
+  margin-bottom: 0.75rem;
+}
+
+.filter-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #002855;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: flex-end;
+}
+
+.filter-col {
+  flex: 1 1 180px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.filter-col.col-search {
+  flex: 2 1 240px;
+}
+
+.filter-col label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.input-with-icon {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-with-icon i {
+  position: absolute;
+  left: 0.75rem;
+  color: #94a3b8;
+}
+
+.input-with-icon input {
+  padding-left: 2.25rem;
+}
+
+.filter-col-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* BADGES DE ESTADO (AZUL MARINO Y VERDE) */
+.badge-custodia-marino {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.65rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border-radius: 9999px;
+  background-color: #002855;
+  color: #ffffff;
+  letter-spacing: 0.02em;
+}
+
+.location-badge {
+  font-size: 0.75rem;
+  color: #0369a1;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.cat-chip {
+  background-color: #f1f5f9;
+  color: #1e293b;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+}
+
+.desc-obj-text {
+  max-width: 280px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.85rem;
+  color: #334155;
+}
+
+/* ACCIONES DE TABLA */
+.table-actions {
+  white-space: nowrap;
+}
+
+.action-btn {
+  background: none;
+  border: 1px solid transparent;
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+  margin-left: 0.25rem;
+}
+
+.action-deliver {
+  color: #15803d;
+  background-color: #dcfce7;
+}
+.action-deliver:hover {
+  background-color: #bbf7d0;
+}
+
+.action-view {
+  color: #002855;
+  background-color: #eff6ff;
+}
+.action-view:hover {
+  background-color: #dbeafe;
+}
+
+.action-edit {
+  color: #b45309;
+  background-color: #fef3c7;
+}
+.action-edit:hover {
+  background-color: #fde68a;
+}
+
+.action-delete {
+  color: #dc2626;
+  background-color: #fee2e2;
+}
+.action-delete:hover {
+  background-color: #fca5a5;
+}
+
+.pagination-wrapper {
+  display: flex;
+  justify-content: flex-end;
+  padding: 1rem 0 0 0;
+}
+
+/* MODALES */
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 28, 61, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1050;
+  padding: 1rem;
+}
+
+.modal-window {
+  background: #ffffff;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 580px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-header {
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #ffffff;
+}
+
+.modal-header h2 {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #002855;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+}
+
+.modal-header.header-entrega h2 {
+  color: #15803d;
+}
+
+.btn-close-modal {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  color: #64748b;
+  cursor: pointer;
+  padding: 0.25rem;
+}
+
+.modal-body {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.modal-footer {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  background-color: #f8fafc;
+  border-bottom-left-radius: 12px;
+  border-bottom-right-radius: 12px;
+}
+
+.btn-success-entrega {
+  background-color: #15803d;
+  color: #ffffff;
+  border: 1px solid transparent;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  border-radius: var(--citef-radius-sm, 4px);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  transition: all 0.2s ease;
+}
+
+.btn-success-entrega:hover {
+  background-color: #166534;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.field-label {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.field-label.required::after {
+  content: ' *';
+  color: #dc2626;
+}
+
+.input-error {
+  border-color: #dc2626 !important;
+  box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.15) !important;
+}
+
+.field-error-text {
+  color: #dc2626;
+  font-size: 0.775rem;
+  font-weight: 600;
+  margin-top: 0.25rem;
+}
+
+.obj-summary-box {
+  background-color: #eff6ff;
+  border: 1px solid #bfdbfe;
+  padding: 0.85rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+}
+
+.obj-summary-box p {
+  color: #1e40af;
+  margin-top: 0.25rem;
+}
+
+/* FICHA DETALLE */
+.ficha-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  padding: 1rem;
+  border-radius: 8px;
+}
+
+.ficha-row {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.85rem;
+}
+
+.ficha-row .lbl {
+  color: #64748b;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.ficha-row .val {
+  color: #002855;
+  font-weight: 700;
+}
+
+.ficha-desc-box {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  padding: 0.85rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+}
+
+.ficha-desc-box p {
+  color: #334155;
+  margin-top: 0.25rem;
+}
+
+.ficha-devolucion-box {
+  background-color: #f0fdf4;
+  border: 1px solid #86efac;
+  padding: 0.85rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+}
+
+.ficha-devolucion-box h4 {
+  font-size: 0.9rem;
+  color: #15803d;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.ficha-devolucion-box p {
+  color: #166534;
+  margin-top: 0.2rem;
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+  display: inline-block;
+}
+
+@keyframes spin {
+  100% { transform: rotate(360deg); }
+}
+
+.text-right { text-align: right; }
+.text-center { text-align: center; }
+.text-muted { color: #64748b; }
+.font-bold { font-weight: 700; }
+.text-xs { font-size: 0.75rem; }
+.mt-2 { margin-top: 0.5rem; }
+.mt-3 { margin-top: 0.75rem; }
+.py-4 { padding-top: 1.5rem; padding-bottom: 1.5rem; }

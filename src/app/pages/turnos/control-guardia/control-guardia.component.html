@@ -1,0 +1,1196 @@
+<div class="control-guardia-container">
+  <!-- ENCABEZADO DE PÁGINA -->
+  <div class="page-header">
+    <div class="header-left">
+      <h1>
+        <i class="bi bi-shield-check"></i> Guardias y Relevos de Laboratorio
+      </h1>
+    </div>
+    <div class="header-right">
+      @if (!esAdmin()) {
+        @if (jornadaActiva()) {
+          <button class="citef-btn btn-danger-cierre" (click)="abrirModalCierre()" title="Cerrar turno actual">
+            <i class="bi bi-door-closed-fill"></i> Cerrar Guardia
+          </button>
+        } @else {
+          <button class="citef-btn citef-btn-primary" (click)="abrirModalApertura()" title="Iniciar nuevo turno">
+            <i class="bi bi-door-open-fill"></i> Abrir Guardia
+          </button>
+        }
+      } @else {
+        <button class="citef-btn citef-btn-outline" (click)="cargarDashboardSalas()" title="Actualizar estado de salas">
+          <i class="bi bi-arrow-repeat" [class.spin]="cargandoDashboard()"></i> Actualizar Monitoreo
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- ALERTAS GLOBALES -->
+  @if (mensajeExito()) {
+    <div class="alert-banner alert-success">
+      <i class="bi bi-check-circle-fill"></i>
+      <span>{{ mensajeExito() }}</span>
+      <button class="btn-close-alert" (click)="mensajeExito.set(null)" title="Cerrar">
+        <i class="bi bi-x"></i>
+      </button>
+    </div>
+  }
+
+  @if (mensajeError()) {
+    <div class="alert-banner alert-danger">
+      <i class="bi bi-exclamation-triangle-fill"></i>
+      <span>{{ mensajeError() }}</span>
+      <button class="btn-close-alert" (click)="mensajeError.set(null)" title="Cerrar">
+        <i class="bi bi-x"></i>
+      </button>
+    </div>
+  }
+
+  <!-- VISTA ADMINISTRADOR: DASHBOARD DE SUPERVISIÓN DE SALAS -->
+  @if (esAdmin()) {
+    <div class="admin-supervision-panel">
+      <div class="panel-header">
+        <span class="panel-title">
+          <i class="bi bi-display"></i> Supervisión Operativa de Laboratorios en Vivo
+        </span>
+        <span class="panel-meta text-muted">
+          {{ salasDashboard().length }} laboratorios registrados
+        </span>
+      </div>
+
+      <div class="dashboard-rooms-grid">
+        @for (sala of salasDashboard(); track sala.id_sala) {
+          <div class="room-supervision-card" [class.room-active]="sala.guardia_activa">
+            <div class="room-card-header">
+              <div class="room-identity">
+                <span class="room-code">{{ sala.codigo_sala }}</span>
+                <span class="room-name">{{ sala.nombre }}</span>
+              </div>
+              @if (sala.guardia_activa) {
+                <span class="badge-live-pulse" title="Guardia en curso">
+                  <span class="pulsing-dot"></span> EN VIVO
+                </span>
+              } @else {
+                <span class="badge-inactive">Sin guardia</span>
+              }
+            </div>
+
+            <div class="room-card-body">
+              <div class="room-info-row">
+                <span class="lbl"><i class="bi bi-layers"></i> Ubicación:</span>
+                <span class="val">Piso {{ sala.piso }}</span>
+              </div>
+
+              @if (sala.guardia_activa && sala.jornada) {
+                <div class="room-info-row">
+                  <span class="lbl"><i class="bi bi-person-badge"></i> Auxiliar:</span>
+                  <span class="val font-bold">
+                    {{ sala.jornada.auxiliar?.nombres || 'Auxiliar' }} {{ sala.jornada.auxiliar?.apellidos || '' }}
+                  </span>
+                </div>
+                <div class="room-info-row">
+                  <span class="lbl"><i class="bi bi-clock-history"></i> Apertura:</span>
+                  <span class="val">{{ sala.jornada.hora_apertura | date:'HH:mm:ss' }}</span>
+                </div>
+
+                <div class="room-kpis-mini">
+                  <div class="kpi-mini" title="Estudiantes atendidos">
+                    <i class="bi bi-people-fill text-primary"></i>
+                    <span>{{ sala.jornada.cant_estudiantes_atendidos }}</span>
+                  </div>
+                  <div class="kpi-mini" title="Averías reportadas">
+                    <i class="bi bi-tools text-danger"></i>
+                    <span>{{ sala.jornada.cant_averias_reportadas }}</span>
+                  </div>
+                  <div class="kpi-mini" title="Objetos en custodia">
+                    <i class="bi bi-box-seam text-warning"></i>
+                    <span>{{ sala.jornada.cant_objetos_custodiados }}</span>
+                  </div>
+                </div>
+              } @else {
+                <div class="room-idle-text text-muted">
+                  <i class="bi bi-door-closed"></i> Laboratorio cerrado sin turno activo
+                </div>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- VISTA AUXILIAR: PANEL DE GUARDIA PERSONAL -->
+  @if (!esAdmin()) {
+    @if (jornadaActiva()) {
+      <div class="live-guard-card">
+        <div class="live-guard-header">
+          <div class="live-status-pill">
+            <span class="pulsing-dot"></span>
+            <span class="status-text">GUARDIA EN VIVO</span>
+          </div>
+          <div class="live-timer-container">
+            <span class="timer-label"><i class="bi bi-stopwatch"></i> Tiempo Transcurrido:</span>
+            <span class="timer-digits">{{ tiempoTranscurrido() }}</span>
+          </div>
+        </div>
+
+        <div class="live-guard-body">
+          <div class="guard-meta-item">
+            <span class="meta-label"><i class="bi bi-building"></i> Sala Asignada</span>
+            <span class="meta-value">{{ jornadaActiva()?.sala?.nombre || 'Sala Principal' }} ({{ jornadaActiva()?.sala?.codigo_sala || 'LAB' }})</span>
+          </div>
+
+          <div class="guard-meta-item">
+            <span class="meta-label"><i class="bi bi-person-badge"></i> Auxiliar Responsable</span>
+            <span class="meta-value">{{ nombreAuxiliarResponsable() }}</span>
+          </div>
+
+          <div class="guard-meta-item">
+            <span class="meta-label"><i class="bi bi-calendar-event"></i> Apertura</span>
+            <span class="meta-value">{{ jornadaActiva()?.hora_apertura | date:'dd/MM/yyyy HH:mm:ss' }}</span>
+          </div>
+
+          <div class="guard-meta-item">
+            <span class="meta-label"><i class="bi bi-pc-display"></i> Equipos Iniciales</span>
+            <span class="meta-value">{{ jornadaActiva()?.checklist_apertura?.pcs_encendidas || 0 }} PCs Operativas</span>
+          </div>
+        </div>
+
+        <!-- MÉTRICAS COMPACTAS -->
+        <div class="guard-metrics-compact">
+          <div class="metric-chip" (click)="irAAverias()" title="Ver y registrar averías">
+            <div class="metric-chip-icon bg-blue"><i class="bi bi-people-fill"></i></div>
+            <div class="metric-chip-info">
+              <span class="metric-chip-num">{{ jornadaActiva()?.cant_estudiantes_atendidos || 0 }}</span>
+              <span class="metric-chip-lbl">Estudiantes</span>
+            </div>
+          </div>
+
+          <div class="metric-chip" (click)="irAAverias()" title="Ver y registrar fallas técnicas">
+            <div class="metric-chip-icon bg-red"><i class="bi bi-tools"></i></div>
+            <div class="metric-chip-info">
+              <span class="metric-chip-num">{{ jornadaActiva()?.cant_averias_reportadas || 0 }}</span>
+              <span class="metric-chip-lbl">Averías</span>
+            </div>
+          </div>
+
+          <div class="metric-chip" (click)="irAObjetos()" title="Ver objetos extraviados">
+            <div class="metric-chip-icon bg-gold"><i class="bi bi-box-seam"></i></div>
+            <div class="metric-chip-info">
+              <span class="metric-chip-num">{{ jornadaActiva()?.cant_objetos_custodiados || 0 }}</span>
+              <span class="metric-chip-lbl">Objetos</span>
+            </div>
+          </div>
+
+          <div class="guard-inline-actions">
+            <button class="citef-btn btn-danger-cierre" (click)="abrirModalCierre()">
+              <i class="bi bi-door-closed-fill"></i> Cerrar Guardia
+            </button>
+            <button class="citef-btn citef-btn-outline" (click)="irAAverias()">
+              <i class="bi bi-tools"></i> Reportar Falla
+            </button>
+            <button class="citef-btn citef-btn-outline" (click)="irAObjetos()">
+              <i class="bi bi-box-seam"></i> Registrar Objeto
+            </button>
+          </div>
+        </div>
+      </div>
+    } @else {
+      <div class="no-guard-card">
+        <div class="no-guard-illustration">
+          <i class="bi bi-shield-slash"></i>
+        </div>
+        <div class="no-guard-content">
+          <h3>Sin guardia activa en este momento</h3>
+          <button class="citef-btn citef-btn-primary" (click)="abrirModalApertura()">
+            <i class="bi bi-door-open-fill"></i> Iniciar Apertura de Guardia
+          </button>
+        </div>
+      </div>
+    }
+  }
+
+  <!-- BARRA DE PESTAÑAS (TABS) -->
+  <div class="tabs-bar">
+    <button
+      class="tab-btn"
+      [class.active]="tabActiva() === 'HISTORIAL'"
+      (click)="cambiarTab('HISTORIAL')"
+    >
+      <i class="bi bi-journal-text"></i> Historial de Guardias
+      <span class="tab-badge">{{ totalJornadas() }}</span>
+    </button>
+    <button
+      class="tab-btn"
+      [class.active]="tabActiva() === 'ACTAS'"
+      (click)="cambiarTab('ACTAS')"
+    >
+      <i class="bi bi-file-earmark-check"></i> Actas de Relevo (Handover)
+      <span class="tab-badge">{{ totalActas() }}</span>
+    </button>
+  </div>
+
+  <!-- ================= TAB: HISTORIAL DE GUARDIAS ================= -->
+  @if (tabActiva() === 'HISTORIAL') {
+    <!-- BARRA DE FILTROS -->
+    <div class="filter-card">
+      <div class="filter-row">
+        <div class="filter-col">
+          <label for="filtroSalaGuardia">Laboratorio:</label>
+          <select id="filtroSalaGuardia" class="citef-select" [(ngModel)]="filtroSalaGuardia">
+            <option [ngValue]="null">Todos los laboratorios</option>
+            @for (s of salas(); track s.id_sala) {
+              <option [ngValue]="s.id_sala">{{ s.codigo_sala }} - {{ s.nombre }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="filter-col">
+          <label for="filtroFechaGuardia">Fecha:</label>
+          <input
+            id="filtroFechaGuardia"
+            type="date"
+            class="citef-input"
+            [(ngModel)]="filtroFechaGuardia"
+          />
+        </div>
+
+        <div class="filter-col">
+          <label for="filtroEstadoGuardia">Estado:</label>
+          <select id="filtroEstadoGuardia" class="citef-select" [(ngModel)]="filtroEstadoGuardia">
+            <option value="TODOS">Todos los estados</option>
+            <option value="EN_CURSO">En Curso (En Vivo)</option>
+            <option value="CERRADO_NORMAL">Cerrado Normal</option>
+            <option value="CERRADO_CON_NOVEDADES">Cerrado con Novedades</option>
+            <option value="RELEVADO">Relevado Formalmente</option>
+          </select>
+        </div>
+
+        <div class="filter-col-buttons">
+          <button class="citef-btn citef-btn-primary" (click)="aplicarFiltrosGuardias()" title="Buscar jornadas">
+            <i class="bi bi-search"></i> Buscar
+          </button>
+          <button class="citef-btn citef-btn-outline" (click)="limpiarFiltrosGuardias()" title="Restablecer filtros">
+            <i class="bi bi-arrow-counterclockwise"></i> Limpiar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TABLA DE HISTORIAL -->
+    <app-table-card
+      title="Bitácora Histórica de Jornadas y Guardias"
+      [hasActions]="false"
+    >
+      <div class="citef-table-container">
+        <table class="citef-table">
+          <thead>
+            <tr>
+              <th>ID / Fecha</th>
+              <th>Laboratorio</th>
+              <th>Auxiliar Operador</th>
+              <th>Horario Apertura - Cierre</th>
+              <th>Métricas</th>
+              <th>Estado</th>
+              <th class="text-right">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @if (cargando()) {
+              <tr>
+                <td colspan="7" class="text-center py-4">
+                  <i class="bi bi-arrow-repeat spin"></i> Cargando bitácora de guardias...
+                </td>
+              </tr>
+            } @else if (jornadas().length === 0) {
+              <tr>
+                <td colspan="7" class="text-center py-4 text-muted">
+                  <i class="bi bi-info-circle"></i> No se encontraron registros de jornadas con los filtros aplicados.
+                </td>
+              </tr>
+            } @else {
+              @for (j of jornadas(); track j.id_jornada) {
+                <tr>
+                  <td>
+                    <span class="font-bold">#{{ j.id_jornada }}</span>
+                    <div class="text-xs text-muted">{{ j.fecha | date:'dd/MM/yyyy' }}</div>
+                  </td>
+                  <td>
+                    <strong>{{ j.sala?.nombre || 'Sala' }}</strong>
+                    <div class="text-xs text-muted">{{ j.sala?.codigo_sala }}</div>
+                  </td>
+                  <td>
+                    <span>{{ j.usuario_auxiliar?.nombres }} {{ j.usuario_auxiliar?.apellidos }}</span>
+                    <div class="text-xs text-muted">{{ j.usuario_auxiliar?.correo_institucional || 'Auxiliar' }}</div>
+                  </td>
+                  <td>
+                    <div><i class="bi bi-box-arrow-in-right text-success"></i> {{ j.hora_apertura | date:'HH:mm:ss' }}</div>
+                    @if (j.hora_cierre) {
+                      <div><i class="bi bi-box-arrow-left text-danger"></i> {{ j.hora_cierre | date:'HH:mm:ss' }}</div>
+                    } @else {
+                      <span class="badge-guardia-activa">En Curso</span>
+                    }
+                  </td>
+                  <td>
+                    <div class="metrics-mini">
+                      <span title="Estudiantes atendidos"><i class="bi bi-people"></i> {{ j.cant_estudiantes_atendidos }}</span>
+                      <span title="Averías reportadas"><i class="bi bi-tools"></i> {{ j.cant_averias_reportadas }}</span>
+                      <span title="Objetos en custodia"><i class="bi bi-box-seam"></i> {{ j.cant_objetos_custodiados }}</span>
+                    </div>
+                  </td>
+                  <td>
+                    @switch (j.estado) {
+                      @case ('EN_CURSO') {
+                        <span class="citef-badge citef-badge-info"><i class="bi bi-broadcast"></i> En Curso</span>
+                      }
+                      @case ('CERRADO_NORMAL') {
+                        <span class="citef-badge citef-badge-success"><i class="bi bi-check2-circle"></i> Normal</span>
+                      }
+                      @case ('CERRADO_CON_NOVEDADES') {
+                        <span class="citef-badge citef-badge-warning"><i class="bi bi-exclamation-triangle"></i> Novedades</span>
+                      }
+                      @case ('RELEVADO') {
+                        <span class="citef-badge citef-badge-purple"><i class="bi bi-file-earmark-check"></i> Relevado</span>
+                      }
+                      @default {
+                        <span class="citef-badge citef-badge-neutral">{{ j.estado }}</span>
+                      }
+                    }
+                  </td>
+                  <td class="text-right table-actions">
+                    <button
+                      class="action-btn action-view"
+                      (click)="verDetalleJornada(j)"
+                      title="Ver detalle de checklist y novedades"
+                    >
+                      <i class="bi bi-eye"></i>
+                    </button>
+                    <button
+                      class="action-btn action-edit"
+                      (click)="abrirModalEditarObsJornada(j)"
+                      title="Editar observaciones de jornada"
+                    >
+                      <i class="bi bi-pencil"></i>
+                    </button>
+                    <button
+                      class="action-btn action-delete"
+                      (click)="solicitarEliminarJornada(j)"
+                      title="Eliminar jornada"
+                    >
+                      <i class="bi bi-trash3"></i>
+                    </button>
+                  </td>
+                </tr>
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <!-- PAGINACIÓN ESTÁNDAR 15 FILAS A LA DERECHA -->
+      <div class="pagination-wrapper">
+        <app-pagination
+          [paginaActual]="paginaJornadas()"
+          [totalRegistros]="totalJornadas()"
+          [tamanoPagina]="limite"
+          etiqueta="jornadas"
+          (paginaCambiada)="cambiarPaginaJornadas($event)"
+        ></app-pagination>
+      </div>
+    </app-table-card>
+  }
+
+  <!-- ================= TAB: ACTAS DE RELEVO ================= -->
+  @if (tabActiva() === 'ACTAS') {
+    <!-- BARRA DE FILTROS -->
+    <div class="filter-card">
+      <div class="filter-row">
+        <div class="filter-col col-search">
+          <label for="filtroBusquedaActas">Búsqueda Rápida:</label>
+          <div class="input-with-icon">
+            <i class="bi bi-search"></i>
+            <input
+              id="filtroBusquedaActas"
+              type="text"
+              class="citef-input"
+              placeholder="Buscar por auxiliar, novedades..."
+              [(ngModel)]="filtroBusquedaActas"
+              (keyup.enter)="aplicarFiltrosActas()"
+            />
+          </div>
+        </div>
+
+        <div class="filter-col">
+          <label for="filtroSalaActas">Laboratorio:</label>
+          <select id="filtroSalaActas" class="citef-select" [(ngModel)]="filtroSalaActas">
+            <option [ngValue]="null">Todos los laboratorios</option>
+            @for (s of salas(); track s.id_sala) {
+              <option [ngValue]="s.id_sala">{{ s.codigo_sala }} - {{ s.nombre }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="filter-col">
+          <label for="filtroFechaActas">Fecha:</label>
+          <input
+            id="filtroFechaActas"
+            type="date"
+            class="citef-input"
+            [(ngModel)]="filtroFechaActas"
+          />
+        </div>
+
+        <div class="filter-col col-check">
+          <label class="check-inline">
+            <input type="checkbox" [(ngModel)]="filtroSoloPendientesActas" />
+            <span>Solo pendientes de firma</span>
+          </label>
+        </div>
+
+        <div class="filter-col-buttons">
+          <button class="citef-btn citef-btn-primary" (click)="aplicarFiltrosActas()" title="Buscar actas">
+            <i class="bi bi-search"></i> Buscar
+          </button>
+          <button class="citef-btn citef-btn-outline" (click)="limpiarFiltrosActas()" title="Limpiar filtros">
+            <i class="bi bi-arrow-counterclockwise"></i> Limpiar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TABLA DE ACTAS -->
+    <app-table-card
+      title="Registro Oficial de Actas de Handover"
+      [hasActions]="false"
+    >
+      <div class="citef-table-container">
+        <table class="citef-table">
+          <thead>
+            <tr>
+              <th>N° Acta / Fecha</th>
+              <th>Laboratorio</th>
+              <th>Auxiliar Saliente</th>
+              <th>Auxiliar Entrante</th>
+              <th>Equipos / Balances</th>
+              <th>Estado de Conformidad</th>
+              <th class="text-right">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @if (actas().length === 0) {
+              <tr>
+                <td colspan="7" class="text-center py-4 text-muted">
+                  <i class="bi bi-info-circle"></i> No se encontraron actas registradas con los criterios seleccionados.
+                </td>
+              </tr>
+            } @else {
+              @for (acta of actas(); track acta.id_acta_relevo) {
+                <tr>
+                  <td>
+                    <span class="font-bold">ACTA-{{ acta.id_acta_relevo }}</span>
+                    <div class="text-xs text-muted">{{ acta.fecha_hora_relevo | date:'dd/MM/yyyy HH:mm' }}</div>
+                  </td>
+                  <td>
+                    <strong>{{ acta.jornada_saliente?.sala?.nombre || 'Sala Laboratorio' }}</strong>
+                    <div class="text-xs text-muted">{{ acta.jornada_saliente?.sala?.codigo_sala }}</div>
+                  </td>
+                  <td>
+                    <span class="badge-saliente"><i class="bi bi-person-up"></i> {{ acta.usuario_saliente?.nombres }} {{ acta.usuario_saliente?.apellidos }}</span>
+                  </td>
+                  <td>
+                    @if (acta.usuario_entrante) {
+                      <span class="badge-entrante"><i class="bi bi-person-down"></i> {{ acta.usuario_entrante.nombres }} {{ acta.usuario_entrante.apellidos }}</span>
+                    } @else {
+                      <span class="text-muted text-xs">Sin asignar</span>
+                    }
+                  </td>
+                  <td>
+                    <div class="balance-chips">
+                      <span class="chip-op" title="Equipos Operativos"><i class="bi bi-pc-display"></i> {{ acta.cant_equipos_operativos }}</span>
+                      <span class="chip-av" title="Averías Pendientes"><i class="bi bi-tools"></i> {{ acta.cant_averias_pend }}</span>
+                      <span class="chip-obj" title="Objetos en Custodia"><i class="bi bi-box-seam"></i> {{ acta.cant_objetos_custodia }}</span>
+                    </div>
+                  </td>
+                  <td>
+                    @if (acta.aceptado_por_entrante) {
+                      @if (acta.obs_discrepancia) {
+                        <span class="citef-badge citef-badge-warning" title="Aceptado con discrepancias">
+                          <i class="bi bi-exclamation-triangle-fill"></i> Con Discrepancia
+                        </span>
+                      } @else {
+                        <span class="citef-badge citef-badge-success" title="Firmado en plena conformidad">
+                          <i class="bi bi-patch-check-fill"></i> Conforme
+                        </span>
+                      }
+                    } @else {
+                      <span class="citef-badge citef-badge-info" title="Pendiente de firma por el auxiliar entrante">
+                        <i class="bi bi-clock-history"></i> Pendiente Firma
+                      </span>
+                    }
+                  </td>
+                  <td class="text-right table-actions">
+                    <button
+                      class="action-btn action-view"
+                      (click)="verDetalleActa(acta)"
+                      title="Ver acta oficial e imprimir"
+                    >
+                      <i class="bi bi-file-earmark-medical"></i>
+                    </button>
+
+                    @if (!acta.aceptado_por_entrante) {
+                      <button
+                        class="action-btn action-sign"
+                        (click)="abrirModalFirmaActa(acta)"
+                        title="Firmar conformidad de relevo"
+                      >
+                        <i class="bi bi-pen"></i>
+                      </button>
+                    }
+
+                    <button
+                      class="action-btn action-edit"
+                      (click)="abrirModalEditarActa(acta)"
+                      title="Editar novedades de acta"
+                    >
+                      <i class="bi bi-pencil"></i>
+                    </button>
+
+                    <button
+                      class="action-btn action-delete"
+                      (click)="solicitarEliminarActa(acta)"
+                      title="Eliminar acta"
+                    >
+                      <i class="bi bi-trash3"></i>
+                    </button>
+                  </td>
+                </tr>
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <!-- PAGINACIÓN ESTÁNDAR 15 FILAS A LA DERECHA -->
+      <div class="pagination-wrapper">
+        <app-pagination
+          [paginaActual]="paginaActas()"
+          [totalRegistros]="totalActas()"
+          [tamanoPagina]="limite"
+          etiqueta="actas"
+          (paginaCambiada)="cambiarPaginaActas($event)"
+        ></app-pagination>
+      </div>
+    </app-table-card>
+  }
+
+  <!-- ================= MODAL APERTURA DE GUARDIA ================= -->
+  @if (mostrarModalApertura()) {
+    <div class="modal-backdrop">
+      <div class="modal-window">
+        <div class="modal-header">
+          <h2><i class="bi bi-door-open-fill"></i> Apertura de Guardia de Laboratorio</h2>
+          <button class="btn-close-modal" (click)="cerrarModalApertura()" title="Cerrar">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+
+        <div class="modal-body">
+          <app-modal-alert
+            [mensaje]="modalAlertApertura()"
+            tipo="danger"
+            (cerrar)="modalAlertApertura.set(null)"
+          ></app-modal-alert>
+
+          <div class="form-group">
+            <label for="aperturaSala" class="field-label required">Laboratorio Asignado:</label>
+            <select
+              id="aperturaSala"
+              class="citef-select"
+              [(ngModel)]="aperturaForm.id_sala"
+              [class.input-error]="formErrorsApertura()['id_sala']"
+            >
+              <option [ngValue]="null">-- Seleccione el Laboratorio --</option>
+              @for (s of salas(); track s.id_sala) {
+                <option [ngValue]="s.id_sala">{{ s.codigo_sala }} - {{ s.nombre }} (Piso {{ s.piso }})</option>
+              }
+            </select>
+            @if (formErrorsApertura()['id_sala']) {
+              <div class="field-error-text">{{ formErrorsApertura()['id_sala'] }}</div>
+            }
+          </div>
+
+          <div class="checklist-section">
+            <div class="checklist-title"><i class="bi bi-card-checklist"></i> Checklist de Inspección Inicial</div>
+
+            <label class="checklist-item">
+              <input type="checkbox" [(ngModel)]="aperturaForm.luces" />
+              <div class="check-text">
+                <strong>Iluminación Operativa</strong>
+              </div>
+            </label>
+
+            <label class="checklist-item">
+              <input type="checkbox" [(ngModel)]="aperturaForm.orden_limpieza" />
+              <div class="check-text">
+                <strong>Orden y Limpieza General</strong>
+              </div>
+            </label>
+
+            <label class="checklist-item">
+              <input type="checkbox" [(ngModel)]="aperturaForm.aire_acondicionado" />
+              <div class="check-text">
+                <strong>Sistema de Climatización</strong>
+              </div>
+            </label>
+
+            <label class="checklist-item">
+              <input type="checkbox" [(ngModel)]="aperturaForm.proyector" />
+              <div class="check-text">
+                <strong>Proyector Multimedia</strong>
+              </div>
+            </label>
+          </div>
+
+          <div class="form-group mt-3">
+            <label for="aperturaPcs" class="field-label required">Computadoras Encendidas / Verificadas:</label>
+            <input
+              id="aperturaPcs"
+              type="number"
+              min="0"
+              class="citef-input"
+              [(ngModel)]="aperturaForm.pcs_encendidas"
+              [class.input-error]="formErrorsApertura()['pcs_encendidas']"
+            />
+            @if (formErrorsApertura()['pcs_encendidas']) {
+              <div class="field-error-text">{{ formErrorsApertura()['pcs_encendidas'] }}</div>
+            }
+          </div>
+
+          <div class="form-group">
+            <label for="aperturaObs" class="field-label">Observaciones Iniciales (Opcional):</label>
+            <textarea
+              id="aperturaObs"
+              rows="3"
+              class="citef-input"
+              [(ngModel)]="aperturaForm.observaciones"
+              placeholder="Detalle cualquier novedad física detectada al recibir el laboratorio..."
+            ></textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="citef-btn citef-btn-outline" (click)="cerrarModalApertura()">
+            Cancelar
+          </button>
+          <button class="citef-btn citef-btn-primary" (click)="confirmarApertura()" [disabled]="cargando()">
+            @if (cargando()) {
+              <i class="bi bi-arrow-repeat spin"></i> Abriendo...
+            } @else {
+              <i class="bi bi-check-circle-fill"></i> Iniciar Guardia Oficial
+            }
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ================= MODAL CIERRE DE GUARDIA (CON RELEVO INTEGRADO) ================= -->
+  @if (mostrarModalCierre()) {
+    <div class="modal-backdrop">
+      <div class="modal-window">
+        <div class="modal-header header-cierre">
+          <h2><i class="bi bi-door-closed-fill"></i> Cierre de Guardia y Emisión de Acta</h2>
+          <button class="btn-close-modal" (click)="cerrarModalCierre()" title="Cerrar">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+
+        <div class="modal-body">
+          <app-modal-alert
+            [mensaje]="modalAlertCierre()"
+            tipo="danger"
+            (cerrar)="modalAlertCierre.set(null)"
+          ></app-modal-alert>
+
+          <!-- CONSOLIDADO AUTOMÁTICO -->
+          <div class="consolidado-box">
+            <h4><i class="bi bi-calculator"></i> Consolidación Automática</h4>
+            <div class="consolidado-grid">
+              <div class="item">
+                <span class="label">Estudiantes Asistidos</span>
+                <span class="val">{{ jornadaActiva()?.cant_estudiantes_atendidos || 0 }}</span>
+              </div>
+              <div class="item">
+                <span class="label">Averías Reportadas</span>
+                <span class="val">{{ jornadaActiva()?.cant_averias_reportadas || 0 }}</span>
+              </div>
+              <div class="item">
+                <span class="label">Objetos Olvidados</span>
+                <span class="val">{{ jornadaActiva()?.cant_objetos_custodiados || 0 }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="checklist-section">
+            <div class="checklist-title"><i class="bi bi-card-checklist"></i> Verificaciones de Cierre</div>
+
+            <label class="checklist-item">
+              <input type="checkbox" [(ngModel)]="cierreForm.pcs_apagadas" />
+              <div class="check-text">
+                <strong>Computadoras Apagadas</strong>
+              </div>
+            </label>
+
+            <label class="checklist-item">
+              <input type="checkbox" [(ngModel)]="cierreForm.luces_apagadas" />
+              <div class="check-text">
+                <strong>Iluminación Apagada</strong>
+              </div>
+            </label>
+
+            <label class="checklist-item">
+              <input type="checkbox" [(ngModel)]="cierreForm.aire_apagado" />
+              <div class="check-text">
+                <strong>Aire Acondicionado Desconectado</strong>
+              </div>
+            </label>
+
+            <label class="checklist-item">
+              <input type="checkbox" [(ngModel)]="cierreForm.proyector_apagado" />
+              <div class="check-text">
+                <strong>Proyector Multimedia Apagado</strong>
+              </div>
+            </label>
+
+            <label class="checklist-item">
+              <input type="checkbox" [(ngModel)]="cierreForm.orden_verificado" />
+              <div class="check-text">
+                <strong>Sillas en Orden y Puerta Cerrada</strong>
+              </div>
+            </label>
+          </div>
+
+          <!-- ASIGNACIÓN DE RELEVO AL AUXILIAR ENTRANTE -->
+          <div class="form-group mt-3">
+            <label for="cierreAuxEntrante" class="field-label">Auxiliar Entrante para Relevo (Handover):</label>
+            <select
+              id="cierreAuxEntrante"
+              class="citef-select"
+              [(ngModel)]="cierreForm.id_usuario_entrante"
+            >
+              <option [ngValue]="null">-- Fin de jornada (Turno noche)--</option>
+              @for (aux of auxiliaresDisponibles(); track aux.id_usuario) {
+                <option [ngValue]="aux.id_usuario">
+                  {{ aux.nombres }} {{ aux.apellidos }} ({{ aux.correo_institucional || 'Auxiliar' }})
+                </option>
+              }
+            </select>
+          </div>
+
+          <div class="form-group mt-2">
+            <label for="cierreObs" class="field-label">Novedades y Observaciones de Cierre:</label>
+            <textarea
+              id="cierreObs"
+              rows="3"
+              class="citef-input"
+              [(ngModel)]="cierreForm.observaciones"
+              placeholder="Describa cualquier novedad o reporte para el siguiente turno..."
+            ></textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="citef-btn citef-btn-outline" (click)="cerrarModalCierre()">
+            Cancelar
+          </button>
+          <button class="citef-btn btn-danger-cierre" (click)="confirmarCierre()" [disabled]="cargando()">
+            @if (cargando()) {
+              <i class="bi bi-arrow-repeat spin"></i> Cerrando y emitiendo acta...
+            } @else {
+              <i class="bi bi-door-closed-fill"></i> Cerrar Guardia y Emitir Acta
+            }
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ================= MODAL DETALLE DE JORNADA ================= -->
+  @if (mostrarModalDetalleJornada() && jornadaSeleccionada()) {
+    <div class="modal-backdrop">
+      <div class="modal-window modal-lg">
+        <div class="modal-header">
+          <h2><i class="bi bi-info-circle-fill"></i> Detalle de Guardia #{{ jornadaSeleccionada()?.id_jornada }}</h2>
+          <button class="btn-close-modal" (click)="cerrarModalDetalleJornada()" title="Cerrar">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+
+        <div class="modal-body">
+          <div class="detail-grid">
+            <div class="detail-cell">
+              <span class="lbl">Sala / Laboratorio:</span>
+              <span class="val">{{ jornadaSeleccionada()?.sala?.nombre }} ({{ jornadaSeleccionada()?.sala?.codigo_sala }})</span>
+            </div>
+            <div class="detail-cell">
+              <span class="lbl">Auxiliar Operador:</span>
+              <span class="val">{{ jornadaSeleccionada()?.usuario_auxiliar?.nombres }} {{ jornadaSeleccionada()?.usuario_auxiliar?.apellidos }}</span>
+            </div>
+            <div class="detail-cell">
+              <span class="lbl">Fecha:</span>
+              <span class="val">{{ jornadaSeleccionada()?.fecha | date:'dd/MM/yyyy' }}</span>
+            </div>
+            <div class="detail-cell">
+              <span class="lbl">Horario:</span>
+              <span class="val">
+                {{ jornadaSeleccionada()?.hora_apertura | date:'HH:mm:ss' }} - 
+                {{ jornadaSeleccionada()?.hora_cierre ? (jornadaSeleccionada()?.hora_cierre | date:'HH:mm:ss') : 'En Curso' }}
+              </span>
+            </div>
+          </div>
+
+          <h4 class="section-subtitle mt-3"><i class="bi bi-check2-all"></i> Checklist de Apertura</h4>
+          <div class="check-summary-grid">
+            <span [class.text-success]="jornadaSeleccionada()?.checklist_apertura?.luces" [class.text-danger]="!jornadaSeleccionada()?.checklist_apertura?.luces">
+              <i [class]="jornadaSeleccionada()?.checklist_apertura?.luces ? 'bi bi-check-circle-fill' : 'bi bi-x-circle-fill'"></i> Luces
+            </span>
+            <span [class.text-success]="jornadaSeleccionada()?.checklist_apertura?.orden_limpieza" [class.text-danger]="!jornadaSeleccionada()?.checklist_apertura?.orden_limpieza">
+              <i [class]="jornadaSeleccionada()?.checklist_apertura?.orden_limpieza ? 'bi bi-check-circle-fill' : 'bi bi-x-circle-fill'"></i> Orden y Limpieza
+            </span>
+            <span [class.text-success]="jornadaSeleccionada()?.checklist_apertura?.aire_acondicionado" [class.text-danger]="!jornadaSeleccionada()?.checklist_apertura?.aire_acondicionado">
+              <i [class]="jornadaSeleccionada()?.checklist_apertura?.aire_acondicionado ? 'bi bi-check-circle-fill' : 'bi bi-x-circle-fill'"></i> Aire Acondicionado
+            </span>
+            <span [class.text-success]="jornadaSeleccionada()?.checklist_apertura?.proyector" [class.text-danger]="!jornadaSeleccionada()?.checklist_apertura?.proyector">
+              <i [class]="jornadaSeleccionada()?.checklist_apertura?.proyector ? 'bi bi-check-circle-fill' : 'bi bi-x-circle-fill'"></i> Proyector
+            </span>
+          </div>
+
+          @if (jornadaSeleccionada()?.checklist_cierre) {
+            <h4 class="section-subtitle mt-3"><i class="bi bi-shield-check"></i> Checklist de Cierre</h4>
+            <div class="check-summary-grid">
+              <span [class.text-success]="jornadaSeleccionada()?.checklist_cierre?.pcs_apagadas">
+                <i class="bi bi-check-circle-fill"></i> Computadoras Apagadas
+              </span>
+              <span [class.text-success]="jornadaSeleccionada()?.checklist_cierre?.luces_apagadas">
+                <i class="bi bi-check-circle-fill"></i> Luces Apagadas
+              </span>
+              <span [class.text-success]="jornadaSeleccionada()?.checklist_cierre?.aire_apagado">
+                <i class="bi bi-check-circle-fill"></i> Aire Apagado
+              </span>
+              <span [class.text-success]="jornadaSeleccionada()?.checklist_cierre?.proyector_apagado">
+                <i class="bi bi-check-circle-fill"></i> Proyector Apagado
+              </span>
+            </div>
+          }
+
+          <div class="obs-box mt-3">
+            <strong>Observaciones / Novedades:</strong>
+            <p>{{ jornadaSeleccionada()?.obs_cierre || jornadaSeleccionada()?.checklist_apertura?.observaciones || 'Sin observaciones registradas.' }}</p>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="citef-btn citef-btn-primary" (click)="cerrarModalDetalleJornada()">
+            Cerrar
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ================= MODAL EDITAR OBSERVACIÓN JORNADA ================= -->
+  @if (mostrarModalEditarObsJornada()) {
+    <div class="modal-backdrop">
+      <div class="modal-window">
+        <div class="modal-header">
+          <h2><i class="bi bi-pencil-square"></i> Editar Observaciones de Jornada</h2>
+          <button class="btn-close-modal" (click)="cerrarModalEditarObsJornada()" title="Cerrar">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="editObsText" class="field-label">Observaciones de Bitácora:</label>
+            <textarea
+              id="editObsText"
+              rows="5"
+              class="citef-input"
+              [(ngModel)]="observacionEdicionJornada"
+            ></textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="citef-btn citef-btn-outline" (click)="cerrarModalEditarObsJornada()">
+            Cancelar
+          </button>
+          <button class="citef-btn citef-btn-primary" (click)="guardarObservacionJornada()" [disabled]="cargando()">
+            Guardar Cambios
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ================= MODAL VER ACTA OFICIAL (MEMBRETADO IMPRIMIBLE) ================= -->
+  @if (mostrarModalVerActa() && actaSeleccionada()) {
+    <div class="modal-backdrop">
+      <div class="modal-window modal-acta-oficial">
+        <div class="modal-header">
+          <h2><i class="bi bi-file-earmark-text"></i> Acta Formal de Relevo #{{ actaSeleccionada()?.id_acta_relevo }}</h2>
+          <div class="header-btns">
+            <button class="citef-btn citef-btn-outline citef-btn-sm" (click)="imprimirActa()" title="Imprimir documento oficial">
+              <i class="bi bi-printer"></i> Imprimir Acta
+            </button>
+            <button class="btn-close-modal" (click)="cerrarModalVerActa()" title="Cerrar">
+              <i class="bi bi-x-lg"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="modal-body printable-acta">
+          <!-- CABECERA INSTITUCIONAL FCEE -->
+          <div class="acta-formal-header">
+            <div class="acta-logo-text">
+              <h3>UNIVERSIDAD AUTÓNOMA GABRIEL RENÉ MORENO</h3>
+              <h4>FACULTAD DE CIENCIAS ECONÓMICAS Y EMPRESARIALES</h4>
+              <p>Centro de Cómputo e Infraestructura Tecnológica (CITEF)</p>
+            </div>
+            <div class="acta-title-badge">
+              <span>ACTA DE RELEVO DE GUARDIA</span>
+              <strong>N° {{ actaSeleccionada()?.id_acta_relevo | number:'4.0' }}</strong>
+            </div>
+          </div>
+
+          <div class="acta-grid-info">
+            <div class="info-block">
+              <span class="info-label">Laboratorio:</span>
+              <span class="info-val">{{ actaSeleccionada()?.jornada_saliente?.sala?.nombre || 'Sala Cómputo' }} ({{ actaSeleccionada()?.jornada_saliente?.sala?.codigo_sala }})</span>
+            </div>
+            <div class="info-block">
+              <span class="info-label">Fecha y Hora de Relevo:</span>
+              <span class="info-val">{{ actaSeleccionada()?.fecha_hora_relevo | date:'dd/MM/yyyy HH:mm:ss' }}</span>
+            </div>
+            <div class="info-block">
+              <span class="info-label">Auxiliar Saliente (Entrega):</span>
+              <span class="info-val">{{ actaSeleccionada()?.usuario_saliente?.nombres }} {{ actaSeleccionada()?.usuario_saliente?.apellidos }}</span>
+            </div>
+            <div class="info-block">
+              <span class="info-label">Auxiliar Entrante (Recibe):</span>
+              <span class="info-val">
+                @if (actaSeleccionada()?.usuario_entrante) {
+                  {{ actaSeleccionada()?.usuario_entrante?.nombres }} {{ actaSeleccionada()?.usuario_entrante?.apellidos }}
+                } @else {
+                  <span class="text-muted">Sin auxiliar entrante asignado</span>
+                }
+              </span>
+            </div>
+          </div>
+
+          <!-- BALANCES DE LABORATORIO -->
+          <div class="acta-section-title"><i class="bi bi-boxes"></i> Balance Físico y Técnico Transferido</div>
+          <div class="balance-table-box">
+            <div class="bal-item">
+              <span class="lbl">Computadoras Operativas:</span>
+              <span class="val">{{ actaSeleccionada()?.cant_equipos_operativos }}</span>
+            </div>
+            <div class="bal-item">
+              <span class="lbl">Averías Pendientes:</span>
+              <span class="val text-danger">{{ actaSeleccionada()?.cant_averias_pend }}</span>
+            </div>
+            <div class="bal-item">
+              <span class="lbl">Objetos en Custodia:</span>
+              <span class="val text-primary">{{ actaSeleccionada()?.cant_objetos_custodia }}</span>
+            </div>
+          </div>
+
+          <!-- NOVEDADES REPORTADAS -->
+          <div class="acta-section-title"><i class="bi bi-chat-left-quote"></i> Novedades y Observaciones</div>
+          <div class="acta-text-box">
+            {{ actaSeleccionada()?.novedades || 'Sin novedades reportadas por el auxiliar saliente.' }}
+          </div>
+
+          <!-- ESTADO DE CONFORMIDAD Y FIRMAS DIGITALES -->
+          <div class="acta-section-title"><i class="bi bi-pen"></i> Estado de Conformidad y Firma Digital</div>
+          <div class="acta-signatures">
+            <div class="signature-box">
+              <div class="sig-seal"><i class="bi bi-check-circle-fill text-success"></i></div>
+              <div class="sig-name">{{ actaSeleccionada()?.usuario_saliente?.nombres }} {{ actaSeleccionada()?.usuario_saliente?.apellidos }}</div>
+              <div class="sig-role">Auxiliar Saliente (Entrega Conforme)</div>
+              <div class="sig-time">{{ actaSeleccionada()?.fecha_hora_relevo | date:'dd/MM/yyyy HH:mm:ss' }}</div>
+            </div>
+
+            <div class="signature-box" [class.pending-sign]="!actaSeleccionada()?.aceptado_por_entrante">
+              @if (actaSeleccionada()?.aceptado_por_entrante) {
+                <div class="sig-seal">
+                  <i class="bi bi-check-circle-fill text-success"></i>
+                </div>
+                <div class="sig-name">{{ actaSeleccionada()?.usuario_entrante?.nombres }} {{ actaSeleccionada()?.usuario_entrante?.apellidos }}</div>
+                <div class="sig-role">Auxiliar Entrante (Recepción Conforme)</div>
+                <div class="sig-time">{{ actaSeleccionada()?.fecha_hora_conformidad | date:'dd/MM/yyyy HH:mm:ss' }}</div>
+                @if (actaSeleccionada()?.obs_discrepancia) {
+                  <div class="discrepancy-note">
+                    <strong>Discrepancia Notificada:</strong> {{ actaSeleccionada()?.obs_discrepancia }}
+                  </div>
+                }
+              } @else {
+                <div class="sig-seal"><i class="bi bi-hourglass-split text-warning"></i></div>
+                <div class="sig-name">
+                  {{ actaSeleccionada()?.usuario_entrante ? (actaSeleccionada()?.usuario_entrante?.nombres + ' ' + actaSeleccionada()?.usuario_entrante?.apellidos) : 'Auxiliar Entrante' }}
+                </div>
+                <div class="sig-role">Pendiente de Firma de Conformidad</div>
+                @if (!esAdmin()) {
+                  <button class="citef-btn citef-btn-primary citef-btn-sm mt-2" (click)="abrirModalFirmaActa(actaSeleccionada()!)">
+                    <i class="bi bi-pen"></i> Firmar Ahora
+                  </button>
+                }
+              }
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="citef-btn citef-btn-outline" (click)="cerrarModalVerActa()">
+            Cerrar
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ================= MODAL FIRMA DE RELEVO ================= -->
+  @if (mostrarModalFirmarActa() && actaSeleccionada()) {
+    <div class="modal-backdrop">
+      <div class="modal-window">
+        <div class="modal-header">
+          <h2><i class="bi bi-pen-fill"></i> Suscripción Digital de Conformidad</h2>
+          <button class="btn-close-modal" (click)="cerrarModalFirmaActa()" title="Cerrar">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+
+        <div class="modal-body">
+          <app-modal-alert
+            [mensaje]="modalAlertFirma()"
+            tipo="danger"
+            (cerrar)="modalAlertFirma.set(null)"
+          ></app-modal-alert>
+
+          <div class="form-group">
+            <label class="field-label required">Dictamen de Recepción:</label>
+            <div class="radio-options">
+              <label class="radio-label">
+                <input type="radio" [value]="true" [(ngModel)]="firmaForm.conforme" />
+                <span><i class="bi bi-check2-circle text-success"></i> Acepto en Plena Conformidad</span>
+              </label>
+              <label class="radio-label">
+                <input type="radio" [value]="false" [(ngModel)]="firmaForm.conforme" />
+                <span><i class="bi bi-exclamation-triangle-fill text-danger"></i> Acepto con Observaciones de Discrepancia</span>
+              </label>
+            </div>
+          </div>
+
+          @if (!firmaForm.conforme) {
+            <div class="form-group mt-2">
+              <label for="obsDiscrepancia" class="field-label required">Detalle de Discrepancias Detectadas:</label>
+              <textarea
+                id="obsDiscrepancia"
+                rows="4"
+                class="citef-input"
+                [(ngModel)]="firmaForm.obs_discrepancia"
+                [class.input-error]="formErrorsFirma()['obs_discrepancia']"
+                placeholder="Indique los daños, equipos no operativos o anomalías que no fueron reportadas por el saliente..."
+              ></textarea>
+              @if (formErrorsFirma()['obs_discrepancia']) {
+                <div class="field-error-text">{{ formErrorsFirma()['obs_discrepancia'] }}</div>
+              }
+            </div>
+          }
+        </div>
+
+        <div class="modal-footer">
+          <button class="citef-btn citef-btn-outline" (click)="cerrarModalFirmaActa()">
+            Cancelar
+          </button>
+          <button class="citef-btn citef-btn-primary" (click)="confirmarFirmaActa()" [disabled]="cargando()">
+            @if (cargando()) {
+              <i class="bi bi-arrow-repeat spin"></i> Firmando...
+            } @else {
+              <i class="bi bi-fingerprint"></i> Certificar Firma Digital
+            }
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ================= MODAL EDITAR ACTA ================= -->
+  @if (mostrarModalEditarActa() && actaSeleccionada()) {
+    <div class="modal-backdrop">
+      <div class="modal-window">
+        <div class="modal-header">
+          <h2><i class="bi bi-pencil-square"></i> Editar Novedades de Acta #{{ actaSeleccionada()?.id_acta_relevo }}</h2>
+          <button class="btn-close-modal" (click)="cerrarModalEditarActa()" title="Cerrar">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="editActaNovedades" class="field-label">Novedades Reportadas:</label>
+            <textarea
+              id="editActaNovedades"
+              rows="4"
+              class="citef-input"
+              [(ngModel)]="edicionActaForm.novedades"
+            ></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="editActaDiscrepancia" class="field-label">Observaciones de Discrepancia:</label>
+            <textarea
+              id="editActaDiscrepancia"
+              rows="3"
+              class="citef-input"
+              [(ngModel)]="edicionActaForm.obs_discrepancia"
+            ></textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="citef-btn citef-btn-outline" (click)="cerrarModalEditarActa()">
+            Cancelar
+          </button>
+          <button class="citef-btn citef-btn-primary" (click)="guardarEdicionActa()" [disabled]="cargando()">
+            Guardar Cambios
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ================= CONFIRMACIÓN ELIMINACIÓN DE JORNADA ================= -->
+  <app-confirm-modal
+    [visible]="mostrarConfirmEliminarJornada()"
+    title="Eliminar Registro de Jornada"
+    [message]="'¿Está seguro de eliminar el registro de la jornada N° ' + (jornadaAEliminar()?.id_jornada || '') + '? Esta acción revocará los registros vinculados.'"
+    confirmBtnText="Eliminar Definitivamente"
+    cancelBtnText="Cancelar"
+    [isDanger]="true"
+    (confirmed)="confirmarEliminarJornada()"
+    (cancelled)="cancelarEliminarJornada()"
+  ></app-confirm-modal>
+
+  <!-- ================= CONFIRMACIÓN ELIMINACIÓN DE ACTA ================= -->
+  <app-confirm-modal
+    [visible]="mostrarConfirmEliminarActa()"
+    title="Eliminar Acta de Relevo"
+    [message]="'¿Está seguro de eliminar el acta de relevo N° ' + (actaAEliminar()?.id_acta_relevo || '') + '? Esta acción revocará la certificación del traspaso.'"
+    confirmBtnText="Eliminar Acta"
+    cancelBtnText="Cancelar"
+    [isDanger]="true"
+    (confirmed)="confirmarEliminarActa()"
+    (cancelled)="cancelarEliminarActa()"
+  ></app-confirm-modal>
+</div>

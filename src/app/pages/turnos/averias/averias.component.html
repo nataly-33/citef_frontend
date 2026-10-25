@@ -1,0 +1,727 @@
+<div class="averias-container">
+  <!-- ENCABEZADO DE PÁGINA -->
+  <div class="page-header">
+    <div class="header-left">
+      <h1>
+        <i class="bi bi-tools"></i> Gestión de Averías e Incidencias Técnicas
+      </h1>
+
+</div>
+    <div class="header-right">
+      <button class="citef-btn citef-btn-primary" (click)="abrirModalReportar()" title="Reportar falla técnica">
+        <i class="bi bi-plus-circle-fill"></i> Reportar Avería
+      </button>
+
+</div>
+
+</div>
+
+  <!-- ALERTAS GLOBALES -->
+  @if (mensajeExito()) {
+    <div class="alert-banner alert-success">
+      <i class="bi bi-check-circle-fill"></i>
+      <span>{{ mensajeExito() }}</span>
+      <button class="btn-close-alert" (click)="mensajeExito.set(null)" title="Cerrar">
+        <i class="bi bi-x"></i>
+      </button>
+
+</div>
+  }
+
+  @if (mensajeError()) {
+    <div class="alert-banner alert-danger">
+      <i class="bi bi-exclamation-triangle-fill"></i>
+      <span>{{ mensajeError() }}</span>
+      <button class="btn-close-alert" (click)="mensajeError.set(null)" title="Cerrar">
+        <i class="bi bi-x"></i>
+      </button>
+
+</div>
+  }
+
+  <!-- BARRA DE FILTROS AVANZADOS (REGLA 7) -->
+  <div class="filter-card">
+    <div class="filter-row">
+      <div class="filter-col col-search">
+        <label for="filtroBusqueda">Búsqueda Textual:</label>
+        <div class="input-with-icon">
+          <i class="bi bi-search"></i>
+          <input
+            id="filtroBusqueda"
+            type="text"
+            class="citef-input"
+            placeholder="Buscar por código de equipo, falla..."
+            [(ngModel)]="filtroBusqueda"
+            (keyup.enter)="aplicarFiltros()"
+          />
+    
+</div>
+  
+</div>
+
+      <div class="filter-col">
+        <label for="filtroSala">Laboratorio:</label>
+        <select id="filtroSala" class="citef-select" [(ngModel)]="filtroSala">
+          <option [ngValue]="null">Todos los laboratorios</option>
+          @for (s of salas(); track s.id_sala) {
+            <option [ngValue]="s.id_sala">{{ s.codigo_sala }} - {{ s.nombre }}</option>
+          }
+        </select>
+  
+</div>
+
+      <div class="filter-col">
+        <label for="filtroGravedad">Gravedad:</label>
+        <select id="filtroGravedad" class="citef-select" [(ngModel)]="filtroGravedad">
+          <option value="TODOS">Todas las gravedades</option>
+          <option value="BAJA">Baja (Periférico / Leve)</option>
+          <option value="MEDIA">Media (Software / Red)</option>
+          <option value="CRITICA">Crítica (Hardware Inoperativo)</option>
+        </select>
+  
+</div>
+
+      <div class="filter-col">
+        <label for="filtroEstado">Estado Soporte:</label>
+        <select id="filtroEstado" class="citef-select" [(ngModel)]="filtroEstado">
+          <option value="TODOS">Todos los estados</option>
+          <option value="PENDIENTE_REVISION">Pendiente de Revisión</option>
+          <option value="EN_TALLER">En Taller de Soporte</option>
+          <option value="REPARADO">Reparado / Operativo</option>
+          <option value="DESCARTADO">Descartado / Baja</option>
+        </select>
+  
+</div>
+
+      <div class="filter-col-buttons">
+        <button class="citef-btn citef-btn-primary" (click)="aplicarFiltros()" title="Buscar averías">
+          <i class="bi bi-search"></i> Buscar
+        </button>
+        <button class="citef-btn citef-btn-outline" (click)="limpiarFiltros()" title="Limpiar filtros">
+          <i class="bi bi-arrow-counterclockwise"></i> Limpiar
+        </button>
+  
+</div>
+
+</div>
+
+</div>
+
+  <!-- TABLA PRINCIPAL CON APP-TABLE-CARD -->
+  <app-table-card
+    title="Bandeja de Control de Incidencias Técnicas"
+    [hasActions]="false"
+  >
+    <div class="citef-table-container">
+      <table class="citef-table">
+        <thead>
+          <tr>
+            <th>Código / Fecha</th>
+            <th>Ubicación y Estación</th>
+            <th>Tipo y Gravedad</th>
+            <th>Descripción de Falla</th>
+            <th>Contexto / Último Usuario</th>
+            <th>Estado</th>
+            <th class="text-right">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          @if (cargando()) {
+            <tr>
+              <td colspan="7" class="text-center py-4">
+                <i class="bi bi-arrow-repeat spin"></i> Cargando incidencias técnicas...
+              </td>
+            </tr>
+          } @else if (averias().length === 0) {
+            <tr>
+              <td colspan="7" class="text-center py-4 text-muted">
+                <i class="bi bi-info-circle"></i> No se encontraron averías registradas con los filtros seleccionados.
+              </td>
+            </tr>
+          } @else {
+            @for (a of averias(); track a.id_averia) {
+              <tr>
+                <td>
+                  <span class="font-bold">#AV-{{ a.id_averia }}</span>
+                  <div class="text-xs text-muted">{{ a.fecha_reporte | date:'dd/MM/yyyy HH:mm' }}
+</div>
+                </td>
+                <td>
+                  <strong>{{ a.sala?.nombre || 'Sala' }}</strong>
+                  <div class="text-xs font-bold text-primary">
+                    <i class="bi bi-pc-display"></i> {{ a.computadora?.codigo_equipo || 'PC' }}
+              
+</div>
+                </td>
+                <td>
+                  <div>
+                    <span class="tipo-tag">{{ a.tipo_falla }}</span>
+              
+</div>
+                  <div class="mt-1">
+                    @switch (a.gravedad) {
+                      @case ('BAJA') {
+                        <span class="badge-gravedad gravedad-baja"><i class="bi bi-info-circle"></i> Baja</span>
+                      }
+                      @case ('MEDIA') {
+                        <span class="badge-gravedad gravedad-media"><i class="bi bi-exclamation-circle"></i> Media</span>
+                      }
+                      @case ('CRITICA') {
+                        <span class="badge-gravedad gravedad-critica"><i class="bi bi-exclamation-triangle-fill"></i> Crítica</span>
+                      }
+                    }
+              
+</div>
+                </td>
+                <td>
+                  <div class="desc-falla-text" [title]="a.descrip_falla">
+                    {{ a.descrip_falla }}
+              
+</div>
+                  @if (a.solucion_tecnica) {
+                    <div class="text-xs text-success mt-1">
+                      <i class="bi bi-check2-all"></i> Solución: {{ a.solucion_tecnica }}
+                
+</div>
+                  }
+                </td>
+                <td>
+                  @if (a.estudiante) {
+                    <div class="context-pill context-student">
+                      <i class="bi bi-person-fill"></i>
+                      <span>{{ a.estudiante.nombres }} {{ a.estudiante.apellidos }} (RU: {{ a.estudiante.registro }})</span>
+                
+</div>
+                  } @else if (a.registro_ultimo_estudiante) {
+                    <div class="context-pill context-student">
+                      <i class="bi bi-person-badge"></i>
+                      <span>RU: {{ a.registro_ultimo_estudiante }}</span>
+                
+</div>
+                  } @else if (a.id_reserva) {
+                    <div class="context-pill context-reserva">
+                      <i class="bi bi-calendar-event"></i>
+                      <span>Reserva Académica #{{ a.id_reserva }}</span>
+                
+</div>
+                  } @else {
+                    <span class="text-muted text-xs">No vinculado</span>
+                  }
+                </td>
+                <td>
+                  @switch (a.estado) {
+                    @case ('PENDIENTE_REVISION') {
+                      <span class="citef-badge citef-badge-warning">
+                        <i class="bi bi-hourglass-split"></i> Pendiente
+                      </span>
+                    }
+                    @case ('EN_TALLER') {
+                      <span class="citef-badge citef-badge-info">
+                        <i class="bi bi-tools"></i> En Taller
+                      </span>
+                    }
+                    @case ('REPARADO') {
+                      <span class="citef-badge citef-badge-success">
+                        <i class="bi bi-check2-circle"></i> Reparado
+                      </span>
+                    }
+                    @case ('DESCARTADO') {
+                      <span class="citef-badge citef-badge-danger">
+                        <i class="bi bi-x-circle"></i> Descartado
+                      </span>
+                    }
+                    @default {
+                      <span class="citef-badge citef-badge-neutral">{{ a.estado }}</span>
+                    }
+                  }
+                </td>
+                <td class="text-right table-actions">
+                  <button
+                    class="action-btn action-wrench"
+                    (click)="abrirModalCambiarEstado(a)"
+                    title="Actualizar estado / marcar reparado"
+                  >
+                    <i class="bi bi-wrench-adjustable"></i>
+                  </button>
+
+                  <button
+                    class="action-btn action-view"
+                    (click)="verDetalleAveria(a)"
+                    title="Ver detalle completo"
+                  >
+                    <i class="bi bi-eye"></i>
+                  </button>
+
+                  <button
+                    class="action-btn action-edit"
+                    (click)="abrirModalEditar(a)"
+                    title="Editar información de avería"
+                  >
+                    <i class="bi bi-pencil"></i>
+                  </button>
+
+                  <button
+                    class="action-btn action-delete"
+                    (click)="solicitarEliminar(a)"
+                    title="Eliminar incidencia"
+                  >
+                    <i class="bi bi-trash3"></i>
+                  </button>
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+
+</div>
+
+    <!-- PAGINACIÓN ESTÁNDAR 15 FILAS A LA DERECHA -->
+    <div class="pagination-wrapper">
+      <app-pagination
+        [paginaActual]="paginaActual()"
+        [totalRegistros]="totalRegistros()"
+        [tamanoPagina]="limite"
+        etiqueta="averías"
+        (paginaCambiada)="cambiarPagina($event)"
+      ></app-pagination>
+
+</div>
+  </app-table-card>
+
+  <!-- ================= MODAL REPORTAR AVERÍA (CU22) ================= -->
+  @if (mostrarModalReportar()) {
+    <div class="modal-backdrop">
+      <div class="modal-window modal-lg">
+        <div class="modal-header">
+          <h2><i class="bi bi-exclamation-triangle-fill text-danger"></i> Reportar Avería Técnica (CU22)</h2>
+          <button class="btn-close-modal" (click)="cerrarModalReportar()" title="Cerrar">
+            <i class="bi bi-x-lg"></i>
+          </button>
+    
+</div>
+
+        <div class="modal-body">
+          <app-modal-alert
+            [mensaje]="modalAlertReporte()"
+            tipo="danger"
+            (cerrar)="modalAlertReporte.set(null)"
+          ></app-modal-alert>
+
+          <div class="form-row-2">
+            <div class="form-group">
+              <label for="repSala" class="field-label required">Laboratorio / Sala:</label>
+              <select
+                id="repSala"
+                class="citef-select"
+                [(ngModel)]="reporteForm.id_sala"
+                (ngModelChange)="alCambiarSalaReporte($event)"
+                [class.input-error]="formErrorsReporte()['id_sala']"
+              >
+                <option [ngValue]="null">-- Seleccione Laboratorio --</option>
+                @for (s of salas(); track s.id_sala) {
+                  <option [ngValue]="s.id_sala">{{ s.codigo_sala }} - {{ s.nombre }}</option>
+                }
+              </select>
+              @if (formErrorsReporte()['id_sala']) {
+                <div class="field-error-text">{{ formErrorsReporte()['id_sala'] }}
+</div>
+              }
+        
+</div>
+
+            <div class="form-group">
+              <div class="field-header-row">
+                <label for="repPc" class="field-label required">Computadora con Desperfecto:</label>
+                <button
+                  type="button"
+                  class="btn-visual-picker"
+                  (click)="abrirModalPlano()"
+                  [disabled]="cargandoComputadoras() || !reporteForm.id_sala"
+                  title="Abrir mapa visual interactivo de la sala"
+                >
+                  <i class="bi bi-grid-3x3"></i> Ver Plano Visual
+                </button>
+          
+</div>
+              <select
+                id="repPc"
+                class="citef-select"
+                [(ngModel)]="reporteForm.id_computadora"
+                (ngModelChange)="alCambiarComputadoraReporte($event)"
+                [class.input-error]="formErrorsReporte()['id_computadora']"
+                [disabled]="cargandoComputadoras() || !reporteForm.id_sala"
+              >
+                <option [ngValue]="null">
+                  {{ cargandoComputadoras() ? 'Cargando estaciones...' : '-- Seleccione Estación --' }}
+                </option>
+                @for (pc of computadorasSala(); track pc.id_computadora) {
+                  <option [ngValue]="pc.id_computadora">
+                    {{ pc.codigo_equipo }} (Fila {{ pc.posicion_fila }}, Col {{ pc.posicion_columna }}) - {{ pc.estado_actual }}
+                  </option>
+                }
+              </select>
+              @if (formErrorsReporte()['id_computadora']) {
+                <div class="field-error-text">{{ formErrorsReporte()['id_computadora'] }}
+</div>
+              }
+        
+</div>
+      
+</div>
+
+          <!-- TARJETA DE AUTO-VINCULACIÓN CONTEXTUAL (CU22) -->
+          @if (consultandoContexto()) {
+            <div class="context-loading">
+              <i class="bi bi-arrow-repeat spin"></i> Consultando historial de ocupación reciente de la estación...
+        
+</div>
+          } @else if (contextoComputadora()) {
+            <div class="context-card-cu22">
+              <div class="context-card-title">
+                <i class="bi bi-shield-check text-primary"></i> Auto-Vinculación Contextual Automática
+          
+</div>
+              <div class="context-card-body">
+                @if (contextoComputadora()?.ultimo_estudiante) {
+                  <div class="context-user-highlight">
+                    <i class="bi bi-person-circle"></i>
+                    <div>
+                      <strong>Último Estudiante que utilizó la estación:</strong>
+                      <div>
+                        {{ contextoComputadora()?.ultimo_estudiante?.nombres }}
+                        {{ contextoComputadora()?.ultimo_estudiante?.apellidos }}
+                        (RU: {{ contextoComputadora()?.ultimo_estudiante?.registro }})
+                  
+</div>
+                      <span class="text-xs text-muted">
+                        Sesión: {{ contextoComputadora()?.ultimo_estudiante?.hora_inicio | date:'dd/MM HH:mm' }}
+                      </span>
+                
+</div>
+              
+</div>
+                }
+
+                @if (contextoComputadora()?.reserva_reciente) {
+                  <div class="context-reserva-highlight mt-2">
+                    <i class="bi bi-mortarboard-fill"></i>
+                    <div>
+                      <strong>Cátedra previa en sala:</strong>
+                      <div>
+                        {{ contextoComputadora()?.reserva_reciente?.materia_nombre }} —
+                        Prof. {{ contextoComputadora()?.reserva_reciente?.docente_nombre }}
+                  
+</div>
+                
+</div>
+              
+</div>
+                }
+
+                @if (!contextoComputadora()?.ultimo_estudiante && !contextoComputadora()?.reserva_reciente) {
+                  <div class="text-muted text-xs">
+                    <i class="bi bi-info-circle"></i> Sin registros recientes de sesiones para esta computadora.
+              
+</div>
+                }
+          
+</div>
+        
+</div>
+          }
+
+          <div class="form-row-2">
+            <div class="form-group">
+              <label for="repTipo" class="field-label required">Tipo de Desperfecto:</label>
+              <select id="repTipo" class="citef-select" [(ngModel)]="reporteForm.tipo_falla">
+                <option value="HARDWARE">Hardware (Pantalla, CPU, Teclado, Ratón)</option>
+                <option value="SOFTWARE">Software (Sistema Operativo, Drivers, App)</option>
+                <option value="RED">Conectividad / Red (Cable UTP, IP, Sin Internet)</option>
+                <option value="PERIFERICO">Periférico (Cables, Auriculares, Otros)</option>
+              </select>
+        
+</div>
+
+            <div class="form-group">
+              <label for="repGravedad" class="field-label required">Nivel de Gravedad:</label>
+              <select id="repGravedad" class="citef-select" [(ngModel)]="reporteForm.gravedad">
+                <option value="BAJA">Baja (Equipo utilizable parcialmente)</option>
+                <option value="MEDIA">Media (Afecta el rendimiento normal)</option>
+                <option value="CRITICA">Crítica (Inoperativo / No enciende)</option>
+              </select>
+        
+</div>
+      
+</div>
+
+          <div class="form-group">
+            <label for="repDesc" class="field-label required">Descripción Detallada de la Falla:</label>
+            <textarea
+              id="repDesc"
+              rows="4"
+              class="citef-input"
+              [(ngModel)]="reporteForm.descrip_falla"
+              [class.input-error]="formErrorsReporte()['descrip_falla']"
+              placeholder="Describa el comportamiento anómalo, mensajes de error en pantalla o daños físicos visibles..."
+            ></textarea>
+            @if (formErrorsReporte()['descrip_falla']) {
+              <div class="field-error-text">{{ formErrorsReporte()['descrip_falla'] }}
+</div>
+            }
+      
+</div>
+    
+</div>
+
+        <div class="modal-footer">
+          <button class="citef-btn citef-btn-outline" (click)="cerrarModalReportar()">
+            Cancelar
+          </button>
+          <button class="citef-btn citef-btn-primary" (click)="confirmarReporteAveria()" [disabled]="cargando()">
+            @if (cargando()) {
+              <i class="bi bi-arrow-repeat spin"></i> Registrando...
+            } @else {
+              <i class="bi bi-send-check"></i> Emitir Reporte a Soporte
+            }
+          </button>
+    
+</div>
+  
+</div>
+
+</div>
+  }
+
+  <!-- ================= MODAL CAMBIAR ESTADO ================= -->
+  @if (mostrarModalCambiarEstado() && averiaSeleccionada()) {
+    <div class="modal-backdrop">
+      <div class="modal-window">
+        <div class="modal-header">
+          <h2><i class="bi bi-wrench-adjustable"></i> Actualizar Estado Técnico #{{ averiaSeleccionada()?.id_averia }}</h2>
+          <button class="btn-close-modal" (click)="cerrarModalCambiarEstado()" title="Cerrar">
+            <i class="bi bi-x-lg"></i>
+          </button>
+    
+</div>
+
+        <div class="modal-body">
+          <app-modal-alert
+            [mensaje]="modalAlertEstado()"
+            tipo="danger"
+            (cerrar)="modalAlertEstado.set(null)"
+          ></app-modal-alert>
+
+          <div class="form-group">
+            <label for="estSelect" class="field-label required">Nuevo Estado de Soporte:</label>
+            <select id="estSelect" class="citef-select" [(ngModel)]="estadoForm.estado">
+              <option value="PENDIENTE_REVISION">Pendiente de Revisión</option>
+              <option value="EN_TALLER">Trasladado a Taller de Soporte</option>
+              <option value="REPARADO">Reparado y Reintegrado (Operativo)</option>
+              <option value="DESCARTADO">Descartado / Baja Definitiva</option>
+            </select>
+      
+</div>
+
+          <div class="form-group mt-2">
+            <label for="estSolucion" class="field-label" [class.required]="estadoForm.estado === 'REPARADO'">
+              Solución Técnica / Observación de Mantenimiento:
+            </label>
+            <textarea
+              id="estSolucion"
+              rows="4"
+              class="citef-input"
+              [(ngModel)]="estadoForm.solucion_tecnica"
+              [class.input-error]="formErrorsEstado()['solucion_tecnica']"
+              placeholder="Detalle la reparación realizada (cambio de disco, reinstalación, reemplazo de periférico)..."
+            ></textarea>
+            @if (formErrorsEstado()['solucion_tecnica']) {
+              <div class="field-error-text">{{ formErrorsEstado()['solucion_tecnica'] }}
+</div>
+            }
+      
+</div>
+    
+</div>
+
+        <div class="modal-footer">
+          <button class="citef-btn citef-btn-outline" (click)="cerrarModalCambiarEstado()">
+            Cancelar
+          </button>
+          <button class="citef-btn citef-btn-primary" (click)="confirmarCambioEstado()" [disabled]="cargando()">
+            @if (cargando()) {
+              <i class="bi bi-arrow-repeat spin"></i> Actualizando...
+            } @else {
+              <i class="bi bi-check2-circle"></i> Confirmar Actualización
+            }
+          </button>
+    
+</div>
+  
+</div>
+
+</div>
+  }
+
+  <!-- ================= MODAL VER DETALLE ================= -->
+  @if (mostrarModalDetalle() && averiaSeleccionada()) {
+    <div class="modal-backdrop">
+      <div class="modal-window">
+        <div class="modal-header">
+          <h2><i class="bi bi-info-circle-fill"></i> Detalle de Incidencia #{{ averiaSeleccionada()?.id_averia }}</h2>
+          <button class="btn-close-modal" (click)="cerrarModalDetalle()" title="Cerrar">
+            <i class="bi bi-x-lg"></i>
+          </button>
+    
+</div>
+
+        <div class="modal-body">
+          <div class="detail-box">
+            <div class="detail-row">
+              <span class="lbl">Laboratorio / PC:</span>
+              <span class="val">{{ averiaSeleccionada()?.sala?.nombre }} — {{ averiaSeleccionada()?.computadora?.codigo_equipo }}</span>
+        
+</div>
+            <div class="detail-row">
+              <span class="lbl">Reportado por:</span>
+              <span class="val">{{ averiaSeleccionada()?.usuario_reporta?.nombres }} {{ averiaSeleccionada()?.usuario_reporta?.apellidos }}</span>
+        
+</div>
+            <div class="detail-row">
+              <span class="lbl">Fecha de Emisión:</span>
+              <span class="val">{{ averiaSeleccionada()?.fecha_reporte | date:'dd/MM/yyyy HH:mm:ss' }}</span>
+        
+</div>
+            <div class="detail-row">
+              <span class="lbl">Tipo / Gravedad:</span>
+              <span class="val">{{ averiaSeleccionada()?.tipo_falla }} (Gravedad: {{ averiaSeleccionada()?.gravedad }})</span>
+        
+</div>
+            <div class="detail-row">
+              <span class="lbl">Último Estudiante Vinculado:</span>
+              <span class="val">
+                {{ averiaSeleccionada()?.estudiante?.nombres || 'No asignado' }} {{ averiaSeleccionada()?.estudiante?.apellidos || '' }}
+                @if (averiaSeleccionada()?.registro_ultimo_estudiante) {
+                  (RU: {{ averiaSeleccionada()?.registro_ultimo_estudiante }})
+                }
+              </span>
+        
+</div>
+      
+</div>
+
+          <div class="falla-desc-box mt-3">
+            <strong>Descripción del Desperfecto:</strong>
+            <p>{{ averiaSeleccionada()?.descrip_falla }}</p>
+      
+</div>
+
+          @if (averiaSeleccionada()?.solucion_tecnica) {
+            <div class="solucion-desc-box mt-2">
+              <strong>Solución Técnica Registrada:</strong>
+              <p>{{ averiaSeleccionada()?.solucion_tecnica }}</p>
+              @if (averiaSeleccionada()?.fecha_solucion) {
+                <span class="text-xs text-muted">Fecha Solución: {{ averiaSeleccionada()?.fecha_solucion | date:'dd/MM/yyyy HH:mm' }}</span>
+              }
+        
+</div>
+          }
+    
+</div>
+
+        <div class="modal-footer">
+          <button class="citef-btn citef-btn-primary" (click)="cerrarModalDetalle()">
+            Cerrar Detalle
+          </button>
+    
+</div>
+  
+</div>
+
+</div>
+  }
+
+  <!-- ================= MODAL EDITAR ================= -->
+  @if (mostrarModalEditar()) {
+    <div class="modal-backdrop">
+      <div class="modal-window">
+        <div class="modal-header">
+          <h2><i class="bi bi-pencil-square"></i> Editar Avería #{{ averiaSeleccionada()?.id_averia }}</h2>
+          <button class="btn-close-modal" (click)="cerrarModalEditar()" title="Cerrar">
+            <i class="bi bi-x-lg"></i>
+          </button>
+    
+</div>
+
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="editTipo" class="field-label required">Tipo de Falla:</label>
+            <select id="editTipo" class="citef-select" [(ngModel)]="editarForm.tipo_falla">
+              <option value="HARDWARE">Hardware</option>
+              <option value="SOFTWARE">Software</option>
+              <option value="RED">Red</option>
+              <option value="PERIFERICO">Periférico</option>
+            </select>
+      
+</div>
+
+          <div class="form-group">
+            <label for="editGravedad" class="field-label required">Gravedad:</label>
+            <select id="editGravedad" class="citef-select" [(ngModel)]="editarForm.gravedad">
+              <option value="BAJA">Baja</option>
+              <option value="MEDIA">Media</option>
+              <option value="CRITICA">Crítica</option>
+            </select>
+      
+</div>
+
+          <div class="form-group">
+            <label for="editDesc" class="field-label required">Descripción:</label>
+            <textarea
+              id="editDesc"
+              rows="4"
+              class="citef-input"
+              [(ngModel)]="editarForm.descrip_falla"
+            ></textarea>
+      
+</div>
+    
+</div>
+
+        <div class="modal-footer">
+          <button class="citef-btn citef-btn-outline" (click)="cerrarModalEditar()">
+            Cancelar
+          </button>
+          <button class="citef-btn citef-btn-primary" (click)="guardarEdicion()" [disabled]="cargando()">
+            Guardar Cambios
+          </button>
+    
+</div>
+  
+</div>
+
+</div>
+  }
+
+  <!-- ================= CONFIRMAR ELIMINAR ================= -->
+  <app-confirm-modal
+    [visible]="mostrarConfirmEliminar()"
+    title="Eliminar Reporte de Avería"
+    [message]="'¿Está seguro de eliminar el reporte de avería #AV-' + (averiaAEliminar()?.id_averia || '') + '? Se removerá el registro de la cola de soporte.'"
+    confirmBtnText="Eliminar Incidencia"
+    cancelBtnText="Cancelar"
+    [isDanger]="true"
+    (confirmed)="confirmarEliminar()"
+    (cancelled)="cancelarEliminar()"
+  ></app-confirm-modal>
+
+  <!-- ================= MODAL PLANO VISUAL COMPARTIDO ================= -->
+  <app-selector-computadora-modal
+    [visible]="mostrarModalPlano()"
+    [idSala]="reporteForm.id_sala"
+    [idComputadoraSeleccionada]="reporteForm.id_computadora"
+    [salasDisponibles]="salas()"
+    (seleccionada)="onComputadoraSeleccionadaEnPlano($event)"
+    (cerrar)="mostrarModalPlano.set(false)"
+  ></app-selector-computadora-modal>
+</div>

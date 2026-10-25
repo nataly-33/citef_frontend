@@ -17,6 +17,10 @@ import { AsistenciasComponent } from './pages/ocupacion/asistencias/asistencias.
 import { InicioComponent } from './pages/inicio/inicio.component';
 import { CalendarioReservasComponent } from './pages/reservas/calendario/calendario-reservas.component';
 import { BandejaGestionReservasComponent } from './pages/reservas/gestion/bandeja-gestion-reservas.component';
+import { ControlGuardiaComponent } from './pages/turnos/control-guardia/control-guardia.component';
+import { ActaRelevoComponent } from './pages/turnos/acta-relevo/acta-relevo.component';
+import { AveriasComponent } from './pages/turnos/averias/averias.component';
+import { ObjetosExtraviadosComponent } from './pages/turnos/objetos-extraviados/objetos-extraviados.component';
 import { authGuard } from './core/guards/auth.guard';
 import { permissionGuard } from './core/guards/permission.guard';
 
@@ -132,6 +136,32 @@ export const routes: Routes = [
         redirectTo: 'reservas/calendario',
         pathMatch: 'full',
       },
+      // MÓDULO 6: Turnos de Guardia, Incidencias Técnicas y Objetos Extraviados
+      {
+        path: 'turnos/guardia',
+        component: ControlGuardiaComponent,
+        canActivate: [permissionGuard(['TURNOS_APERTURA_CIERRE'])],
+      },
+      {
+        path: 'turnos/actas',
+        redirectTo: 'turnos/guardia',
+        pathMatch: 'full',
+      },
+      {
+        path: 'turnos/averias',
+        component: AveriasComponent,
+        canActivate: [permissionGuard(['TURNOS_INCIDENCIAS_REPORTAR'])],
+      },
+      {
+        path: 'turnos/objetos',
+        component: ObjetosExtraviadosComponent,
+        canActivate: [permissionGuard(['TURNOS_OBJETOS_EXTRAVIADOS'])],
+      },
+      {
+        path: 'turnos',
+        redirectTo: 'turnos/guardia',
+        pathMatch: 'full',
+      },
       // Aliases directos para facilidad de navegación
       { path: 'academicos', redirectTo: 'catalogos/academicos', pathMatch: 'full' },
       { path: 'operativos', redirectTo: 'catalogos/operativos', pathMatch: 'full' },
@@ -144,6 +174,10 @@ export const routes: Routes = [
       { path: 'asistencias', redirectTo: 'ocupacion/asistencias', pathMatch: 'full' },
       { path: 'calendario', redirectTo: 'reservas/calendario', pathMatch: 'full' },
       { path: 'gestion-reservas', redirectTo: 'reservas/gestion', pathMatch: 'full' },
+      { path: 'guardia', redirectTo: 'turnos/guardia', pathMatch: 'full' },
+      { path: 'actas', redirectTo: 'turnos/actas', pathMatch: 'full' },
+      { path: 'averias', redirectTo: 'turnos/averias', pathMatch: 'full' },
+      { path: 'objetos', redirectTo: 'turnos/objetos', pathMatch: 'full' },
       { path: '', redirectTo: 'inicio', pathMatch: 'full' },
     ],
   },
@@ -155,6 +189,15 @@ export const routes: Routes = [
   { path: 'reservas/calendario', redirectTo: 'admin/reservas/calendario', pathMatch: 'full' },
   { path: 'reservas/gestion', redirectTo: 'admin/reservas/gestion', pathMatch: 'full' },
   { path: 'reservas', redirectTo: 'admin/reservas/calendario', pathMatch: 'full' },
+  { path: 'turnos/guardia', redirectTo: 'admin/turnos/guardia', pathMatch: 'full' },
+  { path: 'turnos/actas', redirectTo: 'admin/turnos/actas', pathMatch: 'full' },
+  { path: 'turnos/averias', redirectTo: 'admin/turnos/averias', pathMatch: 'full' },
+  { path: 'turnos/objetos', redirectTo: 'admin/turnos/objetos', pathMatch: 'full' },
+  { path: 'turnos', redirectTo: 'admin/turnos/guardia', pathMatch: 'full' },
+  { path: 'guardia', redirectTo: 'admin/turnos/guardia', pathMatch: 'full' },
+  { path: 'actas', redirectTo: 'admin/turnos/actas', pathMatch: 'full' },
+  { path: 'averias', redirectTo: 'admin/turnos/averias', pathMatch: 'full' },
+  { path: 'objetos', redirectTo: 'admin/turnos/objetos', pathMatch: 'full' },
   { path: '', redirectTo: 'login', pathMatch: 'full' },
   { path: '**', redirectTo: 'login' },
 ];

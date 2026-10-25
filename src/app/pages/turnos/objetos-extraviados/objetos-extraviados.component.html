@@ -1,0 +1,554 @@
+<div class="objetos-container">
+  <!-- ENCABEZADO DE PÁGINA -->
+  <div class="page-header">
+    <div class="header-left">
+      <h1>
+        <i class="bi bi-box-seam"></i> Libro Digital de Objetos Extraviados
+      </h1>
+    </div>
+    <div class="header-right">
+      <button class="citef-btn citef-btn-primary" (click)="abrirModalRegistrar()" title="Registrar nuevo objeto">
+        <i class="bi bi-plus-circle-fill"></i> Registrar Objeto Olvidado
+      </button>
+    </div>
+  </div>
+
+  <!-- ALERTAS GLOBALES -->
+  @if (mensajeExito()) {
+    <div class="alert-banner alert-success">
+      <i class="bi bi-check-circle-fill"></i>
+      <span>{{ mensajeExito() }}</span>
+      <button class="btn-close-alert" (click)="mensajeExito.set(null)" title="Cerrar">
+        <i class="bi bi-x"></i>
+      </button>
+    </div>
+  }
+
+  @if (mensajeError()) {
+    <div class="alert-banner alert-danger">
+      <i class="bi bi-exclamation-triangle-fill"></i>
+      <span>{{ mensajeError() }}</span>
+      <button class="btn-close-alert" (click)="mensajeError.set(null)" title="Cerrar">
+        <i class="bi bi-x"></i>
+      </button>
+    </div>
+  }
+
+  <!-- BARRA DE FILTROS AVANZADOS (REGLA 7) -->
+  <div class="filter-card">
+    <div class="filter-row">
+      <div class="filter-col col-search">
+        <label for="filtroBusqueda">Búsqueda Textual:</label>
+        <div class="input-with-icon">
+          <i class="bi bi-search"></i>
+          <input
+            id="filtroBusqueda"
+            type="text"
+            class="citef-input"
+            placeholder="Buscar por descripción, ubicación..."
+            [(ngModel)]="filtroBusqueda"
+            (keyup.enter)="aplicarFiltros()"
+          />
+        </div>
+      </div>
+
+      <div class="filter-col">
+        <label for="filtroSala">Laboratorio:</label>
+        <select id="filtroSala" class="citef-select" [(ngModel)]="filtroSala">
+          <option [ngValue]="null">Todos los laboratorios</option>
+          @for (s of salas(); track s.id_sala) {
+            <option [ngValue]="s.id_sala">{{ s.codigo_sala }} - {{ s.nombre }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="filter-col">
+        <label for="filtroCategoria">Categoría:</label>
+        <select id="filtroCategoria" class="citef-select" [(ngModel)]="filtroCategoria">
+          <option value="TODOS">Todas las categorías</option>
+          <option value="ELECTRONICA">Electrónica (Móviles, USB, Cables)</option>
+          <option value="DOCUMENTO">Documentos (C.I., Credenciales, Libretas)</option>
+          <option value="PRENDA">Prendas de Vestir / Accesorios</option>
+          <option value="MATERIAL_ESTUDIO">Material de Estudio / Libros</option>
+          <option value="OTRO">Otros Enseres</option>
+        </select>
+      </div>
+
+      <div class="filter-col">
+        <label for="filtroEstado">Estado de Custodia:</label>
+        <select id="filtroEstado" class="citef-select" [(ngModel)]="filtroEstado">
+          <option value="TODOS">Todos los estados</option>
+          <option value="BAJO_CUSTODIA">Bajo Custodia Preventiva</option>
+          <option value="DEVUELTO">Restituido / Devuelto</option>
+          <option value="DONADO_ARCHIVO">Donado / Archivo FCEE</option>
+        </select>
+      </div>
+
+      <div class="filter-col-buttons">
+        <button class="citef-btn citef-btn-primary" (click)="aplicarFiltros()" title="Buscar objetos">
+          <i class="bi bi-search"></i> Buscar
+        </button>
+        <button class="citef-btn citef-btn-outline" (click)="limpiarFiltros()" title="Limpiar filtros">
+          <i class="bi bi-arrow-counterclockwise"></i> Limpiar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TABLA CON APP-TABLE-CARD -->
+  <app-table-card
+    title="Libro General de Custodia y Restitución de Bienes"
+    [hasActions]="false"
+  >
+    <div class="citef-table-container">
+      <table class="citef-table">
+        <thead>
+          <tr>
+            <th>ID / Fecha Hallazgo</th>
+            <th>Laboratorio y Ubicación</th>
+            <th>Categoría</th>
+            <th>Descripción del Objeto</th>
+            <th>Estado de Custodia</th>
+            <th>Receptor / Restitución</th>
+            <th class="text-right">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          @if (cargando()) {
+            <tr>
+              <td colspan="7" class="text-center py-4">
+                <i class="bi bi-arrow-repeat spin"></i> Cargando libro de objetos...
+              </td>
+            </tr>
+          } @else if (objetos().length === 0) {
+            <tr>
+              <td colspan="7" class="text-center py-4 text-muted">
+                <i class="bi bi-info-circle"></i> No se encontraron objetos extraviados con los filtros aplicados.
+              </td>
+            </tr>
+          } @else {
+            @for (obj of objetos(); track obj.id_objeto) {
+              <tr>
+                <td>
+                  <span class="font-bold">#OBJ-{{ obj.id_objeto }}</span>
+                  <div class="text-xs text-muted">{{ obj.fecha_hora_hallazgo | date:'dd/MM/yyyy HH:mm' }}</div>
+                </td>
+                <td>
+                  <strong>{{ obj.sala?.nombre || 'Sala' }}</strong>
+                  <div class="location-badge">
+                    <i class="bi bi-geo-alt-fill"></i> {{ obj.lugar_exacto }}
+                  </div>
+                </td>
+                <td>
+                  <span class="cat-chip">{{ obj.categoria }}</span>
+                </td>
+                <td>
+                  <div class="desc-obj-text" [title]="obj.descrip_detallada">
+                    {{ obj.descrip_detallada }}
+                  </div>
+                </td>
+                <td>
+                  @switch (obj.estado) {
+                    @case ('BAJO_CUSTODIA') {
+                      <span class="badge-custodia-marino">
+                        <i class="bi bi-shield-lock-fill"></i> Bajo Custodia
+                      </span>
+                    }
+                    @case ('DEVUELTO') {
+                      <span class="citef-badge citef-badge-success">
+                        <i class="bi bi-patch-check-fill"></i> Restituido
+                      </span>
+                    }
+                    @case ('DONADO_ARCHIVO') {
+                      <span class="citef-badge citef-badge-neutral">
+                        <i class="bi bi-archive-fill"></i> Archivo FCEE
+                      </span>
+                    }
+                    @default {
+                      <span class="citef-badge citef-badge-neutral">{{ obj.estado }}</span>
+                    }
+                  }
+                </td>
+                <td>
+                  @if (obj.estado === 'DEVUELTO') {
+                    <div class="text-xs">
+                      <strong>RU: {{ obj.registro_estudiante_receptor }}</strong>
+                      @if (obj.nombre_estudiante_receptor || obj.estudiante_receptor) {
+                        <div>{{ obj.nombre_estudiante_receptor || (obj.estudiante_receptor?.nombres + ' ' + obj.estudiante_receptor?.apellidos) }}</div>
+                      }
+                      <div class="text-muted">{{ obj.fecha_hora_devolucion | date:'dd/MM/yy HH:mm' }}</div>
+                    </div>
+                  } @else {
+                    <span class="text-muted text-xs"><i class="bi bi-hourglass-split"></i> En espera de reclamo</span>
+                  }
+                </td>
+                <td class="text-right table-actions">
+                  @if (obj.estado === 'BAJO_CUSTODIA') {
+                    <button
+                      class="action-btn action-deliver"
+                      (click)="abrirModalDevolver(obj)"
+                      title="Entregar al estudiante titular"
+                    >
+                      <i class="bi bi-box-arrow-right"></i>
+                    </button>
+                  }
+
+                  <button
+                    class="action-btn action-view"
+                    (click)="verDetalleObjeto(obj)"
+                    title="Ver detalle / comprobante"
+                  >
+                    <i class="bi bi-eye"></i>
+                  </button>
+
+                  <button
+                    class="action-btn action-edit"
+                    (click)="abrirModalEditar(obj)"
+                    title="Editar descripción o ubicación"
+                  >
+                    <i class="bi bi-pencil"></i>
+                  </button>
+
+                  <button
+                    class="action-btn action-delete"
+                    (click)="solicitarEliminar(obj)"
+                    title="Eliminar registro"
+                  >
+                    <i class="bi bi-trash3"></i>
+                  </button>
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <!-- PAGINACIÓN ESTÁNDAR 15 FILAS A LA DERECHA -->
+    <div class="pagination-wrapper">
+      <app-pagination
+        [paginaActual]="paginaActual()"
+        [totalRegistros]="totalRegistros()"
+        [tamanoPagina]="limite"
+        etiqueta="objetos"
+        (paginaCambiada)="cambiarPagina($event)"
+      ></app-pagination>
+    </div>
+  </app-table-card>
+
+  <!-- ================= MODAL REGISTRAR OBJETO ================= -->
+  @if (mostrarModalRegistrar()) {
+    <div class="modal-backdrop">
+      <div class="modal-window">
+        <div class="modal-header">
+          <h2><i class="bi bi-box-seam-fill"></i> Registrar Objeto Olvidado (CU23)</h2>
+          <button class="btn-close-modal" (click)="cerrarModalRegistrar()" title="Cerrar">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+
+        <div class="modal-body">
+          <app-modal-alert
+            [mensaje]="modalAlertRegistro()"
+            tipo="danger"
+            (cerrar)="modalAlertRegistro.set(null)"
+          ></app-modal-alert>
+
+          <div class="form-group">
+            <label for="objSala" class="field-label required">Laboratorio / Sala del Hallazgo:</label>
+            <select
+              id="objSala"
+              class="citef-select"
+              [(ngModel)]="registroForm.id_sala"
+              [class.input-error]="formErrorsRegistro()['id_sala']"
+            >
+              <option [ngValue]="null">-- Seleccione el Laboratorio --</option>
+              @for (s of salas(); track s.id_sala) {
+                <option [ngValue]="s.id_sala">{{ s.codigo_sala }} - {{ s.nombre }}</option>
+              }
+            </select>
+            @if (formErrorsRegistro()['id_sala']) {
+              <div class="field-error-text">{{ formErrorsRegistro()['id_sala'] }}</div>
+            }
+          </div>
+
+          <div class="form-group">
+            <label for="objCat" class="field-label required">Categoría de Bien:</label>
+            <select id="objCat" class="citef-select" [(ngModel)]="registroForm.categoria">
+              <option value="ELECTRONICA">Electrónica (Móvil, Cargador, Flash Drive, Auriculares)</option>
+              <option value="DOCUMENTO">Documentos (C.I., Carnet Universitario, Cuaderno)</option>
+              <option value="PRENDA">Prenda de Vestir (Chaqueta, Bufanda, Gorra, Lentes)</option>
+              <option value="MATERIAL_ESTUDIO">Material de Estudio (Libros, Calculadora, Estuche)</option>
+              <option value="OTRO">Otro Tipo de Pertenencia</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="objLugar" class="field-label required">Ubicación Física Exacta:</label>
+            <input
+              id="objLugar"
+              type="text"
+              class="citef-input"
+              [(ngModel)]="registroForm.lugar_exacto"
+              [class.input-error]="formErrorsRegistro()['lugar_exacto']"
+              placeholder="Ej: Mesa PC-14, Asiento Fila 2, Escritorio Docente..."
+            />
+            @if (formErrorsRegistro()['lugar_exacto']) {
+              <div class="field-error-text">{{ formErrorsRegistro()['lugar_exacto'] }}</div>
+            }
+          </div>
+
+          <div class="form-group">
+            <label for="objDesc" class="field-label required">Descripción Detallada y Características:</label>
+            <textarea
+              id="objDesc"
+              rows="4"
+              class="citef-input"
+              [(ngModel)]="registroForm.descrip_detallada"
+              [class.input-error]="formErrorsRegistro()['descrip_detallada']"
+              placeholder="Describa marca, color, funda o detalles identificativos específicos..."
+            ></textarea>
+            @if (formErrorsRegistro()['descrip_detallada']) {
+              <div class="field-error-text">{{ formErrorsRegistro()['descrip_detallada'] }}</div>
+            }
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="citef-btn citef-btn-outline" (click)="cerrarModalRegistrar()">
+            Cancelar
+          </button>
+          <button class="citef-btn citef-btn-primary" (click)="confirmarRegistro()" [disabled]="cargando()">
+            @if (cargando()) {
+              <i class="bi bi-arrow-repeat spin"></i> Guardando...
+            } @else {
+              <i class="bi bi-box-arrow-in-down"></i> Ingresar a Custodia
+            }
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ================= MODAL RESTITUCIÓN / ENTREGA AL ESTUDIANTE ================= -->
+  @if (mostrarModalDevolver() && objetoSeleccionado()) {
+    <div class="modal-backdrop">
+      <div class="modal-window">
+        <div class="modal-header header-entrega">
+          <h2><i class="bi bi-person-check-fill"></i> Restitución Formal al Estudiante (CU23)</h2>
+          <button class="btn-close-modal" (click)="cerrarModalDevolver()" title="Cerrar">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+
+        <div class="modal-body">
+          <app-modal-alert
+            [mensaje]="modalAlertDevolucion()"
+            tipo="danger"
+            (cerrar)="modalAlertDevolucion.set(null)"
+          ></app-modal-alert>
+
+          <div class="obj-summary-box">
+            <strong>Bien a Devolver:</strong>
+            <p>{{ objetoSeleccionado()?.descrip_detallada }} (Hallado en {{ objetoSeleccionado()?.lugar_exacto }})</p>
+          </div>
+
+          <div class="form-group">
+            <label for="devRu" class="field-label required">Registro Universitario (RU) o C.I. del Reclamante:</label>
+            <input
+              id="devRu"
+              type="text"
+              class="citef-input"
+              [(ngModel)]="devolucionForm.registro_estudiante"
+              (blur)="buscarEstudianteReceptor()"
+              (keydown.enter)="buscarEstudianteReceptor()"
+              [class.input-error]="formErrorsDevolucion()['registro_estudiante']"
+              placeholder="Ingrese el número de registro estudiantil..."
+            />
+            @if (formErrorsDevolucion()['registro_estudiante']) {
+              <div class="field-error-text">{{ formErrorsDevolucion()['registro_estudiante'] }}</div>
+            }
+          </div>
+
+          <div class="form-group">
+            <label for="devNombre" class="field-label required">Nombre Completo del Estudiante Reclamante:</label>
+            <input
+              id="devNombre"
+              type="text"
+              class="citef-input"
+              [(ngModel)]="devolucionForm.nombre_estudiante"
+              [class.input-error]="formErrorsDevolucion()['nombre_estudiante']"
+              placeholder="Nombre y apellidos del estudiante..."
+            />
+            @if (formErrorsDevolucion()['nombre_estudiante']) {
+              <div class="field-error-text">{{ formErrorsDevolucion()['nombre_estudiante'] }}</div>
+            }
+          </div>
+
+          <div class="form-group">
+            <label for="devObs" class="field-label">Observaciones de la Entrega Acreditada:</label>
+            <textarea
+              id="devObs"
+              rows="3"
+              class="citef-input"
+              [(ngModel)]="devolucionForm.obs_devolucion"
+              placeholder="Detalle el medio de acreditación presentado (Cédula de identidad física, comprobante de matrícula)..."
+            ></textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="citef-btn citef-btn-outline" (click)="cerrarModalDevolver()">
+            Cancelar
+          </button>
+          <button class="citef-btn btn-success-entrega" (click)="confirmarDevolucion()" [disabled]="cargando()">
+            @if (cargando()) {
+              <i class="bi bi-arrow-repeat spin"></i> Procesando...
+            } @else {
+              <i class="bi bi-check-circle-fill"></i> Certificar Entrega y Restitución
+            }
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ================= MODAL DETALLE / COMPROBANTE ================= -->
+  @if (mostrarModalDetalle() && objetoSeleccionado()) {
+    <div class="modal-backdrop">
+      <div class="modal-window">
+        <div class="modal-header">
+          <h2><i class="bi bi-file-earmark-medical-fill"></i> Ficha de Objeto en Custodia #{{ objetoSeleccionado()?.id_objeto }}</h2>
+          <button class="btn-close-modal" (click)="cerrarModalDetalle()" title="Cerrar">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+
+        <div class="modal-body">
+          <div class="ficha-grid">
+            <div class="ficha-row">
+              <span class="lbl">Laboratorio:</span>
+              <span class="val">{{ objetoSeleccionado()?.sala?.nombre }}</span>
+            </div>
+            <div class="ficha-row">
+              <span class="lbl">Ubicación Exacta:</span>
+              <span class="val">{{ objetoSeleccionado()?.lugar_exacto }}</span>
+            </div>
+            <div class="ficha-row">
+              <span class="lbl">Categoría:</span>
+              <span class="val">{{ objetoSeleccionado()?.categoria }}</span>
+            </div>
+            <div class="ficha-row">
+              <span class="lbl">Fecha Hallazgo:</span>
+              <span class="val">{{ objetoSeleccionado()?.fecha_hora_hallazgo | date:'dd/MM/yyyy HH:mm:ss' }}</span>
+            </div>
+            <div class="ficha-row">
+              <span class="lbl">Registrado por:</span>
+              <span class="val">{{ objetoSeleccionado()?.usuario_registro?.nombres }} {{ objetoSeleccionado()?.usuario_registro?.apellidos }}</span>
+            </div>
+            <div class="ficha-row">
+              <span class="lbl">Estado Actual:</span>
+              <span class="val">{{ objetoSeleccionado()?.estado }}</span>
+            </div>
+          </div>
+
+          <div class="ficha-desc-box mt-3">
+            <strong>Descripción del Bien:</strong>
+            <p>{{ objetoSeleccionado()?.descrip_detallada }}</p>
+          </div>
+
+          @if (objetoSeleccionado()?.estado === 'DEVUELTO') {
+            <div class="ficha-devolucion-box mt-2">
+              <h4><i class="bi bi-patch-check-fill text-success"></i> Acta de Restitución Acreditada</h4>
+              <p>
+                <strong>Estudiante Receptor:</strong> RU {{ objetoSeleccionado()?.registro_estudiante_receptor }}
+                @if (objetoSeleccionado()?.nombre_estudiante_receptor || objetoSeleccionado()?.estudiante_receptor) {
+                  - {{ objetoSeleccionado()?.nombre_estudiante_receptor || (objetoSeleccionado()?.estudiante_receptor?.nombres + ' ' + objetoSeleccionado()?.estudiante_receptor?.apellidos) }}
+                }
+              </p>
+              <p><strong>Entregado por:</strong> {{ objetoSeleccionado()?.usuario_entrega?.nombres }} {{ objetoSeleccionado()?.usuario_entrega?.apellidos }}</p>
+              <p><strong>Fecha y Hora:</strong> {{ objetoSeleccionado()?.fecha_hora_devolucion | date:'dd/MM/yyyy HH:mm:ss' }}</p>
+              @if (objetoSeleccionado()?.obs_devolucion) {
+                <p><strong>Observaciones:</strong> {{ objetoSeleccionado()?.obs_devolucion }}</p>
+              }
+            </div>
+          }
+        </div>
+
+        <div class="modal-footer">
+          <button class="citef-btn citef-btn-primary" (click)="cerrarModalDetalle()">
+            Entendido
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ================= MODAL EDITAR ================= -->
+  @if (mostrarModalEditar()) {
+    <div class="modal-backdrop">
+      <div class="modal-window">
+        <div class="modal-header">
+          <h2><i class="bi bi-pencil-square"></i> Editar Objeto #{{ objetoSeleccionado()?.id_objeto }}</h2>
+          <button class="btn-close-modal" (click)="cerrarModalEditar()" title="Cerrar">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="editCat" class="field-label required">Categoría:</label>
+            <select id="editCat" class="citef-select" [(ngModel)]="editarForm.categoria">
+              <option value="ELECTRONICA">Electrónica</option>
+              <option value="DOCUMENTO">Documentos</option>
+              <option value="PRENDA">Prenda</option>
+              <option value="MATERIAL_ESTUDIO">Material de Estudio</option>
+              <option value="OTRO">Otro</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="editLugar" class="field-label required">Ubicación Exacta:</label>
+            <input
+              id="editLugar"
+              type="text"
+              class="citef-input"
+              [(ngModel)]="editarForm.lugar_exacto"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="editDesc" class="field-label required">Descripción:</label>
+            <textarea
+              id="editDesc"
+              rows="4"
+              class="citef-input"
+              [(ngModel)]="editarForm.descrip_detallada"
+            ></textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="citef-btn citef-btn-outline" (click)="cerrarModalEditar()">
+            Cancelar
+          </button>
+          <button class="citef-btn citef-btn-primary" (click)="guardarEdicion()" [disabled]="cargando()">
+            Guardar Cambios
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ================= CONFIRMAR ELIMINACIÓN ================= -->
+  <app-confirm-modal
+    [visible]="mostrarConfirmEliminar()"
+    title="Eliminar Objeto del Libro de Custodia"
+    [message]="'¿Está seguro de remover el registro del objeto #OBJ-' + (objetoAEliminar()?.id_objeto || '') + '? Esta acción es irreversible.'"
+    confirmBtnText="Eliminar del Registro"
+    cancelBtnText="Cancelar"
+    [isDanger]="true"
+    (confirmed)="confirmarEliminar()"
+    (cancelled)="cancelarEliminar()"
+  ></app-confirm-modal>
+</div>
