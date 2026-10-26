@@ -5,14 +5,6 @@
       <h1>
         <i class="bi bi-wrench-adjustable"></i> Bandeja de Taller y Soporte Técnico
       </h1>
-      <p class="header-subtitle">
-        Control de órdenes de reparación, diagnóstico de hardware/software y certificación de retorno a sala (CU24 y CU25)
-      </p>
-    </div>
-    <div class="header-right">
-      <button class="citef-btn citef-btn-primary" (click)="abrirModalNuevaOrden()" title="Registrar nueva orden en taller">
-        <i class="bi bi-plus-circle-fill"></i> Registrar Orden en Taller
-      </button>
     </div>
   </div>
 
@@ -41,14 +33,13 @@
   <div class="filter-card">
     <div class="filter-row">
       <div class="filter-col col-search">
-        <label for="filtroBusqueda">Búsqueda Textual:</label>
         <div class="input-with-icon">
           <i class="bi bi-search"></i>
           <input
             id="filtroBusqueda"
             type="text"
             class="citef-input"
-            placeholder="Buscar por código de equipo, problema, solución o N° orden..."
+            placeholder="Buscar por equipo, problema o N° orden..."
             [(ngModel)]="filtroBusqueda"
             (keyup.enter)="aplicarFiltros()"
           />
@@ -56,7 +47,6 @@
       </div>
 
       <div class="filter-col">
-        <label for="filtroSala">Laboratorio / Sala:</label>
         <select id="filtroSala" class="citef-select" [(ngModel)]="filtroSala">
           <option [ngValue]="null">Todos los laboratorios</option>
           @for (s of salas(); track s.id_sala) {
@@ -66,7 +56,6 @@
       </div>
 
       <div class="filter-col">
-        <label for="filtroEstado">Estado en Taller:</label>
         <select id="filtroEstado" class="citef-select" [(ngModel)]="filtroEstado">
           <option value="TODOS">Todos los estados</option>
           <option value="PENDIENTE_TALLER">Pendiente de Intervención</option>
@@ -90,7 +79,7 @@
 
   <!-- TABLA PRINCIPAL DE ÓRDENES DE TALLER -->
   <app-table-card
-    title="Órdenes de Trabajo e Intervenciones Técnicas en Banco de Trabajo"
+    title="Órdenes de Taller"
     [hasActions]="false"
   >
     <div class="citef-table-container">
@@ -615,7 +604,7 @@
               <div class="inst-uni">UNIVERSIDAD AUTÓNOMA GABRIEL RENÉ MORENO</div>
               <div class="inst-fac">FACULTAD DE CIENCIAS ECONÓMICAS Y EMPRESARIALES</div>
               <div class="inst-sub">Centro de Información y Tecnologías Económico Financieras (CITEF)</div>
-              <div class="inst-doc">COMPROBANTE TÉCNICO DE BANCO DE TRABAJO - CU24 / CU25</div>
+              <div class="inst-doc">FICHA TÉCNICA DE ORDEN DE TRABAJO EN TALLER</div>
             </div>
             <div class="ficha-folio">
               <div class="folio-title">ORDEN DE TALLER</div>
@@ -632,118 +621,110 @@
             </div>
           </div>
 
-          <!-- BLOQUE DE DATOS DEL EQUIPO -->
+          <!-- BLOQUE 1: IDENTIFICACIÓN DEL EQUIPO -->
           <div class="ficha-seccion-titulo">
             <i class="bi bi-pc-display"></i> 1. DATOS DE IDENTIFICACIÓN DEL EQUIPO
           </div>
-          <div class="ficha-grid-3">
-            <div class="ficha-field">
-              <label>Código de Estación:</label>
-              <strong>{{ ordenSeleccionada()?.computadora?.codigo_equipo }}</strong>
-            </div>
-            <div class="ficha-field">
-              <label>Laboratorio de Origen:</label>
-              <span>{{ ordenSeleccionada()?.computadora?.sala?.nombre }}</span>
-            </div>
-            <div class="ficha-field">
-              <label>Piso / Ubicación:</label>
-              <span>Piso {{ ordenSeleccionada()?.computadora?.sala?.piso || 1 }}</span>
-            </div>
-            <div class="ficha-field">
-              <label>Marca / Modelo:</label>
-              <span>{{ ordenSeleccionada()?.computadora?.marca || 'Generico' }} {{ ordenSeleccionada()?.computadora?.modelo || '' }}</span>
-            </div>
-            <div class="ficha-field">
-              <label>Dirección IP Red:</label>
-              <span>{{ ordenSeleccionada()?.computadora?.ip_actual || 'DHCP' }}</span>
-            </div>
-            <div class="ficha-field">
-              <label>Dirección MAC:</label>
-              <span>{{ ordenSeleccionada()?.computadora?.mac_address || 'N/A' }}</span>
-            </div>
-          </div>
+          <table class="ficha-tabla-institucional">
+            <tbody>
+              <tr>
+                <th>Código de Estación:</th>
+                <td><strong>{{ ordenSeleccionada()?.computadora?.codigo_equipo }}</strong></td>
+                <th>Laboratorio / Sala:</th>
+                <td>{{ ordenSeleccionada()?.computadora?.sala?.nombre }} ({{ ordenSeleccionada()?.computadora?.sala?.codigo_sala }})</td>
+              </tr>
+              <tr>
+                <th>Piso / Ubicación:</th>
+                <td>Piso {{ ordenSeleccionada()?.computadora?.sala?.piso || 1 }}</td>
+                <th>Marca y Modelo:</th>
+                <td>{{ ordenSeleccionada()?.computadora?.marca || 'Genérico' }} {{ ordenSeleccionada()?.computadora?.modelo || '' }}</td>
+              </tr>
+              <tr>
+                <th>Dirección IP Red:</th>
+                <td><code>{{ ordenSeleccionada()?.computadora?.ip_actual || 'DHCP' }}</code></td>
+                <th>Dirección MAC:</th>
+                <td><code>{{ ordenSeleccionada()?.computadora?.mac_address || 'N/A' }}</code></td>
+              </tr>
+            </tbody>
+          </table>
 
-          <!-- BLOQUE CRONOLÓGICO -->
-          <div class="ficha-seccion-titulo mt-3">
+          <!-- BLOQUE 2: CRONOLOGÍA Y TIEMPOS DE INTERVENCIÓN (RAMS) -->
+          <div class="ficha-seccion-titulo mt-2">
             <i class="bi bi-clock-history"></i> 2. CRONOLOGÍA Y TIEMPOS DE INTERVENCIÓN (RAMS)
           </div>
-          <div class="ficha-grid-3">
-            <div class="ficha-field">
-              <label>Fecha Ingreso a Taller:</label>
-              <span>{{ ordenSeleccionada()?.fecha_hora_ingreso | date:'dd/MM/yyyy HH:mm' }}</span>
-            </div>
-            <div class="ficha-field">
-              <label>Inicio de Reparación:</label>
-              <span>{{ ordenSeleccionada()?.fecha_hora_inicio_taller ? (ordenSeleccionada()?.fecha_hora_inicio_taller | date:'dd/MM/yyyy HH:mm') : 'En espera' }}</span>
-            </div>
-            <div class="ficha-field">
-              <label>Término de Intervención:</label>
-              <span>{{ ordenSeleccionada()?.fecha_hora_fin_taller ? (ordenSeleccionada()?.fecha_hora_fin_taller | date:'dd/MM/yyyy HH:mm') : 'Pendiente' }}</span>
-            </div>
-            <div class="ficha-field">
-              <label>Duración Neta en Taller:</label>
-              <strong>{{ ordenSeleccionada()?.duracion_taller_horas ? (ordenSeleccionada()?.duracion_taller_horas + ' hrs') : 'En curso' }}</strong>
-            </div>
-            <div class="ficha-field">
-              <label>Tipo de Mantenimiento:</label>
-              <span>{{ ordenSeleccionada()?.tipo_mantenimiento }}</span>
-            </div>
-            <div class="ficha-field">
-              <label>Nivel de Prioridad:</label>
-              <span>{{ ordenSeleccionada()?.prioridad }}</span>
-            </div>
-          </div>
+          <table class="ficha-tabla-institucional">
+            <tbody>
+              <tr>
+                <th>Fecha Ingreso a Taller:</th>
+                <td>{{ ordenSeleccionada()?.fecha_hora_ingreso | date:'dd/MM/yyyy HH:mm' }}</td>
+                <th>Inicio de Reparación:</th>
+                <td>{{ ordenSeleccionada()?.fecha_hora_inicio_taller ? (ordenSeleccionada()?.fecha_hora_inicio_taller | date:'dd/MM/yyyy HH:mm') : 'En espera de asignación' }}</td>
+              </tr>
+              <tr>
+                <th>Término de Intervención:</th>
+                <td>{{ ordenSeleccionada()?.fecha_hora_fin_taller ? (ordenSeleccionada()?.fecha_hora_fin_taller | date:'dd/MM/yyyy HH:mm') : 'En curso / Pendiente' }}</td>
+                <th>Duración Neta en Taller:</th>
+                <td><strong>{{ ordenSeleccionada()?.duracion_taller_horas ? (ordenSeleccionada()?.duracion_taller_horas + ' hrs') : 'En curso' }}</strong></td>
+              </tr>
+              <tr>
+                <th>Tipo de Mantenimiento:</th>
+                <td>{{ ordenSeleccionada()?.tipo_mantenimiento }}</td>
+                <th>Nivel de Prioridad:</th>
+                <td>{{ ordenSeleccionada()?.prioridad }}</td>
+              </tr>
+            </tbody>
+          </table>
 
-          <!-- BLOQUE DE DIAGNÓSTICO Y SOLUCIÓN -->
-          <div class="ficha-seccion-titulo mt-3">
-            <i class="bi bi-tools"></i> 3. DIAGNÓSTICO Y ACCIONES EJECUTADAS
+          <!-- BLOQUE 3: DIAGNÓSTICO Y ACCIONES EJECUTADAS -->
+          <div class="ficha-seccion-titulo mt-2">
+            <i class="bi bi-tools"></i> 3. DIAGNÓSTICO TÉCNICO Y ACCIONES EJECUTADAS
           </div>
-          <div class="ficha-bloque-texto">
-            <label>Falla Reportada Inicialmente:</label>
-            <p>{{ ordenSeleccionada()?.descripcion_problema || 'Sin detalle de falla' }}</p>
-          </div>
-          <div class="ficha-bloque-texto mt-2">
-            <label>Diagnóstico Técnico en Banco de Trabajo:</label>
-            <p>{{ ordenSeleccionada()?.diagnostico_tecnico || 'Pendiente de diagnóstico por especialista' }}</p>
-          </div>
-          <div class="ficha-bloque-texto mt-2">
-            <label>Solución Técnica Aplicada:</label>
-            <p>{{ ordenSeleccionada()?.solucion_aplicada || 'Reparación aún no finalizada' }}</p>
-          </div>
-          <div class="ficha-grid-2 mt-2">
-            <div class="ficha-bloque-texto">
-              <label>Repuestos / Piezas Utilizadas:</label>
-              <p>{{ ordenSeleccionada()?.repuestos_utilizados || 'Ninguno' }}</p>
-            </div>
-            <div class="ficha-bloque-texto">
-              <label>Costo de Reparación (Bs.):</label>
-              <p><strong>{{ (ordenSeleccionada()?.costo_reparacion || 0) | currency:'Bs. ':'symbol':'1.2-2' }}</strong></p>
-            </div>
-          </div>
+          <table class="ficha-tabla-institucional">
+            <tbody>
+              <tr>
+                <th>Falla Reportada Inicialmente:</th>
+                <td colspan="3">{{ ordenSeleccionada()?.descripcion_problema || 'Sin detalle de falla' }}</td>
+              </tr>
+              <tr>
+                <th>Diagnóstico en Banco de Trabajo:</th>
+                <td colspan="3">{{ ordenSeleccionada()?.diagnostico_tecnico || 'Pendiente de diagnóstico por especialista' }}</td>
+              </tr>
+              <tr>
+                <th>Solución Técnica Aplicada:</th>
+                <td colspan="3">{{ ordenSeleccionada()?.solucion_aplicada || 'Reparación aún no finalizada' }}</td>
+              </tr>
+              <tr>
+                <th>Repuestos / Piezas Utilizadas:</th>
+                <td>{{ ordenSeleccionada()?.repuestos_utilizados || 'Ninguno' }}</td>
+                <th>Costo Reparación (Bs.):</th>
+                <td><strong>{{ (ordenSeleccionada()?.costo_reparacion || 0) | currency:'Bs. ':'symbol':'1.2-2' }}</strong></td>
+              </tr>
+            </tbody>
+          </table>
 
-          <!-- BLOQUE CU25 DE PUESTA EN MARCHA -->
+          <!-- BLOQUE 4: CERTIFICACIÓN DE RETORNO (SI CORRESPONDE) -->
           @if (ordenSeleccionada()?.confirmacion_retorno) {
-            <div class="ficha-seccion-titulo mt-3">
-              <i class="bi bi-box-arrow-in-left"></i> 4. CERTIFICACIÓN DE RETORNO Y PUESTA EN MARCHA EN SALA (CU25)
+            <div class="ficha-seccion-titulo mt-2">
+              <i class="bi bi-box-arrow-in-left"></i> 4. CERTIFICACIÓN DE RETORNO Y PUESTA EN MARCHA EN SALA
             </div>
-            <div class="ficha-grid-2">
-              <div class="ficha-field">
-                <label>Fecha de Retorno Físico:</label>
-                <span>{{ ordenSeleccionada()?.confirmacion_retorno?.fecha_hora_retorno | date:'dd/MM/yyyy HH:mm' }}</span>
-              </div>
-              <div class="ficha-field">
-                <label>Pruebas de Red y Encendido:</label>
-                <span class="text-success font-bold"><i class="bi bi-check-circle-fill"></i> SATISFACTORIAS</span>
-              </div>
-            </div>
-            <div class="ficha-bloque-texto mt-2">
-              <label>Observaciones de Instalación:</label>
-              <p>{{ ordenSeleccionada()?.confirmacion_retorno?.obs_instalacion || 'Reinstalación en puesto físico sin novedades' }}</p>
-            </div>
+            <table class="ficha-tabla-institucional">
+              <tbody>
+                <tr>
+                  <th>Fecha de Retorno Físico:</th>
+                  <td>{{ ordenSeleccionada()?.confirmacion_retorno?.fecha_hora_retorno | date:'dd/MM/yyyy HH:mm' }}</td>
+                  <th>Pruebas Operativas:</th>
+                  <td><span class="text-success font-bold"><i class="bi bi-check-circle-fill"></i> SATISFACTORIAS</span></td>
+                </tr>
+                <tr>
+                  <th>Observaciones de Instalación:</th>
+                  <td colspan="3">{{ ordenSeleccionada()?.confirmacion_retorno?.obs_instalacion || 'Reinstalación en puesto físico verificada sin novedades' }}</td>
+                </tr>
+              </tbody>
+            </table>
           }
 
           <!-- BLOQUE DE FIRMAS -->
-          <div class="ficha-firmas mt-4">
+          <div class="ficha-firmas mt-4 print-no-break">
             <div class="firma-box">
               <div class="linea-firma"></div>
               <div class="firma-nombre">{{ ordenSeleccionada()?.tecnico ? (ordenSeleccionada()?.tecnico?.nombres + ' ' + ordenSeleccionada()?.tecnico?.apellidos) : 'Técnico Responsable CITEF' }}</div>
@@ -768,145 +749,5 @@
       </div>
     </div>
   }
-
-  <!-- ================= MODAL NUEVA ORDEN DE TALLER ================= -->
-  @if (mostrarModalNuevaOrden()) {
-    <div class="modal-backdrop">
-      <div class="modal-window modal-md">
-        <div class="modal-header">
-          <h2>
-            <i class="bi bi-plus-circle-fill text-primary"></i> Registrar Nueva Orden en Taller
-          </h2>
-          <button class="modal-close" (click)="cerrarModalNuevaOrden()" title="Cerrar">&times;</button>
-        </div>
-
-        <div class="modal-body">
-          <app-modal-alert
-            [mensaje]="modalAlertNuevaOrden()"
-            tipo="danger"
-            (cerrar)="modalAlertNuevaOrden.set(null)"
-          ></app-modal-alert>
-
-          <div class="form-row-2">
-            <div class="form-group">
-              <label for="nuevaSala" class="field-label required">Laboratorio de Origen:</label>
-              <select
-                id="nuevaSala"
-                class="citef-select"
-                [(ngModel)]="nuevaOrdenForm.id_sala"
-                (ngModelChange)="alCambiarSalaNuevaOrden($event)"
-                [class.input-error]="formErrorsNuevaOrden()['id_sala']"
-              >
-                <option [ngValue]="null">-- Seleccionar laboratorio --</option>
-                @for (s of salas(); track s.id_sala) {
-                  <option [ngValue]="s.id_sala">{{ s.codigo_sala }} - {{ s.nombre }}</option>
-                }
-              </select>
-              @if (formErrorsNuevaOrden()['id_sala']) {
-                <div class="field-error-text">{{ formErrorsNuevaOrden()['id_sala'] }}</div>
-              }
-            </div>
-
-            <div class="form-group">
-              <label for="nuevaPC" class="field-label required">Estación de Trabajo:</label>
-              <div class="input-pc-group">
-                <select
-                  id="nuevaPC"
-                  class="citef-select"
-                  [(ngModel)]="nuevaOrdenForm.id_computadora"
-                  [disabled]="!nuevaOrdenForm.id_sala || cargandoComputadoras()"
-                  [class.input-error]="formErrorsNuevaOrden()['id_computadora']"
-                >
-                  <option [ngValue]="null">
-                    {{ cargandoComputadoras() ? 'Cargando estaciones...' : '-- Seleccionar computadora --' }}
-                  </option>
-                  @for (pc of computadorasSala(); track pc.id_computadora) {
-                    <option [ngValue]="pc.id_computadora">
-                      {{ pc.codigo_equipo }} ({{ pc.estado_actual }})
-                    </option>
-                  }
-                </select>
-                <button
-                  type="button"
-                  class="citef-btn citef-btn-outline btn-pc-plano"
-                  (click)="abrirModalPlanoNuevaOrden()"
-                  [disabled]="!nuevaOrdenForm.id_sala"
-                  title="Seleccionar en plano visual"
-                >
-                  <i class="bi bi-grid-3x3"></i>
-                </button>
-              </div>
-              @if (formErrorsNuevaOrden()['id_computadora']) {
-                <div class="field-error-text">{{ formErrorsNuevaOrden()['id_computadora'] }}</div>
-              }
-            </div>
-          </div>
-
-          <div class="form-row-2 mt-3">
-            <div class="form-group">
-              <label for="nuevoTipo" class="field-label">Tipo de Mantenimiento:</label>
-              <select id="nuevoTipo" class="citef-select" [(ngModel)]="nuevaOrdenForm.tipo_mantenimiento">
-                <option value="CORRECTIVO">Correctivo (Reparación de falla)</option>
-                <option value="PREVENTIVO">Preventivo (Limpieza y revisión)</option>
-              </select>
-            </div>
-
-            <div class="form-group">
-              <label for="nuevaPrioridad" class="field-label">Nivel de Prioridad:</label>
-              <select id="nuevaPrioridad" class="citef-select" [(ngModel)]="nuevaOrdenForm.prioridad">
-                <option value="BAJA">Baja</option>
-                <option value="MEDIA">Media</option>
-                <option value="ALTA">Alta</option>
-                <option value="CRITICA">Crítica</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="form-group mt-3">
-            <label for="nuevaDescrip" class="field-label required">Descripción del Problema / Motivo:</label>
-            <textarea
-              id="nuevaDescrip"
-              class="citef-textarea"
-              rows="3"
-              [(ngModel)]="nuevaOrdenForm.descripcion_problema"
-              [class.input-error]="formErrorsNuevaOrden()['descripcion_problema']"
-              placeholder="Indique los síntomas del fallo, comportamiento observado o tareas preventivas a realizar..."
-            ></textarea>
-            @if (formErrorsNuevaOrden()['descripcion_problema']) {
-              <div class="field-error-text">{{ formErrorsNuevaOrden()['descripcion_problema'] }}</div>
-            }
-          </div>
-
-          <div class="form-group mt-3">
-            <label for="nuevoTecnico" class="field-label">Asignar Técnico Responsable:</label>
-            <select id="nuevoTecnico" class="citef-select" [(ngModel)]="nuevaOrdenForm.id_usuario_tecnico">
-              <option [ngValue]="null">-- Asignar más adelante --</option>
-              @for (t of tecnicosDisponibles(); track t.id_usuario) {
-                <option [ngValue]="t.id_usuario">{{ t.nombres }} {{ t.apellidos }}</option>
-              }
-            </select>
-          </div>
-        </div>
-
-        <div class="modal-footer">
-          <button class="citef-btn citef-btn-outline" (click)="cerrarModalNuevaOrden()">
-            Cancelar
-          </button>
-          <button class="citef-btn citef-btn-primary" (click)="guardarNuevaOrden()" [disabled]="cargando()">
-            <i class="bi bi-save"></i> Registrar Orden
-          </button>
-        </div>
-      </div>
-    </div>
-  }
-
-  <!-- ================= SELECTOR DE PLANO VISUAL ================= -->
-  <app-selector-computadora-modal
-    [visible]="mostrarModalPlano()"
-    [idSala]="nuevaOrdenForm.id_sala"
-    [idComputadoraSeleccionada]="nuevaOrdenForm.id_computadora"
-    [salasDisponibles]="salas()"
-    (seleccionada)="onComputadoraSeleccionadaEnPlano($event)"
-    (cerrar)="mostrarModalPlano.set(false)"
-  ></app-selector-computadora-modal>
 </div>
+

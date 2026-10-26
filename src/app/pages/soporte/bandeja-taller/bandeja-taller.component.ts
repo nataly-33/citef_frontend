@@ -8,22 +8,19 @@ import {
   FinalizarMantenimientoDto,
   ConfirmarRetornoDto,
   DarBajaDto,
-  CrearOrdenTallerDto,
   EstadoMantenimiento,
 } from '../../../core/services/soporte.service';
 import {
   InfraestructuraService,
   SalaItem,
-  ComputadoraItem,
 } from '../../../core/services/infraestructura.service';
-import { UsuariosService, UsuarioItem } from '../../../core/services/usuarios.service';
+import { UsuarioItem } from '../../../core/services/usuarios.service';
 import { AuthService } from '../../../core/services/auth.service';
 import {
   ConfirmModalComponent,
   PaginationComponent,
   ModalAlertComponent,
   TableCardComponent,
-  SelectorComputadoraModalComponent,
 } from '../../../shared/components';
 
 @Component({
@@ -36,7 +33,6 @@ import {
     PaginationComponent,
     ModalAlertComponent,
     TableCardComponent,
-    SelectorComputadoraModalComponent,
   ],
   templateUrl: './bandeja-taller.component.html',
   styleUrls: ['./bandeja-taller.component.css'],
@@ -44,12 +40,10 @@ import {
 export class BandejaTallerComponent implements OnInit {
   private readonly soporteService = inject(SoporteService);
   private readonly infraService = inject(InfraestructuraService);
-  private readonly usuariosService = inject(UsuariosService);
   readonly authService = inject(AuthService);
 
   // Estados reactivos de datos
   cargando = signal<boolean>(false);
-  cargandoComputadoras = signal<boolean>(false);
   ordenes = signal<MantenimientoTaller[]>([]);
   totalRegistros = signal<number>(0);
   paginaActual = signal<number>(1);
@@ -57,7 +51,6 @@ export class BandejaTallerComponent implements OnInit {
 
   // Catálogos
   salas = signal<SalaItem[]>([]);
-  computadorasSala = signal<ComputadoraItem[]>([]);
   tecnicosDisponibles = signal<UsuarioItem[]>([]);
 
   // Filtros de búsqueda (Regla 4: Botón Buscar y Botón Limpiar)
@@ -78,8 +71,6 @@ export class BandejaTallerComponent implements OnInit {
   mostrarModalRetorno = signal<boolean>(false);
   mostrarModalBaja = signal<boolean>(false);
   mostrarModalFicha = signal<boolean>(false);
-  mostrarModalNuevaOrden = signal<boolean>(false);
-  mostrarModalPlano = signal<boolean>(false);
 
   // Formulario: Iniciar Reparación
   iniciarForm = {
@@ -114,18 +105,6 @@ export class BandejaTallerComponent implements OnInit {
   formErrorsBaja = signal<{ [key: string]: string }>({});
   modalAlertBaja = signal<string | null>(null);
 
-  // Formulario: Nueva Orden Manual
-  nuevaOrdenForm = {
-    id_sala: null as number | null,
-    id_computadora: null as number | null,
-    tipo_mantenimiento: 'CORRECTIVO' as 'CORRECTIVO' | 'PREVENTIVO',
-    prioridad: 'MEDIA' as 'BAJA' | 'MEDIA' | 'ALTA' | 'CRITICA',
-    descripcion_problema: '',
-    id_usuario_tecnico: null as number | null,
-  };
-  formErrorsNuevaOrden = signal<{ [key: string]: string }>({});
-  modalAlertNuevaOrden = signal<string | null>(null);
-
   ngOnInit(): void {
     this.cargarSalas();
     this.cargarTecnicos();
@@ -140,18 +119,13 @@ export class BandejaTallerComponent implements OnInit {
   }
 
   cargarTecnicos(): void {
-    this.usuariosService.getUsuarios({ activo: true }).subscribe({
-      next: (usuarios) => {
-        // Filtrar técnicos o usuarios operativos
-        const tecnicos = (usuarios || []).filter(
-          (u) =>
-            u.roles?.some((r) => r.nombre?.toUpperCase().includes('TEC')) ||
-            u.roles?.some((r) => r.nombre?.toUpperCase().includes('ADMIN')) ||
-            true, // Si no hay rol específico de técnico, permitir usuarios activos
-        );
-        this.tecnicosDisponibles.set(tecnicos);
+    this.soporteService.getTecnicos().subscribe({
+      next: (tecnicos) => {
+        this.tecnicosDisponibles.set(tecnicos || []);
       },
-      error: () => {},
+      error: () => {
+        this.tecnicosDisponibles.set([]);
+      },
     });
   }
 
@@ -438,99 +412,5 @@ export class BandejaTallerComponent implements OnInit {
   imprimirFicha(): void {
     window.print();
   }
-
-  // ================= ACCIONES: REGISTRAR NUEVA ORDEN =================
-
-  abrirModalNuevaOrden(): void {
-    this.nuevaOrdenForm = {
-      id_sala: null,
-      id_computadora: null,
-      tipo_mantenimiento: 'CORRECTIVO',
-      prioridad: 'MEDIA',
-      descripcion_problema: '',
-      id_usuario_tecnico: null,
-    };
-    this.computadorasSala.set([]);
-    this.formErrorsNuevaOrden.set({});
-    this.modalAlertNuevaOrden.set(null);
-    this.mostrarModalNuevaOrden.set(true);
-  }
-
-  cerrarModalNuevaOrden(): void {
-    this.mostrarModalNuevaOrden.set(false);
-  }
-
-  alCambiarSalaNuevaOrden(idSala: number | null): void {
-    this.nuevaOrdenForm.id_computadora = null;
-    if (!idSala) {
-      this.computadorasSala.set([]);
-      return;
-    }
-
-    this.cargandoComputadoras.set(true);
-    this.infraService.getComputadorasPorSala(idSala).subscribe({
-      next: (resp: { sala: SalaItem; computadoras: ComputadoraItem[] }) => {
-        this.computadorasSala.set(resp.computadoras || []);
-        this.cargandoComputadoras.set(false);
-      },
-      error: () => {
-        this.computadorasSala.set([]);
-        this.cargandoComputadoras.set(false);
-      },
-    });
-  }
-
-  abrirModalPlanoNuevaOrden(): void {
-    if (!this.nuevaOrdenForm.id_sala) return;
-    this.mostrarModalPlano.set(true);
-  }
-
-  onComputadoraSeleccionadaEnPlano(pc: ComputadoraItem): void {
-    this.nuevaOrdenForm.id_computadora = Number(pc.id_computadora);
-    this.mostrarModalPlano.set(false);
-  }
-
-  guardarNuevaOrden(): void {
-    const errors: { [key: string]: string } = {};
-    if (!this.nuevaOrdenForm.id_sala) {
-      errors['id_sala'] = 'Debe seleccionar el laboratorio de origen.';
-    }
-    if (!this.nuevaOrdenForm.id_computadora) {
-      errors['id_computadora'] = 'Debe seleccionar la estación de trabajo que ingresa a taller.';
-    }
-    if (!this.nuevaOrdenForm.descripcion_problema.trim()) {
-      errors['descripcion_problema'] = 'La descripción de la falla o motivo de mantenimiento es obligatoria.';
-    } else if (this.nuevaOrdenForm.descripcion_problema.trim().length < 5) {
-      errors['descripcion_problema'] = 'La descripción debe tener al menos 5 caracteres descriptivos.';
-    }
-
-    if (Object.keys(errors).length > 0) {
-      this.formErrorsNuevaOrden.set(errors);
-      return;
-    }
-    this.formErrorsNuevaOrden.set({});
-
-    this.cargando.set(true);
-    const dto: CrearOrdenTallerDto = {
-      id_computadora: Number(this.nuevaOrdenForm.id_computadora),
-      tipo_mantenimiento: this.nuevaOrdenForm.tipo_mantenimiento,
-      prioridad: this.nuevaOrdenForm.prioridad,
-      descripcion_problema: this.nuevaOrdenForm.descripcion_problema.trim(),
-      id_usuario_tecnico: this.nuevaOrdenForm.id_usuario_tecnico || undefined,
-    };
-
-    this.soporteService.crearOrdenTaller(dto).subscribe({
-      next: () => {
-        this.cargando.set(false);
-        this.cerrarModalNuevaOrden();
-        this.mensajeExito.set('Nueva orden de taller registrada exitosamente.');
-        this.cargarOrdenes();
-      },
-      error: (err) => {
-        this.cargando.set(false);
-        const msg = err.error?.message || 'Error al crear la orden de taller.';
-        this.modalAlertNuevaOrden.set(msg);
-      },
-    });
-  }
 }
+

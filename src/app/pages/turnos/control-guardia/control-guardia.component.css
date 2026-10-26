@@ -988,6 +988,43 @@
   margin-top: 0.5rem;
 }
 
+.acta-tabla-datos,
+.acta-tabla-balance {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.4rem;
+  margin-bottom: 0.65rem;
+}
+
+.acta-tabla-datos th,
+.acta-tabla-datos td,
+.acta-tabla-balance th,
+.acta-tabla-balance td {
+  border: 1px solid #e2e8f0;
+  padding: 0.45rem 0.65rem;
+  font-size: 0.8125rem;
+}
+
+.acta-tabla-datos th,
+.acta-tabla-balance th {
+  background-color: #f8fafc;
+  color: #002855;
+  font-weight: 700;
+  text-align: left;
+}
+
+.acta-tabla-datos th {
+  width: 25%;
+}
+
+.acta-tabla-balance th {
+  text-align: center;
+}
+
+.acta-tabla-balance td {
+  font-size: 1.15rem;
+}
+
 .balance-table-box {
   display: flex;
   justify-content: space-around;
@@ -1186,32 +1223,34 @@
   body * {
     visibility: hidden;
   }
-  .printable-acta, .printable-acta * {
+  .printable-acta,
+  .printable-acta * {
     visibility: visible;
   }
   .modal-backdrop {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: auto;
-    background: #ffffff;
-    padding: 0;
+    position: static !important;
+    background: transparent !important;
+    padding: 0 !important;
   }
   .modal-window {
-    box-shadow: none;
-    border: none;
-    max-width: 100%;
-    max-height: none;
+    position: static !important;
+    box-shadow: none !important;
+    border: none !important;
+    max-width: 100% !important;
+    max-height: none !important;
+    width: 100% !important;
   }
-  .modal-header, .modal-footer, .header-btns {
+  .modal-header,
+  .modal-footer,
+  .header-btns {
     display: none !important;
   }
   .printable-acta {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    padding: 1.5cm;
+    position: static !important;
+    width: 100% !important;
+    padding: 0 !important;
+    color: #000000 !important;
+    background: #ffffff !important;
   }
 }
+

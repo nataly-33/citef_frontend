@@ -21,10 +21,6 @@
       <span>Reservada Académica</span>
     </div>
     <div class="legend-item">
-      <span class="legend-dot dot-clase"></span>
-      <span><i class="bi bi-mortarboard-fill"></i> Cátedra en Curso</span>
-    </div>
-    <div class="legend-item">
       <span class="legend-dot dot-mant"></span>
       <span><i class="bi bi-wrench-adjustable"></i> En Mantenimiento</span>
     </div>
@@ -63,7 +59,6 @@
                 [class.pc-disp]="pc.estado_actual === 'DISPONIBLE' && !pc.maquina_docente"
                 [class.pc-ocup]="pc.estado_actual === 'OCUPADA' && !pc.maquina_docente"
                 [class.pc-res]="pc.estado_actual === 'RESERVADA' && !pc.maquina_docente"
-                [class.pc-clase]="pc.estado_actual === 'EN_CLASE' && !pc.maquina_docente"
                 [class.pc-mant]="pc.estado_actual === 'EN_MANTENIMIENTO' && !pc.maquina_docente"
                 [class.pc-docente]="pc.maquina_docente"
                 [class.workstation-selected]="pcSeleccionada?.id_computadora === pc.id_computadora"
@@ -84,8 +79,6 @@
                       <i class="bi bi-display icon-ocup"></i>
                     } @else if (pc.estado_actual === 'RESERVADA') {
                       <i class="bi bi-calendar-check-fill icon-res"></i>
-                    } @else if (pc.estado_actual === 'EN_CLASE') {
-                      <i class="bi bi-mortarboard-fill icon-clase"></i>
                     } @else {
                       <i class="bi bi-wrench-adjustable-circle-fill icon-mant"></i>
                     }
@@ -137,6 +130,19 @@
                     <span class="mon-code" [title]="pc.codigo_equipo">
                       {{ pc.codigo_equipo }}
                     </span>
+                    @if (pc.maquina_docente) {
+                      <span class="badge-tag tag-doc" title="Estación de Docente">DOC</span>
+                    } @else if (pc.estado_actual === 'OCUPADA' && pc.sesion_activa) {
+                      <span class="badge-tag tag-timer font-monospace" title="Minutos de uso transcurridos">
+                        <i class="bi bi-clock-history"></i> {{ pc.sesion_activa.minutos_transcurridos ?? 1 }}m
+                      </span>
+                    } @else if (pc.estado_actual === 'DISPONIBLE') {
+                      <span class="badge-tag tag-disp">DISP</span>
+                    } @else if (pc.estado_actual === 'RESERVADA') {
+                      <span class="badge-tag tag-res">RES</span>
+                    } @else if (pc.estado_actual === 'EN_MANTENIMIENTO') {
+                      <span class="badge-tag tag-mant" title="En Mantenimiento"><i class="bi bi-wrench-adjustable"></i></span>
+                    }
                   </div>
 
                   <!-- Body: Estado / Datos de Estudiante / Asignar -->
@@ -165,20 +171,14 @@
                         class="occupied-center"
                         [title]="'Estudiante: ' + s.estudiante_nombres + (s.motivo_descrip ? ' | Motivo: ' + s.motivo_descrip : '')"
                       >
-                        <div class="student-ru font-monospace">{{ s.registro_estudiante }}</div>
-                        <span class="session-timer font-monospace" title="Minutos de uso transcurridos">
-                          <i class="bi bi-clock-history"></i> {{ s.minutos_transcurridos ?? 1 }}m
-                        </span>
+                        <div class="student-ru font-monospace">
+                          <i class="bi bi-person-badge"></i> {{ s.registro_estudiante }}
+                        </div>
                       </div>
                     } @else if (pc.estado_actual === 'RESERVADA') {
                       <div class="status-center res-center">
                         <i class="bi bi-calendar-check-fill"></i>
                         <span>Reservada</span>
-                      </div>
-                    } @else if (pc.estado_actual === 'EN_CLASE') {
-                      <div class="status-center clase-center">
-                        <i class="bi bi-mortarboard-fill"></i>
-                        <span>En Cátedra</span>
                       </div>
                     } @else if (pc.estado_actual === 'EN_MANTENIMIENTO') {
                       <div class="status-center mant-center">

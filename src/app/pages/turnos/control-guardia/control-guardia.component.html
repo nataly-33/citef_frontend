@@ -955,7 +955,7 @@
             <div class="acta-logo-text">
               <h3>UNIVERSIDAD AUTÓNOMA GABRIEL RENÉ MORENO</h3>
               <h4>FACULTAD DE CIENCIAS ECONÓMICAS Y EMPRESARIALES</h4>
-              <p>Centro de Cómputo e Infraestructura Tecnológica (CITEF)</p>
+              <p>Centro de Información y Tecnologías Económico Financieras (CITEF)</p>
             </div>
             <div class="acta-title-badge">
               <span>ACTA DE RELEVO DE GUARDIA</span>
@@ -963,47 +963,49 @@
             </div>
           </div>
 
-          <div class="acta-grid-info">
-            <div class="info-block">
-              <span class="info-label">Laboratorio:</span>
-              <span class="info-val">{{ actaSeleccionada()?.jornada_saliente?.sala?.nombre || 'Sala Cómputo' }} ({{ actaSeleccionada()?.jornada_saliente?.sala?.codigo_sala }})</span>
-            </div>
-            <div class="info-block">
-              <span class="info-label">Fecha y Hora de Relevo:</span>
-              <span class="info-val">{{ actaSeleccionada()?.fecha_hora_relevo | date:'dd/MM/yyyy HH:mm:ss' }}</span>
-            </div>
-            <div class="info-block">
-              <span class="info-label">Auxiliar Saliente (Entrega):</span>
-              <span class="info-val">{{ actaSeleccionada()?.usuario_saliente?.nombres }} {{ actaSeleccionada()?.usuario_saliente?.apellidos }}</span>
-            </div>
-            <div class="info-block">
-              <span class="info-label">Auxiliar Entrante (Recibe):</span>
-              <span class="info-val">
-                @if (actaSeleccionada()?.usuario_entrante) {
-                  {{ actaSeleccionada()?.usuario_entrante?.nombres }} {{ actaSeleccionada()?.usuario_entrante?.apellidos }}
-                } @else {
-                  <span class="text-muted">Sin auxiliar entrante asignado</span>
-                }
-              </span>
-            </div>
-          </div>
+          <!-- DATOS GENERALES DEL RELEVO -->
+          <div class="acta-section-title"><i class="bi bi-info-circle"></i> Datos Generales del Relevo</div>
+          <table class="acta-tabla-datos">
+            <tbody>
+              <tr>
+                <th>Laboratorio / Sala:</th>
+                <td>{{ actaSeleccionada()?.jornada_saliente?.sala?.nombre || 'Sala Cómputo' }} ({{ actaSeleccionada()?.jornada_saliente?.sala?.codigo_sala }})</td>
+                <th>Fecha y Hora:</th>
+                <td>{{ actaSeleccionada()?.fecha_hora_relevo | date:'dd/MM/yyyy HH:mm:ss' }}</td>
+              </tr>
+              <tr>
+                <th>Auxiliar Saliente (Entrega):</th>
+                <td>{{ actaSeleccionada()?.usuario_saliente?.nombres }} {{ actaSeleccionada()?.usuario_saliente?.apellidos }}</td>
+                <th>Auxiliar Entrante (Recibe):</th>
+                <td>
+                  @if (actaSeleccionada()?.usuario_entrante) {
+                    {{ actaSeleccionada()?.usuario_entrante?.nombres }} {{ actaSeleccionada()?.usuario_entrante?.apellidos }}
+                  } @else {
+                    <span class="text-muted">Sin auxiliar entrante asignado</span>
+                  }
+                </td>
+              </tr>
+            </tbody>
+          </table>
 
           <!-- BALANCES DE LABORATORIO -->
           <div class="acta-section-title"><i class="bi bi-boxes"></i> Balance Físico y Técnico Transferido</div>
-          <div class="balance-table-box">
-            <div class="bal-item">
-              <span class="lbl">Computadoras Operativas:</span>
-              <span class="val">{{ actaSeleccionada()?.cant_equipos_operativos }}</span>
-            </div>
-            <div class="bal-item">
-              <span class="lbl">Averías Pendientes:</span>
-              <span class="val text-danger">{{ actaSeleccionada()?.cant_averias_pend }}</span>
-            </div>
-            <div class="bal-item">
-              <span class="lbl">Objetos en Custodia:</span>
-              <span class="val text-primary">{{ actaSeleccionada()?.cant_objetos_custodia }}</span>
-            </div>
-          </div>
+          <table class="acta-tabla-balance">
+            <thead>
+              <tr>
+                <th>Computadoras Operativas</th>
+                <th>Averías Pendientes</th>
+                <th>Objetos en Custodia</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="text-center font-bold text-primary">{{ actaSeleccionada()?.cant_equipos_operativos }}</td>
+                <td class="text-center font-bold" [class.text-danger]="(actaSeleccionada()?.cant_averias_pend || 0) > 0">{{ actaSeleccionada()?.cant_averias_pend }}</td>
+                <td class="text-center font-bold text-primary">{{ actaSeleccionada()?.cant_objetos_custodia }}</td>
+              </tr>
+            </tbody>
+          </table>
 
           <!-- NOVEDADES REPORTADAS -->
           <div class="acta-section-title"><i class="bi bi-chat-left-quote"></i> Novedades y Observaciones</div>
@@ -1013,9 +1015,9 @@
 
           <!-- ESTADO DE CONFORMIDAD Y FIRMAS DIGITALES -->
           <div class="acta-section-title"><i class="bi bi-pen"></i> Estado de Conformidad y Firma Digital</div>
-          <div class="acta-signatures">
+          <div class="acta-signatures print-no-break">
             <div class="signature-box">
-              <div class="sig-seal"><i class="bi bi-check-circle-fill text-success"></i></div>
+              <div class="sig-seal"><i class="bi bi-check-circle-fill text-primary"></i></div>
               <div class="sig-name">{{ actaSeleccionada()?.usuario_saliente?.nombres }} {{ actaSeleccionada()?.usuario_saliente?.apellidos }}</div>
               <div class="sig-role">Auxiliar Saliente (Entrega Conforme)</div>
               <div class="sig-time">{{ actaSeleccionada()?.fecha_hora_relevo | date:'dd/MM/yyyy HH:mm:ss' }}</div>
@@ -1024,7 +1026,7 @@
             <div class="signature-box" [class.pending-sign]="!actaSeleccionada()?.aceptado_por_entrante">
               @if (actaSeleccionada()?.aceptado_por_entrante) {
                 <div class="sig-seal">
-                  <i class="bi bi-check-circle-fill text-success"></i>
+                  <i class="bi bi-check-circle-fill text-primary"></i>
                 </div>
                 <div class="sig-name">{{ actaSeleccionada()?.usuario_entrante?.nombres }} {{ actaSeleccionada()?.usuario_entrante?.apellidos }}</div>
                 <div class="sig-role">Auxiliar Entrante (Recepción Conforme)</div>

@@ -62,6 +62,10 @@ export class MetricasRamsComponent implements OnInit {
 
   readonly anios = [2024, 2025, 2026, 2027];
 
+  getNombreMes(mes: number): string {
+    return this.meses.find((m) => m.valor === Number(mes))?.nombre || `Mes ${mes}`;
+  }
+
   ngOnInit(): void {
     this.cargarSalas();
     this.cargarDashboard();

@@ -180,12 +180,12 @@
 }
 
 .citef-btn-primary {
-  background-color: var(--citef-secondary, #a81124);
+  background-color: var(--citef-primary, #002855);
   color: #ffffff;
 }
 
 .citef-btn-primary:hover:not(:disabled) {
-  background-color: var(--citef-secondary-hover, #c5182f);
+  background-color: var(--citef-primary-hover, #073b75);
 }
 
 .citef-btn-outline {
@@ -764,6 +764,34 @@
   display: flex;
   align-items: center;
   gap: 0.4rem;
+}
+
+.ficha-tabla-institucional {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.4rem;
+  margin-bottom: 0.65rem;
+}
+
+.ficha-tabla-institucional th,
+.ficha-tabla-institucional td {
+  border: 1px solid #e2e8f0;
+  padding: 0.45rem 0.65rem;
+  font-size: 0.8125rem;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.ficha-tabla-institucional th {
+  background-color: #f8fafc;
+  color: var(--citef-primary, #002855);
+  font-weight: 700;
+  width: 22%;
+}
+
+.ficha-tabla-institucional td {
+  background-color: #ffffff;
+  color: #1e293b;
 }
 
 .ficha-grid-3 {

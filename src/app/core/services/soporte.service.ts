@@ -197,6 +197,7 @@ export interface FiltroRamsDto {
 export class SoporteService {
   private readonly http = inject(HttpClient);
   private readonly apiUrl = 'http://localhost:3000/api/v1/soporte';
+  private readonly baseUrl = this.apiUrl;
 
   // Datos simulados de respaldo para resiliencia ante backend en arranque
   private ordenesMock: MantenimientoTaller[] = [
@@ -391,6 +392,32 @@ export class SoporteService {
       },
     },
   ];
+
+  /**
+   * Obtener lista de personal técnico especializado activo
+   */
+  getTecnicos(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.baseUrl}/tecnicos`).pipe(
+      catchError(() => {
+        return of([
+          {
+            id_usuario: 3,
+            nombres: 'Carlos',
+            apellidos: 'Mendoza Ruiz',
+            correo_institucional: 'cmendoza@uagrm.edu.bo',
+            roles: [{ nombre: 'TECNICO' }],
+          },
+          {
+            id_usuario: 4,
+            nombres: 'Roberto',
+            apellidos: 'Vaca Flores',
+            correo_institucional: 'rvaca@uagrm.edu.bo',
+            roles: [{ nombre: 'TECNICO' }],
+          },
+        ]);
+      }),
+    );
+  }
 
   /**
    * CU24: Listar órdenes de trabajo de taller con paginación y filtros

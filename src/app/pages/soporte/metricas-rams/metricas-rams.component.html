@@ -1,13 +1,30 @@
-<div class="rams-container">
+<div class="rams-container rams-print-report">
+  <!-- CABECERA INSTITUCIONAL IMPRIMIBLE (Visible en @media print) -->
+  <div class="rams-print-header print-only">
+    <div class="print-header-institucional">
+      <div class="ficha-logo-box">
+        <i class="bi bi-mortarboard-fill uagrm-icon"></i>
+      </div>
+      <div class="ficha-header-text">
+        <div class="inst-uni">UNIVERSIDAD AUTÓNOMA GABRIEL RENÉ MORENO</div>
+        <div class="inst-fac">FACULTAD DE CIENCIAS ECONÓMICAS Y EMPRESARIALES</div>
+        <div class="inst-sub">Centro de Información y Tecnologías Económico Financieras (CITEF)</div>
+        <div class="inst-doc">INFORME TÉCNICO DE CONFIABILIDAD OPERATIVA Y DISPONIBILIDAD (RAMS)</div>
+      </div>
+      <div class="ficha-folio">
+        <div class="folio-title">PERÍODO EVALUADO</div>
+        <div class="folio-num">{{ getNombreMes(filtroMes()) }} / {{ filtroAnio() }}</div>
+        <div class="folio-estado">ESTÁNDAR IEEE 762</div>
+      </div>
+    </div>
+  </div>
+
   <!-- ENCABEZADO DE PÁGINA (Sin emojis, paleta institucional) -->
   <div class="page-header">
     <div class="header-left">
       <h1>
         <i class="bi bi-speedometer2"></i> Tablero de Métricas RAMS y Confiabilidad Operativa
       </h1>
-      <p class="header-subtitle">
-        Monitoreo analítico de Confiabilidad (MTBF), Mantenibilidad (MTTR) y Factor de Disponibilidad Inherente A (IEEE 762)
-      </p>
     </div>
     <div class="header-right">
       <button class="citef-btn citef-btn-outline" (click)="mostrarModalFormulas.set(true)" title="Ver fundamentación y formulación matemática">
@@ -24,7 +41,7 @@
     <!-- KPI 1: MTTR Global -->
     <div class="kpi-card">
       <div class="kpi-header">
-        <span class="kpi-title">MTTR GLOBAL (TALLER)</span>
+          <span class="kpi-title">MTTR</span>
         <div class="kpi-icon-box kpi-icon-orange">
           <i class="bi bi-wrench"></i>
         </div>
@@ -32,12 +49,9 @@
       <div class="kpi-value">
         {{ dashboard()?.kpis?.mttr_promedio_horas || 0 }} <span class="kpi-unit">hrs</span>
       </div>
-      <div class="kpi-subtitle">
-        Tiempo Medio Para Reparar (Mean Time To Repair)
-      </div>
       <div class="kpi-footer">
         <span class="benchmark-pill benchmark-good">
-          <i class="bi bi-shield-check"></i> Meta FCEE: &lt; 3.0 hrs
+          <i class="bi bi-shield-check"></i> Meta &lt; 3 h
         </span>
       </div>
     </div>
@@ -45,7 +59,7 @@
     <!-- KPI 2: MTBF Global -->
     <div class="kpi-card">
       <div class="kpi-header">
-        <span class="kpi-title">MTBF GLOBAL (OPERACIÓN)</span>
+          <span class="kpi-title">MTBF</span>
         <div class="kpi-icon-box kpi-icon-blue">
           <i class="bi bi-clock-history"></i>
         </div>
@@ -53,12 +67,9 @@
       <div class="kpi-value">
         {{ dashboard()?.kpis?.mtbf_promedio_horas || 0 }} <span class="kpi-unit">hrs</span>
       </div>
-      <div class="kpi-subtitle">
-        Tiempo Medio Entre Fallas (Mean Time Between Failures)
-      </div>
       <div class="kpi-footer">
         <span class="benchmark-pill benchmark-good">
-          <i class="bi bi-graph-up-arrow"></i> Meta FCEE: &gt; 150 hrs
+          <i class="bi bi-graph-up-arrow"></i> Meta &gt; 150 h
         </span>
       </div>
     </div>
@@ -67,7 +78,7 @@
     @let dispPorcentaje = dashboard()?.kpis?.disponibilidad_promedio_porcentaje || 0;
     <div class="kpi-card">
       <div class="kpi-header">
-        <span class="kpi-title">DISPONIBILIDAD INHERENTE A</span>
+        <span class="kpi-title">DISPONIBILIDAD</span>
         <div class="kpi-icon-box" [ngClass]="{
           'kpi-icon-green': dispPorcentaje >= 95,
           'kpi-icon-blue': dispPorcentaje >= 90 && dispPorcentaje < 95,
@@ -101,16 +112,13 @@
     <!-- KPI 4: Equipos Operativos vs Taller / Parque -->
     <div class="kpi-card">
       <div class="kpi-header">
-        <span class="kpi-title">PARQUE OPERATIVO CITEF</span>
+        <span class="kpi-title">EQUIPOS OPERATIVOS</span>
         <div class="kpi-icon-box kpi-icon-navy">
           <i class="bi bi-pc-display-horizontal"></i>
         </div>
       </div>
       <div class="kpi-value">
         {{ dashboard()?.kpis?.total_equipos_operativos || 0 }} <span class="kpi-unit">/ {{ dashboard()?.kpis?.total_equipos_parque || 0 }}</span>
-      </div>
-      <div class="kpi-subtitle">
-        Estaciones operativas en servicio activo
       </div>
       <div class="kpi-pills-row">
         <span class="tag-counter tag-taller" title="Equipos actualmente en banco de trabajo">
@@ -181,14 +189,13 @@
   <div class="filter-card">
     <div class="filter-row">
       <div class="filter-col col-search">
-        <label for="filtroBusquedaRams">Búsqueda Textual:</label>
         <div class="input-with-icon">
           <i class="bi bi-search"></i>
           <input
             id="filtroBusquedaRams"
             type="text"
             class="citef-input"
-            placeholder="Buscar por código de equipo o nombre de sala..."
+            placeholder="Buscar por equipo o sala..."
             [(ngModel)]="filtroBusqueda"
             (keyup.enter)="aplicarFiltros()"
           />
@@ -196,7 +203,6 @@
       </div>
 
       <div class="filter-col">
-        <label for="filtroSalaRams">Laboratorio:</label>
         <select id="filtroSalaRams" class="citef-select" [(ngModel)]="filtroSala">
           <option [ngValue]="null">Todos los laboratorios</option>
           @for (s of salas(); track s.id_sala) {
@@ -206,7 +212,6 @@
       </div>
 
       <div class="filter-col col-mes">
-        <label for="filtroMesRams">Mes Evaluado:</label>
         <select id="filtroMesRams" class="citef-select" [(ngModel)]="filtroMes">
           @for (m of meses; track m.valor) {
             <option [ngValue]="m.valor">{{ m.nombre }}</option>
@@ -215,7 +220,6 @@
       </div>
 
       <div class="filter-col col-anio">
-        <label for="filtroAnioRams">Año:</label>
         <select id="filtroAnioRams" class="citef-select" [(ngModel)]="filtroAnio">
           @for (a of anios; track a) {
             <option [ngValue]="a">{{ a }}</option>

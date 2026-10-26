@@ -205,3 +205,132 @@ body {
 .citef-table tbody tr:last-child td {
   border-bottom: none;
 }
+
+/* ==========================================================================
+   MOTOR UNIVERSAL DE IMPRESIÓN FORMAL INSTITUCIONAL (@media print)
+   UAGRM - Facultad de Ciencias Económicas y Empresariales - CITEF
+   ========================================================================== */
+@page {
+  size: auto;
+  margin: 12mm 15mm;
+}
+
+@media print {
+  /* 1. Ocultar estrictamente componentes no imprimibles */
+  .sidebar,
+  app-sidebar,
+  .topbar,
+  app-topbar,
+  .app-footer,
+  .filter-card,
+  .filter-section,
+  .filter-row,
+  .filter-col-buttons,
+  .citef-btn,
+  button,
+  .pagination-wrapper,
+  app-pagination,
+  .table-actions,
+  .action-btn,
+  .modal-footer,
+  .header-btns,
+  .btn-close-modal,
+  .modal-close,
+  .alert-banner,
+  .page-header .header-right,
+  .tabs-bar,
+  .tab-item {
+    display: none !important;
+  }
+
+  /* 2. Reset de fondos y visibilidad para documentos impresos */
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    font-size: 11pt;
+    line-height: 1.35;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* 3. Desactivar fondo oscuro de modales */
+  .modal-backdrop {
+    background: none !important;
+    position: static !important;
+    display: block !important;
+    padding: 0 !important;
+  }
+
+  .modal-window {
+    position: static !important;
+    max-width: 100% !important;
+    box-shadow: none !important;
+    border: none !important;
+    margin: 0 !important;
+    width: 100% !important;
+  }
+
+  /* 4. Estilos para Ficha Técnica, Acta de Relevo y Reporte RAMS */
+  .ficha-tecnica-body,
+  .printable-acta,
+  .rams-print-report {
+    color: #000000 !important;
+    background-color: #ffffff !important;
+    font-family: Arial, Helvetica, sans-serif !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .ficha-tecnica-body table,
+  .printable-acta table,
+  .rams-print-report table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    margin-top: 8px !important;
+    margin-bottom: 8px !important;
+    page-break-inside: avoid;
+  }
+
+  .ficha-tecnica-body th,
+  .ficha-tecnica-body td,
+  .printable-acta th,
+  .printable-acta td,
+  .rams-print-report th,
+  .rams-print-report td {
+    border: 1px solid #1e293b !important;
+    padding: 6px 8px !important;
+    font-size: 9.5pt !important;
+    color: #000000 !important;
+    background: #ffffff !important;
+  }
+
+  .ficha-tecnica-body th,
+  .printable-acta th,
+  .rams-print-report th {
+    background-color: #f1f5f9 !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    color: #002855 !important;
+  }
+
+  /* Cabecera institucional imprimible */
+  .print-header-institucional,
+  .acta-formal-header,
+  .ficha-header-institucional {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    border-bottom: 2px solid #002855 !important;
+    padding-bottom: 8px !important;
+    margin-bottom: 12px !important;
+  }
+
+  /* Evitar saltos de página huérfanos */
+  .print-no-break,
+  .acta-signatures,
+  .ficha-firmas {
+    page-break-inside: avoid !important;
+  }
+}
+
