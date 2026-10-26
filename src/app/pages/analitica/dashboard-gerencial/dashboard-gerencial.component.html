@@ -1,0 +1,606 @@
+<div class="analitica-container print-dashboard-view">
+  <!-- MEMBRETE FORMAL INSTITUCIONAL (Visible exclusivamente en @media print) -->
+  <div class="print-header print-only">
+    <div class="print-header-brand">
+      <div class="print-logo-box">
+        <i class="bi bi-mortarboard-fill"></i>
+      </div>
+      <div class="print-text-box">
+        <div class="print-univ">UNIVERSIDAD AUTÓNOMA GABRIEL RENÉ MORENO</div>
+        <div class="print-fac">FACULTAD DE CIENCIAS ECONÓMICAS Y EMPRESARIALES</div>
+        <div class="print-citef">Centro de Información y Tecnologías Económico Financieras (CITEF)</div>
+        <div class="print-title">TABLERO GERENCIAL DE RENDIMIENTO Y ANÁLISIS DE OCUPACIÓN</div>
+      </div>
+      <div class="print-badge-box">
+        <div class="print-folio-tag">FECHA EMISIÓN</div>
+        <div class="print-folio-date">{{ fechaGeneracion() }}</div>
+        <div class="print-folio-status">SISTEMA CITEF OFICIAL</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ENCABEZADO DE PÁGINA (No imprimible) -->
+  <div class="page-header no-print">
+    <div class="header-left">
+      <h1>
+        <i class="bi bi-speedometer"></i> Tablero Ejecutivo y Analítica Facultativa
+      </h1>
+      <p class="header-sub">
+        Consola de mando para Decanatura, Jefatura y Acreditación Universitaria FCEE - UAGRM
+      </p>
+    </div>
+    <div class="header-right">
+      <button
+        type="button"
+        class="citef-btn citef-btn-primary"
+        (click)="imprimirResumen()"
+        title="Imprimir resumen ejecutivo oficial FCEE"
+      >
+        <i class="bi bi-printer"></i> Imprimir Resumen Ejecutivo
+      </button>
+    </div>
+  </div>
+
+  <!-- BARRA DE FILTROS COMPACTA (Sin etiquetas <label>, botones institucional #002855) -->
+  <div class="filter-strip no-print">
+    <div class="filter-controls">
+      <div class="filter-input-wrap">
+        <i class="bi bi-calendar-event"></i>
+        <input
+          type="date"
+          class="compact-input"
+          [ngModel]="filtroFechaDesde()"
+          (ngModelChange)="filtroFechaDesde.set($event)"
+          title="Fecha de inicio"
+          placeholder="Fecha Desde"
+        />
+      </div>
+
+      <div class="filter-input-wrap">
+        <i class="bi bi-calendar-check"></i>
+        <input
+          type="date"
+          class="compact-input"
+          [ngModel]="filtroFechaHasta()"
+          (ngModelChange)="filtroFechaHasta.set($event)"
+          title="Fecha de finalización"
+          placeholder="Fecha Hasta"
+        />
+      </div>
+
+      <div class="filter-input-wrap select-wrap">
+        <i class="bi bi-building"></i>
+        <select
+          class="compact-select"
+          [ngModel]="filtroSalaId()"
+          (ngModelChange)="filtroSalaId.set($event)"
+          title="Filtrar por laboratorio"
+        >
+          <option [ngValue]="null">Todos los Laboratorios</option>
+          @for (s of salas(); track s.id_sala) {
+            <option [ngValue]="s.id_sala">{{ s.codigo_sala }} - {{ s.nombre }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="filter-input-wrap select-wrap">
+        <i class="bi bi-mortarboard"></i>
+        <select
+          class="compact-select"
+          [ngModel]="filtroCarreraId()"
+          (ngModelChange)="filtroCarreraId.set($event)"
+          title="Filtrar por carrera"
+        >
+          <option [ngValue]="null">Todas las Carreras</option>
+          @for (c of carreras(); track c.id_carrera) {
+            <option [ngValue]="c.id_carrera">{{ c.codigo }} - {{ c.nombre }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="filter-buttons">
+        <button
+          type="button"
+          class="citef-btn citef-btn-primary"
+          (click)="cargarDashboard()"
+          title="Buscar métricas con los filtros seleccionados"
+        >
+          <i class="bi bi-search"></i> Buscar
+        </button>
+        <button
+          type="button"
+          class="citef-btn citef-btn-outline"
+          (click)="limpiarFiltros()"
+          title="Restablecer filtros al período actual"
+        >
+          <i class="bi bi-arrow-counterclockwise"></i> Limpiar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6 TARJETAS DE KPIS EJECUTIVOS -->
+  <div class="kpis-grid">
+    <!-- KPI 1: Tasa Global de Ocupación -->
+    <div class="kpi-card">
+      <div class="kpi-card-header">
+        <span class="kpi-name">Tasa Global de Ocupación</span>
+        <div class="kpi-badge-icon icon-navy">
+          <i class="bi bi-pie-chart-fill"></i>
+        </div>
+      </div>
+      <div class="kpi-body">
+        <div class="kpi-main-val">
+          {{ kpis()?.tasa_ocupacion_global || 0 }}<span class="kpi-unit">%</span>
+        </div>
+        <div class="kpi-progress-bar">
+          <div
+            class="kpi-progress-fill"
+            [style.width.%]="kpis()?.tasa_ocupacion_global || 0"
+            [ngClass]="{
+              'fill-green': (kpis()?.tasa_ocupacion_global || 0) <= 75,
+              'fill-amber': (kpis()?.tasa_ocupacion_global || 0) > 75 && (kpis()?.tasa_ocupacion_global || 0) <= 88,
+              'fill-red': (kpis()?.tasa_ocupacion_global || 0) > 88
+            }"
+          ></div>
+        </div>
+        <div class="kpi-subline">
+          <span>{{ kpis()?.puestos_ocupados_actual || 0 }} de {{ kpis()?.capacidad_total_puestos || 0 }} puestos</span>
+          <span
+            class="status-pill"
+            [ngClass]="{
+              'status-optimal': (kpis()?.tasa_ocupacion_global || 0) <= 75,
+              'status-warning': (kpis()?.tasa_ocupacion_global || 0) > 75 && (kpis()?.tasa_ocupacion_global || 0) <= 88,
+              'status-critical': (kpis()?.tasa_ocupacion_global || 0) > 88
+            }"
+          >
+            {{ (kpis()?.tasa_ocupacion_global || 0) > 88 ? 'Alta Demanda' : 'Estable' }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- KPI 2: Total Horas Cátedra Dictadas -->
+    <div class="kpi-card">
+      <div class="kpi-card-header">
+        <span class="kpi-name">Horas Cátedra Dictadas</span>
+        <div class="kpi-badge-icon icon-crimson">
+          <i class="bi bi-journal-check"></i>
+        </div>
+      </div>
+      <div class="kpi-body">
+        <div class="kpi-main-val">
+          {{ kpis()?.total_horas_catedra || 0 }}<span class="kpi-unit">hrs</span>
+        </div>
+        <div class="kpi-trend-info">
+          <i class="bi bi-clock-history"></i>
+          <span>Acumulado semestral en laboratorios CITEF</span>
+        </div>
+        <div class="kpi-subline">
+          <span class="benchmark-label">Acreditación FCEE</span>
+          <span class="benchmark-value">100% Cobertura</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- KPI 3: Evaluaciones Prioritarias -->
+    <div class="kpi-card">
+      <div class="kpi-card-header">
+        <span class="kpi-name">Evaluaciones Prioritarias</span>
+        <div class="kpi-badge-icon icon-amber">
+          <i class="bi bi-patch-check-fill"></i>
+        </div>
+      </div>
+      <div class="kpi-body">
+        <div class="kpi-main-val">
+          {{ kpis()?.evaluaciones_prioritarias || 0 }}<span class="kpi-unit">sesiones</span>
+        </div>
+        <div class="kpi-trend-info">
+          <i class="bi bi-award-fill"></i>
+          <span>Parciales y finales con prioridad académica</span>
+        </div>
+        <div class="kpi-subline">
+          <span>Clases regularizadas</span>
+          <span class="status-pill status-optimal">Garantizadas</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- KPI 4: Tiempo Promedio de Permanencia (Ws) -->
+    <div class="kpi-card">
+      <div class="kpi-card-header">
+        <span class="kpi-name">Tiempo de Permanencia (Ws)</span>
+        <div class="kpi-badge-icon icon-green">
+          <i class="bi bi-hourglass-split"></i>
+        </div>
+      </div>
+      <div class="kpi-body">
+        <div class="kpi-main-val">
+          {{ kpis()?.tiempo_permanencia_promedio_min || 0 }}<span class="kpi-unit">min</span>
+        </div>
+        <div class="kpi-trend-info">
+          <i class="bi bi-person-walking"></i>
+          <span>Duración media por sesión de estudiante</span>
+        </div>
+        <div class="kpi-subline">
+          <span>Rotación diaria de puestos</span>
+          <span class="benchmark-value">~3.2 turnos/pc</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- KPI 5: Salud del Parque RAMS -->
+    <div class="kpi-card">
+      <div class="kpi-card-header">
+        <span class="kpi-name">Salud Parque RAMS</span>
+        <div class="kpi-badge-icon icon-navy">
+          <i class="bi bi-cpu-fill"></i>
+        </div>
+      </div>
+      <div class="kpi-body">
+        <div class="kpi-main-val">
+          {{ kpis()?.salud_parque_rams?.porcentaje_salud || 0 }}<span class="kpi-unit">%</span>
+        </div>
+        <div class="kpi-subline mt-2">
+          <span>Operativas: <strong>{{ kpis()?.salud_parque_rams?.operativas || 0 }}</strong></span>
+          <span>En Taller: <strong class="text-crimson">{{ kpis()?.salud_parque_rams?.taller || 0 }}</strong></span>
+        </div>
+        <div class="kpi-progress-bar">
+          <div
+            class="kpi-progress-fill fill-green"
+            [style.width.%]="kpis()?.salud_parque_rams?.porcentaje_salud || 0"
+          ></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- KPI 6: Mitigación de Conflictos -->
+    <div class="kpi-card">
+      <div class="kpi-card-header">
+        <span class="kpi-name">Mitigación de Conflictos</span>
+        <div class="kpi-badge-icon icon-crimson">
+          <i class="bi bi-shield-fill-check"></i>
+        </div>
+      </div>
+      <div class="kpi-body">
+        <div class="kpi-main-val">
+          {{ kpis()?.mitigacion_conflictos_conteo || 0 }}<span class="kpi-unit">evitadas</span>
+        </div>
+        <div class="kpi-trend-info">
+          <i class="bi bi-diagram-3-fill"></i>
+          <span>Colisiones insalvables neutralizadas</span>
+        </div>
+        <div class="kpi-subline">
+          <span>Motor algorítmico</span>
+          <span class="status-pill status-optimal">Efectividad 100%</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BATERÍA DE 4 VARIEDADES DE GRÁFICOS INTERACTIVOS CON SVG NATIVO RESPONSIVO -->
+  <div class="charts-layout">
+    <!-- FILA 1: Donut (Carreras) + Barras Agrupadas Aforo vs Ocupación -->
+    <div class="chart-row">
+      <!-- 1. GRÁFICO DONUT / TORTA (Cuota por Carrera Curricular) -->
+      <div class="chart-card">
+        <div class="chart-card-header">
+          <div class="chart-title-block">
+            <h2 class="chart-title">
+              <i class="bi bi-pie-chart"></i> Demanda Curricular por Carrera
+            </h2>
+            <span class="chart-subtitle">Distribución porcentual de horas y utilización de cómputo</span>
+          </div>
+        </div>
+
+        <div class="donut-chart-wrapper">
+          <div class="donut-svg-container">
+            <svg viewBox="0 0 240 240" class="donut-svg">
+              <circle
+                cx="120"
+                cy="120"
+                r="70"
+                fill="none"
+                stroke="#e2e8f0"
+                stroke-width="28"
+              />
+              @for (seg of donutSegments(); track seg.codigo) {
+                <circle
+                  cx="120"
+                  cy="120"
+                  r="70"
+                  fill="none"
+                  [attr.stroke]="seg.color"
+                  stroke-width="28"
+                  [attr.stroke-dasharray]="seg.strokeDasharray"
+                  [attr.stroke-dashoffset]="seg.strokeDashoffset"
+                  class="donut-segment"
+                  (mousemove)="mostrarTooltip($event, seg.carrera, seg.porcentaje + '% de demanda', seg.total_horas + ' horas cátedra', seg.color)"
+                  (mouseleave)="ocultarTooltip()"
+                />
+              }
+              <!-- Texto central informativo -->
+              <text x="120" y="115" text-anchor="middle" class="donut-center-title">CARRERAS</text>
+              <text x="120" y="132" text-anchor="middle" class="donut-center-sub">FCEE - UAGRM</text>
+            </svg>
+          </div>
+
+          <!-- Leyendas descriptivas al lado del Donut -->
+          <div class="donut-legend">
+            @for (item of graficos()?.distribucion_carreras; track item.codigo) {
+              <div
+                class="legend-row"
+                (mousemove)="mostrarTooltip($event, item.carrera, item.porcentaje + '% de demanda', item.total_horas + ' horas registradas', item.color)"
+                (mouseleave)="ocultarTooltip()"
+              >
+                <span class="legend-bullet" [style.backgroundColor]="item.color"></span>
+                <span class="legend-label">{{ item.carrera }}</span>
+                <span class="legend-pct">{{ item.porcentaje }}%</span>
+                <span class="legend-hours">{{ item.total_horas }}h</span>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. GRÁFICO DE BARRAS AGRUPADAS: Aforo vs Ocupación por Laboratorio -->
+      <div class="chart-card">
+        <div class="chart-card-header">
+          <div class="chart-title-block">
+            <h2 class="chart-title">
+              <i class="bi bi-bar-chart"></i> Capacidad Instalada vs Ocupación Media
+            </h2>
+            <span class="chart-subtitle">Aforo físico total vs Puestos simultáneos ocupados</span>
+          </div>
+          <div class="chart-actions-legend">
+            <span class="badge-legend">
+              <span class="dot-swatch swatch-aforo"></span> Aforo Físico
+            </span>
+            <span class="badge-legend">
+              <span class="dot-swatch swatch-ocup"></span> Ocupación Media
+            </span>
+          </div>
+        </div>
+
+        <div class="grouped-bar-container">
+          <svg viewBox="0 0 620 220" class="grouped-bar-svg" preserveAspectRatio="xMidYMid meet">
+            <!-- Guías horizontales -->
+            <line x1="45" y1="30" x2="600" y2="30" stroke="#f1f5f9" stroke-dasharray="3,3" />
+            <text x="35" y="34" text-anchor="end" class="bar-axis-text">50</text>
+
+            <line x1="45" y1="80" x2="600" y2="80" stroke="#f1f5f9" stroke-dasharray="3,3" />
+            <text x="35" y="84" text-anchor="end" class="bar-axis-text">35</text>
+
+            <line x1="45" y1="130" x2="600" y2="130" stroke="#f1f5f9" stroke-dasharray="3,3" />
+            <text x="35" y="134" text-anchor="end" class="bar-axis-text">20</text>
+
+            <line x1="45" y1="180" x2="600" y2="180" stroke="#cbd5e1" stroke-width="1.5" />
+            <text x="35" y="184" text-anchor="end" class="bar-axis-text">0</text>
+
+            <!-- Barras agrupadas para cada sala -->
+            @for (s of graficos()?.aforo_vs_ocupacion_salas; track s.codigo_sala; let idx = $index) {
+              <!-- Coordenadas X: margen 60 + idx * 68 -->
+              <!-- Alturas escaladas a max 50 = 150px -->
+              <g class="bar-group">
+                <!-- Barra Aforo -->
+                <rect
+                  [attr.x]="60 + idx * 68"
+                  [attr.y]="180 - (s.aforo / 50) * 150"
+                  width="22"
+                  [attr.height]="(s.aforo / 50) * 150"
+                  rx="3"
+                  class="bar-rect-aforo"
+                  (mousemove)="mostrarTooltip($event, s.sala + ' (' + s.codigo_sala + ')', 'Aforo Físico: ' + s.aforo + ' puestos', 'Capacidad nominal', '#64748b')"
+                  (mouseleave)="ocultarTooltip()"
+                />
+                <!-- Barra Ocupación Real -->
+                <rect
+                  [attr.x]="85 + idx * 68"
+                  [attr.y]="180 - (s.ocupacion_media / 50) * 150"
+                  width="22"
+                  [attr.height]="(s.ocupacion_media / 50) * 150"
+                  rx="3"
+                  class="bar-rect-ocup"
+                  (mousemove)="mostrarTooltip($event, s.sala + ' (' + s.codigo_sala + ')', 'Ocupación Media: ' + s.ocupacion_media + ' puestos', 'Saturación: ' + s.porcentaje + '%', '#002855')"
+                  (mouseleave)="ocultarTooltip()"
+                />
+                <!-- Etiqueta eje X -->
+                <text
+                  [attr.x]="78 + idx * 68"
+                  y="198"
+                  text-anchor="middle"
+                  class="bar-label-x"
+                >
+                  {{ s.codigo_sala }}
+                </text>
+                <!-- Porcentaje sobre barra -->
+                <text
+                  [attr.x]="96 + idx * 68"
+                  [attr.y]="175 - (s.ocupacion_media / 50) * 150"
+                  text-anchor="middle"
+                  class="bar-val-pct"
+                >
+                  {{ s.porcentaje | number:'1.0-0' }}%
+                </text>
+              </g>
+            }
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- FILA 2: Gráfico de Líneas Temporal (Demanda 07:00 - 22:00) + Barras Afluencia por Día -->
+    <div class="chart-row">
+      <!-- 3. GRÁFICO DE LÍNEAS TEMPORAL: Curva de Demanda Horaria -->
+      <div class="chart-card flex-2">
+        <div class="chart-card-header">
+          <div class="chart-title-block">
+            <h2 class="chart-title">
+              <i class="bi bi-graph-up"></i> Curva de Demanda Horaria Continua (07:00 a 22:00)
+            </h2>
+            <span class="chart-subtitle">Concurrencia promedio de estudiantes hora a hora con detección de horas pico</span>
+          </div>
+          <div class="chart-actions-legend">
+            <span class="badge-legend">
+              <span class="dot-swatch swatch-line"></span> Demanda Promedio
+            </span>
+          </div>
+        </div>
+
+        <div class="line-chart-container">
+          <svg viewBox="0 0 640 190" class="line-svg" preserveAspectRatio="xMidYMid meet">
+            <defs>
+              <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#002855" stop-opacity="0.25" />
+                <stop offset="100%" stop-color="#002855" stop-opacity="0.0" />
+              </linearGradient>
+            </defs>
+
+            <!-- Líneas de cuadrícula de fondo -->
+            <line x1="40" y1="30" x2="600" y2="30" stroke="#f1f5f9" stroke-dasharray="3,3" />
+            <line x1="40" y1="75" x2="600" y2="75" stroke="#f1f5f9" stroke-dasharray="3,3" />
+            <line x1="40" y1="120" x2="600" y2="120" stroke="#f1f5f9" stroke-dasharray="3,3" />
+            <line x1="40" y1="155" x2="600" y2="155" stroke="#cbd5e1" stroke-width="1.2" />
+
+            <!-- Área rellena bajo la curva -->
+            @if (linePoints().pathArea) {
+              <path [attr.d]="linePoints().pathArea" fill="url(#areaGradient)" />
+            }
+
+            <!-- Curva continua -->
+            @if (linePoints().pathLine) {
+              <path
+                [attr.d]="linePoints().pathLine"
+                fill="none"
+                stroke="#002855"
+                stroke-width="3"
+                stroke-linejoin="round"
+                stroke-linecap="round"
+              />
+            }
+
+            <!-- Puntos de datos interactivos -->
+            @for (p of linePoints().points; track p.hora) {
+              <circle
+                [attr.cx]="p.x"
+                [attr.cy]="p.y"
+                r="5"
+                class="line-point"
+                (mousemove)="mostrarTooltip($event, 'Franja Horaria: ' + p.hora, 'Afluencia Media: ' + p.valor + ' estudiantes', 'Capacidad Instalada: ' + p.capacidad + ' puestos', '#002855')"
+                (mouseleave)="ocultarTooltip()"
+              />
+              <text [attr.x]="p.x" y="172" text-anchor="middle" class="line-axis-x">
+                {{ p.hora }}
+              </text>
+            }
+          </svg>
+        </div>
+      </div>
+
+      <!-- 4. AFLUENCIA POR DÍA DE LA SEMANA (Lunes a Sábado) -->
+      <div class="chart-card flex-1">
+        <div class="chart-card-header">
+          <div class="chart-title-block">
+            <h2 class="chart-title">
+              <i class="bi bi-calendar3-range"></i> Afluencia Semanal
+            </h2>
+            <span class="chart-subtitle">Volumen total de estudiantes atendidos</span>
+          </div>
+        </div>
+
+        <div class="weekly-bar-container">
+          @for (d of graficos()?.afluencia_dias_semana; track d.dia) {
+            <div
+              class="weekly-row"
+              (mousemove)="mostrarTooltip($event, 'Día ' + d.dia, d.total_estudiantes + ' estudiantes registrados', d.porcentaje + '% del flujo semanal', '#A81124')"
+              (mouseleave)="ocultarTooltip()"
+            >
+              <span class="weekly-day-name">{{ d.dia }}</span>
+              <div class="weekly-bar-track">
+                <div
+                  class="weekly-bar-fill"
+                  [style.width.%]="d.porcentaje * 4"
+                ></div>
+              </div>
+              <span class="weekly-count">{{ d.total_estudiantes }}</span>
+              <span class="weekly-pct">{{ d.porcentaje }}%</span>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+
+    <!-- FILA 3: Heatmap / Matriz de Calor Horaria (07:00 a 22:00) -->
+    <div class="chart-row">
+      <div class="chart-card full-width">
+        <div class="chart-card-header">
+          <div class="chart-title-block">
+            <h2 class="chart-title">
+              <i class="bi bi-grid-3x3"></i> Matriz de Densidad y Calor de Ocupación Horaria (Heatmap)
+            </h2>
+            <span class="chart-subtitle">
+              Saturación de laboratorio por intersección Día x Hora (07:00 a 22:00)
+            </span>
+          </div>
+          <!-- Escala visual de saturación -->
+          <div class="heatmap-scale-legend">
+            <span class="scale-label">Baja Demanda (&lt;45%)</span>
+            <div class="scale-palette">
+              <span class="scale-box" style="background-color: #93c5fd;"></span>
+              <span class="scale-box" style="background-color: #3b82f6;"></span>
+              <span class="scale-box" style="background-color: #002855;"></span>
+              <span class="scale-box" style="background-color: #d97706;"></span>
+              <span class="scale-box" style="background-color: #A81124;"></span>
+            </div>
+            <span class="scale-label">Saturación Crítica (&ge;90%)</span>
+          </div>
+        </div>
+
+        <div class="heatmap-table-wrapper">
+          <div class="heatmap-grid">
+            <!-- Fila de cabecera de Horas -->
+            <div class="heatmap-header-row">
+              <div class="heatmap-day-col-header">DÍA / HORA</div>
+              @for (h of graficos()?.heatmap_densidad?.[0]?.horas; track h.hora) {
+                <div class="heatmap-hour-header">{{ h.hora }}</div>
+              }
+            </div>
+
+            <!-- Filas por día de la semana -->
+            @for (fila of graficos()?.heatmap_densidad; track fila.dia) {
+              <div class="heatmap-data-row">
+                <div class="heatmap-day-label">{{ fila.dia }}</div>
+                @for (c of fila.horas; track c.hora) {
+                  <div
+                    class="heatmap-cell"
+                    [style.backgroundColor]="getHeatmapColor(c.saturacion_pct)"
+                    [style.color]="getHeatmapTextColor(c.saturacion_pct)"
+                    (mousemove)="mostrarTooltip($event, fila.dia + ' a las ' + c.hora, 'Saturación: ' + c.saturacion_pct + '%', 'Estudiantes aproximados: ' + c.valor, getHeatmapColor(c.saturacion_pct))"
+                    (mouseleave)="ocultarTooltip()"
+                  >
+                    {{ c.saturacion_pct }}%
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOOLTIP FLOTANTE INTERACTIVO PARA SVG / HEATMAP -->
+  @if (tooltip().visible) {
+    <div
+      class="chart-floating-tooltip"
+      [style.left.px]="tooltip().x"
+      [style.top.px]="tooltip().y"
+    >
+      <div class="tooltip-title">{{ tooltip().titulo }}</div>
+      <div class="tooltip-line1">{{ tooltip().linea1 }}</div>
+      @if (tooltip().linea2) {
+        <div class="tooltip-line2">{{ tooltip().linea2 }}</div>
+      }
+    </div>
+  }
+</div>

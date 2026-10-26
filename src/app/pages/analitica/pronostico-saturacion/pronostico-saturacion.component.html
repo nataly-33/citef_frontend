@@ -1,0 +1,470 @@
+<div class="pronostico-container">
+  <!-- ENCABEZADO DE PÁGINA -->
+  <div class="page-header">
+    <div class="header-left">
+      <h1>
+        <i class="bi bi-cpu"></i> Analítica Predictiva y Teoría de Colas (M/M/c)
+      </h1>
+      <p class="header-sub">
+        Inferencia de demanda mediante Machine Learning (RandomForest) y simulación analítica Erlang-C para dimensionamiento de cómputo
+      </p>
+    </div>
+  </div>
+
+  @if (mensajeAlerta()) {
+    <div class="mb-3">
+      <app-modal-alert
+        [mensaje]="mensajeAlerta()"
+        tipo="warning"
+        [dismissible]="true"
+        (cerrar)="mensajeAlerta.set(null)"
+      ></app-modal-alert>
+    </div>
+  }
+
+  <!-- SECCIÓN 1: INFERENCIA DE DEMANDA CON MACHINE LEARNING (RANDOMFOREST) -->
+  <div class="section-card">
+    <div class="section-card-header">
+      <div class="section-title-box">
+        <span class="section-tag-badge">CASO DE USO CU26</span>
+        <h2 class="section-title">
+          <i class="bi bi-graph-up-arrow"></i> Curva Predictiva de Demanda Horaria (RandomForest)
+        </h2>
+        <span class="section-subtitle">
+          Proyección estacional hora a hora vs aforo físico disponible con detección automática de congestión
+        </span>
+      </div>
+
+      <!-- Barra de controles compacta sin <label> -->
+      <div class="ml-controls-strip">
+        <div class="filter-input-wrap select-wrap">
+          <i class="bi bi-building"></i>
+          <select
+            class="compact-select"
+            [ngModel]="salaSeleccionadaId()"
+            (ngModelChange)="salaSeleccionadaId.set($event)"
+            title="Seleccionar Laboratorio"
+          >
+            @for (s of salas(); track s.id_sala) {
+              <option [ngValue]="s.id_sala">{{ s.codigo_sala }} - {{ s.nombre }} (Aforo: {{ s.cant_estudiantes }})</option>
+            }
+          </select>
+        </div>
+
+        <div class="filter-input-wrap">
+          <i class="bi bi-calendar3"></i>
+          <input
+            type="date"
+            class="compact-input"
+            [ngModel]="fechaPrediccion()"
+            (ngModelChange)="fechaPrediccion.set($event)"
+            title="Fecha a Predecir"
+          />
+        </div>
+
+        <button
+          type="button"
+          class="citef-btn citef-btn-primary"
+          [disabled]="cargandoPrediccion()"
+          (click)="ejecutarPrediccionDemanda()"
+          title="Ejecutar inferencia en el modelo de Machine Learning"
+        >
+          @if (cargandoPrediccion()) {
+            <span class="spinner-border spinner-border-sm" role="status"></span>
+            <span>Infiriendo...</span>
+          } @else {
+            <i class="bi bi-play-circle-fill"></i> Ejecutar Predicción ML
+          }
+        </button>
+      </div>
+    </div>
+
+    <!-- TARJETAS DE SÍNTESIS PREDICTIVA -->
+    <div class="predictive-metrics-grid">
+      <div class="metric-card">
+        <span class="metric-lbl">Aforo Físico Instalado</span>
+        <div class="metric-val text-navy">
+          {{ prediccion()?.aforo_total || 35 }} <span class="metric-unit">puestos</span>
+        </div>
+        <span class="metric-desc">Capacidad nominal física del laboratorio</span>
+      </div>
+
+      <div class="metric-card">
+        <span class="metric-lbl">Hora Pico Estimada</span>
+        <div class="metric-val text-crimson">
+          {{ prediccion()?.hora_pico || '10:00' }}
+        </div>
+        <span class="metric-desc">Punto de mayor concurrencia estudiantil</span>
+      </div>
+
+      <div class="metric-card">
+        <span class="metric-lbl">Pico Máximo de Demanda</span>
+        <div class="metric-val text-amber">
+          {{ prediccion()?.porcentaje_max_saturacion || 0 }}<span class="metric-unit">%</span>
+        </div>
+        <span class="metric-desc">Tasa proyectada en franja más concurrida</span>
+      </div>
+
+      <div class="metric-card">
+        <span class="metric-lbl">Nivel de Saturación</span>
+        <div class="metric-val">
+          <span
+            class="risk-badge"
+            [ngClass]="{
+              'risk-low': prediccion()?.nivel_saturacion === 'BAJO',
+              'risk-med': prediccion()?.nivel_saturacion === 'MODERADO',
+              'risk-high': prediccion()?.nivel_saturacion === 'CRITICO'
+            }"
+          >
+            <i class="bi bi-shield-shaded"></i> {{ prediccion()?.nivel_saturacion || 'MODERADO' }}
+          </span>
+        </div>
+        <span class="metric-desc">Semáforo de riesgo para contingencia</span>
+      </div>
+    </div>
+
+    <!-- GRÁFICO SVG RESPONSIVO: CURVA ML VS AFORO FÍSICO -->
+    <div class="svg-ml-wrapper">
+      <div class="svg-ml-header">
+        <span class="chart-tag-legend">
+          <span class="legend-dot dot-pred"></span> Demanda Proyectada (RandomForest)
+        </span>
+        <span class="chart-tag-legend">
+          <span class="legend-line-dashed"></span> Aforo Físico Máximo (Límite de Saturación)
+        </span>
+      </div>
+
+      <div class="svg-container-responsive">
+        <svg viewBox="0 0 660 210" class="ml-svg" preserveAspectRatio="xMidYMid meet">
+          <defs>
+            <linearGradient id="mlAreaGradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#002855" stop-opacity="0.28" />
+              <stop offset="100%" stop-color="#002855" stop-opacity="0.0" />
+            </linearGradient>
+          </defs>
+
+          <!-- Guías horizontales de fondo -->
+          <line x1="45" y1="30" x2="620" y2="30" stroke="#f1f5f9" stroke-dasharray="2,2" />
+          <line x1="45" y1="80" x2="620" y2="80" stroke="#f1f5f9" stroke-dasharray="2,2" />
+          <line x1="45" y1="130" x2="620" y2="130" stroke="#f1f5f9" stroke-dasharray="2,2" />
+          <line x1="45" y1="170" x2="620" y2="170" stroke="#cbd5e1" stroke-width="1.2" />
+
+          <!-- Línea de Umbral de Aforo Físico (Rojo Carmesí discontinuo) -->
+          @if (mlCurveData().aforoY) {
+            <line
+              x1="45"
+              [attr.y1]="mlCurveData().aforoY"
+              x2="620"
+              [attr.y2]="mlCurveData().aforoY"
+              stroke="#A81124"
+              stroke-width="2"
+              stroke-dasharray="5,4"
+            />
+            <text
+              x="615"
+              [attr.y]="mlCurveData().aforoY - 5"
+              text-anchor="end"
+              class="aforo-limit-text"
+            >
+              AFORO MÁXIMO ({{ prediccion()?.aforo_total || 35 }} PUESTOS)
+            </text>
+          }
+
+          <!-- Área bajo la curva predictiva -->
+          @if (mlCurveData().pathArea) {
+            <path [attr.d]="mlCurveData().pathArea" fill="url(#mlAreaGradient)" />
+          }
+
+          <!-- Curva continua proyectada -->
+          @if (mlCurveData().pathLine) {
+            <path
+              [attr.d]="mlCurveData().pathLine"
+              fill="none"
+              stroke="#002855"
+              stroke-width="3"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          }
+
+          <!-- Puntos interactivos con diferenciación en Hora Pico -->
+          @for (p of mlCurveData().points; track p.hora) {
+            <circle
+              [attr.cx]="p.x"
+              [attr.cy]="p.y"
+              [attr.r]="p.esPico ? 7 : 5"
+              [class.point-peak]="p.esPico"
+              class="point-normal"
+              (mousemove)="showTooltip($event, 'Proyección ' + p.hora, 'Demanda estimada: ' + p.demanda + ' puestos', 'Saturación: ' + p.pct + '% de la sala')"
+              (mouseleave)="hideTooltip()"
+            />
+            <text [attr.x]="p.x" y="188" text-anchor="middle" class="axis-time-text">
+              {{ p.hora }}
+            </text>
+          }
+        </svg>
+      </div>
+    </div>
+
+    <!-- RECOMENDACIÓN OPERATIVA FCEE -->
+    <div class="recommendation-banner">
+      <div class="banner-icon-box">
+        <i class="bi bi-lightbulb-fill"></i>
+      </div>
+      <div class="banner-content">
+        <div class="banner-title">Dictamen del Motor Algorítmico Predictivo:</div>
+        <div class="banner-text">{{ prediccion()?.recomendacion_operativa }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECCIÓN 2: SIMULADOR INTERACTIVO DE TEORÍA DE COLAS M/M/c (ERLANG-C) -->
+  <div class="section-card">
+    <div class="section-card-header">
+      <div class="section-title-box">
+        <span class="section-tag-badge tag-math">MODELO ESTOCÁSTICO M/M/c</span>
+        <h2 class="section-title">
+          <i class="bi bi-calculator"></i> Simulador Interactivo de Colas y Capacidad (Erlang-C)
+        </h2>
+        <span class="section-subtitle">
+          Ajuste dinámico de parámetros de tráfico estocástico para dimensionar puestos de cómputo y minimizar tiempos de espera
+        </span>
+      </div>
+    </div>
+
+    <!-- GRID DE 2 COLUMNAS: PARÁMETROS INTERACTIVOS Y MÉTRICAS CALCULADAS -->
+    <div class="simulator-layout">
+      <!-- COLUMNA IZQUIERDA: CONTROLES DESLIZANTES REACTIVOS -->
+      <div class="sim-controls-panel">
+        <h3 class="panel-inner-title">
+          <i class="bi bi-sliders"></i> Parámetros de Entrada del Sistema
+        </h3>
+
+        <!-- Control 1: Lambda (Llegadas / hora) -->
+        <div class="control-group">
+          <div class="control-header">
+            <span class="control-label">
+              <strong>Tasa de Llegada (&lambda;)</strong>: Estudiantes / Hora
+            </span>
+            <span class="control-num-badge badge-navy">{{ lambdaInput() }} est/h</span>
+          </div>
+          <input
+            type="range"
+            min="5"
+            max="120"
+            step="1"
+            class="range-slider"
+            [ngModel]="lambdaInput()"
+            (ngModelChange)="lambdaInput.set($event); recalcularModeloColas()"
+          />
+          <div class="range-bounds">
+            <span>5 est/h</span>
+            <span>60 est/h</span>
+            <span>120 est/h</span>
+          </div>
+        </div>
+
+        <!-- Control 2: Tiempo de Permanencia (min) -> Mu -->
+        <div class="control-group">
+          <div class="control-header">
+            <span class="control-label">
+              <strong>Tiempo Medio de Uso</strong>: Duración de Sesión
+            </span>
+            <span class="control-num-badge badge-crimson">{{ tiempoUsoMinutosInput() }} min</span>
+          </div>
+          <input
+            type="range"
+            min="15"
+            max="150"
+            step="5"
+            class="range-slider"
+            [ngModel]="tiempoUsoMinutosInput()"
+            (ngModelChange)="tiempoUsoMinutosInput.set($event); recalcularModeloColas()"
+          />
+          <div class="range-bounds">
+            <span>15 min</span>
+            <span>60 min (1 h)</span>
+            <span>150 min (2.5 h)</span>
+          </div>
+        </div>
+
+        <!-- Control 3: Servidores c (Puestos Activos) -->
+        <div class="control-group">
+          <div class="control-header">
+            <span class="control-label">
+              <strong>Puestos Activos (c)</strong>: Computadoras Habilitadas
+            </span>
+            <span class="control-num-badge badge-amber">{{ puestosActivosInput() }} puestos</span>
+          </div>
+          <input
+            type="range"
+            min="5"
+            max="60"
+            step="1"
+            class="range-slider"
+            [ngModel]="puestosActivosInput()"
+            (ngModelChange)="puestosActivosInput.set($event); recalcularModeloColas()"
+          />
+          <div class="range-bounds">
+            <span>5 pcs</span>
+            <span>30 pcs</span>
+            <span>60 pcs</span>
+          </div>
+        </div>
+
+        <!-- Control 4: Tolerancia Máxima de Espera -->
+        <div class="control-group">
+          <div class="control-header">
+            <span class="control-label">
+              <strong>Tolerancia de Espera (t)</strong>: Límite Aceptable
+            </span>
+            <span class="control-num-badge badge-green">{{ toleranciaEsperaInput() }} min</span>
+          </div>
+          <input
+            type="range"
+            min="1"
+            max="20"
+            step="1"
+            class="range-slider"
+            [ngModel]="toleranciaEsperaInput()"
+            (ngModelChange)="toleranciaEsperaInput.set($event); recalcularModeloColas()"
+          />
+          <div class="range-bounds">
+            <span>1 min</span>
+            <span>10 min</span>
+            <span>20 min</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- COLUMNA DERECHA: RESULTADOS EN TIEMPO REAL Y RECOMENDACIÓN FORMAL -->
+      <div class="sim-results-panel">
+        <h3 class="panel-inner-title">
+          <i class="bi bi-speedometer2"></i> Indicadores Operativos en Tiempo Real
+        </h3>
+
+        <!-- BARRA DE UTILIZACIÓN RHO -->
+        <div class="rho-card">
+          <div class="rho-header">
+            <span class="rho-title">Factor de Ocupación y Estabilidad (&rho;)</span>
+            <span
+              class="rho-badge"
+              [ngClass]="{
+                'rho-badge-good': (resultadoColas()?.rho || 0) <= 0.75,
+                'rho-badge-warn': (resultadoColas()?.rho || 0) > 0.75 && (resultadoColas()?.rho || 0) < 1.0,
+                'rho-badge-danger': (resultadoColas()?.rho || 0) >= 1.0
+              }"
+            >
+              {{ resultadoColas()?.rho_porcentaje || 0 }}%
+              {{ (resultadoColas()?.rho || 0) >= 1.0 ? '(COLAPSO / INESTABLE)' : '' }}
+            </span>
+          </div>
+          <div class="rho-bar-track">
+            <div
+              class="rho-bar-fill"
+              [style.width.%]="Math.min(100, resultadoColas()?.rho_porcentaje || 0)"
+              [ngClass]="{
+                'fill-green': (resultadoColas()?.rho || 0) <= 0.75,
+                'fill-amber': (resultadoColas()?.rho || 0) > 0.75 && (resultadoColas()?.rho || 0) < 1.0,
+                'fill-red': (resultadoColas()?.rho || 0) >= 1.0
+              }"
+            ></div>
+          </div>
+          <div class="rho-subline">
+            <span>Límite de servicio fluido: &le; 80%</span>
+            <span>Capacidad máxima: {{ puestosActivosInput() * (60 / tiempoUsoMinutosInput()) | number:'1.1-1' }} est/h</span>
+          </div>
+        </div>
+
+        <!-- 4 MÉTRICAS DERIVADAS DE TEORÍA DE COLAS -->
+        <div class="mmc-metrics-grid">
+          <!-- Wq: Tiempo medio de espera en cola -->
+          <div class="mmc-metric-box">
+            <span class="mmc-lbl">Tiempo Espera Cola (Wq)</span>
+            <div class="mmc-val text-navy">
+              {{ resultadoColas()?.wq_min || 0 }} <span class="mmc-unit">min</span>
+            </div>
+            <span class="mmc-sub">Tiempo medio en fila</span>
+          </div>
+
+          <!-- Lq: Longitud media de cola -->
+          <div class="mmc-metric-box">
+            <span class="mmc-lbl">Estudiantes en Cola (Lq)</span>
+            <div class="mmc-val text-crimson">
+              {{ resultadoColas()?.lq || 0 }} <span class="mmc-unit">estudiantes</span>
+            </div>
+            <span class="mmc-sub">Fila de espera física</span>
+          </div>
+
+          <!-- Pc: Probabilidad de espera (Erlang-C) -->
+          <div class="mmc-metric-box">
+            <span class="mmc-lbl">Probabilidad de Espera (Pc)</span>
+            <div class="mmc-val text-amber">
+              {{ ((resultadoColas()?.pc || 0) * 100) | number:'1.1-1' }}<span class="mmc-unit">%</span>
+            </div>
+            <span class="mmc-sub">Fórmula C de Erlang</span>
+          </div>
+
+          <!-- Ws: Tiempo total en sistema -->
+          <div class="mmc-metric-box">
+            <span class="mmc-lbl">Tiempo en Sistema (Ws)</span>
+            <div class="mmc-val text-green">
+              {{ resultadoColas()?.ws_min || 0 }} <span class="mmc-unit">min</span>
+            </div>
+            <span class="mmc-sub">Espera + Tiempo de Uso</span>
+          </div>
+        </div>
+
+        <!-- TARJETA ALGORÍTMICA DE RECOMENDACIÓN INSTITUCIONAL FCEE -->
+        <div
+          class="optimal-recommendation-card"
+          [class.card-alert-danger]="(resultadoColas()?.rho || 0) >= 1.0"
+        >
+          <div class="rec-card-header">
+            <div class="rec-icon-title">
+              <i class="bi bi-shield-check"></i>
+              <span>Recomendación Algorítmica Institucional FCEE</span>
+            </div>
+            <button
+              type="button"
+              class="citef-btn citef-btn-primary btn-sm-opt"
+              (click)="aplicarPuestosRecomendados()"
+              title="Ajustar el control de puestos activos automáticamente"
+            >
+              <i class="bi bi-check-circle-fill"></i> Aplicar {{ resultadoColas()?.puestos_optimos_recomendados }} Puestos
+            </button>
+          </div>
+
+          <p class="rec-text">
+            {{ resultadoColas()?.mensaje_recomendacion }}
+          </p>
+
+          <div class="rec-target-pills">
+            <span class="target-pill">
+              <i class="bi bi-check2"></i> Meta Utilización: &rho; &lt; 0.80
+            </span>
+            <span class="target-pill">
+              <i class="bi bi-check2"></i> Meta Espera: Wq &lt; 5.0 min
+            </span>
+            <span class="target-pill pill-highlight">
+              <i class="bi bi-cpu"></i> Puestos Óptimos: {{ resultadoColas()?.puestos_optimos_recomendados }} PCs
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOOLTIP FLOTANTE -->
+  @if (tooltipVisible()) {
+    <div
+      class="ml-floating-tooltip"
+      [style.left.px]="tooltipX()"
+      [style.top.px]="tooltipY()"
+    >
+      <div class="ml-tooltip-title">{{ tooltipTitle() }}</div>
+      <div class="ml-tooltip-line">{{ tooltipLine1() }}</div>
+      <div class="ml-tooltip-sub">{{ tooltipLine2() }}</div>
+    </div>
+  }
+</div>

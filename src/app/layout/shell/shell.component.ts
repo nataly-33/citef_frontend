@@ -315,6 +315,41 @@ export class ShellComponent implements OnInit {
       });
     }
 
+    // MÓDULO: Analítica
+    const itemsAnalitica: NavSubItem[] = [];
+    if (this.authService.hasPermission('REPORTES_DINAMICOS')) {
+      itemsAnalitica.push({
+        ruta: '/admin/analitica/dashboard',
+        texto: 'Dashboard Ejecutivo',
+        icono: 'bi-speedometer2',
+      });
+      itemsAnalitica.push({
+        ruta: '/admin/analitica/reportes',
+        texto: 'Reportes Oficiales',
+        icono: 'bi-file-earmark-bar-graph',
+      });
+    }
+    if (
+      this.authService.hasAnyPermission([
+        'REPORTES_PREDICTIVOS',
+        'REPORTES_DINAMICOS',
+      ])
+    ) {
+      itemsAnalitica.push({
+        ruta: '/admin/analitica/pronostico',
+        texto: 'Pronóstico y Colas',
+        icono: 'bi-cpu',
+      });
+    }
+    if (itemsAnalitica.length > 0) {
+      groups.push({
+        id: 'analitica',
+        titulo: 'Analítica',
+        icono: 'bi-graph-up-arrow',
+        items: itemsAnalitica,
+      });
+    }
+
     return groups;
   });
 

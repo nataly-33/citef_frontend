@@ -23,6 +23,9 @@ import { AveriasComponent } from './pages/turnos/averias/averias.component';
 import { ObjetosExtraviadosComponent } from './pages/turnos/objetos-extraviados/objetos-extraviados.component';
 import { BandejaTallerComponent } from './pages/soporte/bandeja-taller/bandeja-taller.component';
 import { MetricasRamsComponent } from './pages/soporte/metricas-rams/metricas-rams.component';
+import { DashboardGerencialComponent } from './pages/analitica/dashboard-gerencial/dashboard-gerencial.component';
+import { ReportesOficialesComponent } from './pages/analitica/reportes-oficiales/reportes-oficiales.component';
+import { PronosticoSaturacionComponent } from './pages/analitica/pronostico-saturacion/pronostico-saturacion.component';
 import { authGuard } from './core/guards/auth.guard';
 import { permissionGuard } from './core/guards/permission.guard';
 
@@ -190,7 +193,36 @@ export const routes: Routes = [
         redirectTo: 'soporte/taller',
         pathMatch: 'full',
       },
+      // MÓDULO 8: Analítica Predictiva, Dashboard Ejecutivo y Reportes (CU26 y CU27)
+      {
+        path: 'analitica/dashboard',
+        component: DashboardGerencialComponent,
+        canActivate: [permissionGuard(['REPORTES_DINAMICOS'])],
+      },
+      {
+        path: 'analitica/reportes',
+        component: ReportesOficialesComponent,
+        canActivate: [permissionGuard(['REPORTES_DINAMICOS'])],
+      },
+      {
+        path: 'analitica/pronostico',
+        component: PronosticoSaturacionComponent,
+        canActivate: [
+          permissionGuard([
+            'REPORTES_PREDICTIVOS',
+            'REPORTES_DINAMICOS',
+          ]),
+        ],
+      },
+      {
+        path: 'analitica',
+        redirectTo: 'analitica/dashboard',
+        pathMatch: 'full',
+      },
       // Aliases directos para facilidad de navegación
+      { path: 'dashboard', redirectTo: 'analitica/dashboard', pathMatch: 'full' },
+      { path: 'reportes', redirectTo: 'analitica/reportes', pathMatch: 'full' },
+      { path: 'pronostico', redirectTo: 'analitica/pronostico', pathMatch: 'full' },
       { path: 'academicos', redirectTo: 'catalogos/academicos', pathMatch: 'full' },
       { path: 'operativos', redirectTo: 'catalogos/operativos', pathMatch: 'full' },
       { path: 'docentes', redirectTo: 'catalogos/docentes', pathMatch: 'full' },
@@ -233,6 +265,13 @@ export const routes: Routes = [
   { path: 'actas', redirectTo: 'admin/turnos/actas', pathMatch: 'full' },
   { path: 'averias', redirectTo: 'admin/turnos/averias', pathMatch: 'full' },
   { path: 'objetos', redirectTo: 'admin/turnos/objetos', pathMatch: 'full' },
+  { path: 'analitica/dashboard', redirectTo: 'admin/analitica/dashboard', pathMatch: 'full' },
+  { path: 'analitica/reportes', redirectTo: 'admin/analitica/reportes', pathMatch: 'full' },
+  { path: 'analitica/pronostico', redirectTo: 'admin/analitica/pronostico', pathMatch: 'full' },
+  { path: 'analitica', redirectTo: 'admin/analitica/dashboard', pathMatch: 'full' },
+  { path: 'dashboard', redirectTo: 'admin/analitica/dashboard', pathMatch: 'full' },
+  { path: 'reportes', redirectTo: 'admin/analitica/reportes', pathMatch: 'full' },
+  { path: 'pronostico', redirectTo: 'admin/analitica/pronostico', pathMatch: 'full' },
   { path: '', redirectTo: 'login', pathMatch: 'full' },
   { path: '**', redirectTo: 'login' },
 ];

@@ -1,0 +1,339 @@
+<div class="reportes-container">
+  <!-- ENCABEZADO DE PÁGINA (No imprimible) -->
+  <div class="page-header no-print">
+    <div class="header-left">
+      <h1>
+        <i class="bi bi-file-earmark-bar-graph"></i> Catálogo y Generación de Reportes Oficiales
+      </h1>
+      <p class="header-sub">
+        Informes formales normalizados para Acreditación Universitaria, Decanatura y Planificación Facultativa
+      </p>
+    </div>
+  </div>
+
+  <!-- BARRA DE FILTROS COMPACTA (Sin etiquetas <label>) -->
+  <div class="filter-strip no-print">
+    <div class="filter-controls">
+      <div class="filter-input-wrap">
+        <i class="bi bi-calendar-event"></i>
+        <input
+          type="date"
+          class="compact-input"
+          [ngModel]="filtroFechaInicio()"
+          (ngModelChange)="filtroFechaInicio.set($event)"
+          title="Fecha Inicio"
+          placeholder="Fecha Inicio"
+        />
+      </div>
+
+      <div class="filter-input-wrap">
+        <i class="bi bi-calendar-check"></i>
+        <input
+          type="date"
+          class="compact-input"
+          [ngModel]="filtroFechaFin()"
+          (ngModelChange)="filtroFechaFin.set($event)"
+          title="Fecha Fin"
+          placeholder="Fecha Fin"
+        />
+      </div>
+
+      <div class="filter-input-wrap select-wrap">
+        <i class="bi bi-building"></i>
+        <select
+          class="compact-select"
+          [ngModel]="filtroSalaId()"
+          (ngModelChange)="filtroSalaId.set($event)"
+          title="Seleccionar Laboratorio"
+        >
+          <option [ngValue]="null">Todos los Laboratorios CITEF</option>
+          @for (s of salas(); track s.id_sala) {
+            <option [ngValue]="s.id_sala">{{ s.codigo_sala }} - {{ s.nombre }}</option>
+          }
+        </select>
+      </div>
+
+      <!-- BOTONES DE EXPORTACIÓN DIRECTA -->
+      <div class="filter-buttons">
+        <button
+          type="button"
+          class="citef-btn citef-btn-primary"
+          [disabled]="exportandoExcel() || !reporteSeleccionado()"
+          (click)="exportarExcel()"
+          title="Descargar libro estructurado en formato Excel (.xlsx)"
+        >
+          @if (exportandoExcel()) {
+            <span class="spinner-border spinner-border-sm" role="status"></span>
+            <span>Generando .xlsx...</span>
+          } @else {
+            <i class="bi bi-file-earmark-excel"></i> Exportar a Excel (.xlsx)
+          }
+        </button>
+
+        <button
+          type="button"
+          class="citef-btn citef-btn-crimson"
+          [disabled]="cargandoPdf() || !reporteSeleccionado()"
+          (click)="abrirVistaPreviaPdf()"
+          title="Vista previa y expedición de documento PDF oficial FCEE"
+        >
+          @if (cargandoPdf()) {
+            <span class="spinner-border spinner-border-sm" role="status"></span>
+            <span>Compilando...</span>
+          } @else {
+            <i class="bi bi-file-earmark-pdf"></i> Generar e Imprimir PDF Oficial
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ALERTA DE ERROR SI EL SERVIDOR FALLA -->
+  @if (mensajeError()) {
+    <div class="mb-3 no-print">
+      <app-modal-alert
+        [mensaje]="mensajeError()"
+        tipo="danger"
+        [dismissible]="true"
+        (cerrar)="mensajeError.set(null)"
+      ></app-modal-alert>
+    </div>
+  }
+
+  <!-- CATÁLOGO DE LOS 5 REPORTES OFICIALES -->
+  <div class="catalogo-grid no-print">
+    @for (rep of catalogoReportes(); track rep.codigo) {
+      <div
+        class="report-card"
+        [class.selected]="reporteSeleccionado()?.codigo === rep.codigo"
+        (click)="seleccionarReporte(rep)"
+      >
+        <div class="report-card-top">
+          <span class="report-code-badge">{{ rep.codigo }}</span>
+          <div class="report-icon-box">
+            <i class="bi" [class]="rep.icono"></i>
+          </div>
+        </div>
+
+        <h3 class="report-card-title">{{ rep.titulo }}</h3>
+        <p class="report-card-desc">{{ rep.descripcion }}</p>
+
+        <div class="report-meta-box">
+          <div class="meta-row">
+            <i class="bi bi-people-fill"></i>
+            <span class="meta-text"><strong>Destinatario:</strong> {{ rep.destinatario }}</span>
+          </div>
+          <div class="meta-row">
+            <i class="bi bi-arrow-repeat"></i>
+            <span class="meta-text"><strong>Periodicidad:</strong> {{ rep.periodicidad }}</span>
+          </div>
+        </div>
+
+        <div class="report-card-footer">
+          <div class="format-tags">
+            <span class="format-tag tag-pdf"><i class="bi bi-filetype-pdf"></i> PDF Oficial</span>
+            <span class="format-tag tag-excel"><i class="bi bi-filetype-xlsx"></i> Excel .xlsx</span>
+          </div>
+          <div class="select-indicator">
+            @if (reporteSeleccionado()?.codigo === rep.codigo) {
+              <span class="active-badge"><i class="bi bi-check2-circle"></i> Seleccionado</span>
+            } @else {
+              <span class="inactive-badge">Elegir reporte</span>
+            }
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- PANEL DE DETALLES DEL REPORTE SELECCIONADO -->
+  @if (reporteSeleccionado(); as sel) {
+    <div class="selected-summary-card no-print">
+      <div class="summary-left">
+        <div class="summary-badge-icon">
+          <i class="bi" [class]="sel.icono"></i>
+        </div>
+        <div>
+          <h2 class="summary-title">{{ sel.codigo }} - {{ sel.titulo }}</h2>
+          <p class="summary-desc">{{ sel.descripcion }}</p>
+        </div>
+      </div>
+      <div class="summary-actions">
+        <button
+          type="button"
+          class="citef-btn citef-btn-primary"
+          [disabled]="exportandoExcel()"
+          (click)="exportarExcel()"
+        >
+          <i class="bi bi-download"></i> Descargar Excel (.xlsx)
+        </button>
+        <button
+          type="button"
+          class="citef-btn citef-btn-crimson"
+          [disabled]="cargandoPdf()"
+          (click)="abrirVistaPreviaPdf()"
+        >
+          <i class="bi bi-printer"></i> Expedir Documento PDF
+        </button>
+      </div>
+    </div>
+  }
+
+  <!-- MODAL DE VISTA PREVIA Y EXPEDICIÓN FORMAL PDF OFICIAL -->
+  @if (mostrarModalPdf()) {
+    <div class="modal-backdrop">
+      <div class="modal-dialog-pdf">
+        <div class="modal-header-actions no-print">
+          <div class="modal-title-text">
+            <i class="bi bi-shield-check"></i> Expedición Formal de Documento Oficial FCEE
+          </div>
+          <div class="modal-btn-group">
+            <button
+              type="button"
+              class="citef-btn citef-btn-primary"
+              (click)="imprimirDocumentoOficial()"
+              title="Imprimir documento oficial o guardar en PDF"
+            >
+              <i class="bi bi-printer"></i> Imprimir / Guardar PDF
+            </button>
+            <button
+              type="button"
+              class="citef-btn citef-btn-outline"
+              (click)="cerrarModalPdf()"
+            >
+              <i class="bi bi-x-lg"></i> Cerrar
+            </button>
+          </div>
+        </div>
+
+        <!-- HOJA DE DOCUMENTO FORMAL IMPRIMIBLE (Formato A4/Carta institucional) -->
+        <div class="pdf-document-sheet" id="documento-oficial-fcee">
+          <!-- MEMBRETE OFICIAL FCEE UAGRM -->
+          <div class="pdf-header-official">
+            <div class="pdf-logo-left">
+              <i class="bi bi-mortarboard-fill uagrm-symbol"></i>
+            </div>
+            <div class="pdf-header-titles">
+              <h1 class="pdf-uagrm-name">UNIVERSIDAD AUTÓNOMA GABRIEL RENÉ MORENO</h1>
+              <h2 class="pdf-fac-name">FACULTAD DE CIENCIAS ECONÓMICAS Y EMPRESARIALES</h2>
+              <h3 class="pdf-citef-name">CENTRO DE INFORMACIÓN Y TECNOLOGÍAS ECONÓMICO FINANCIERAS (CITEF)</h3>
+              <div class="pdf-doc-badge">DOCUMENTO DE ACREDITACIÓN Y CONTROL OFICIAL</div>
+            </div>
+            <div class="pdf-logo-right">
+              <div class="pdf-folio-container">
+                <span class="folio-label">RESOLUCIÓN FACULTATIVA</span>
+                <span class="folio-code">{{ datosPdfPreview()?.nro_resolucion }}</span>
+                <span class="folio-date">{{ datosPdfPreview()?.fecha_emision }}</span>
+              </div>
+            </div>
+          </div>
+
+          <hr class="pdf-header-divider" />
+
+          <!-- METADATA DEL DOCUMENTO -->
+          <div class="pdf-meta-table-box">
+            <table class="pdf-meta-table">
+              <tbody>
+                <tr>
+                  <td class="meta-th">CÓDIGO OFICIAL:</td>
+                  <td class="meta-td"><strong>{{ datosPdfPreview()?.codigo_reporte }}</strong></td>
+                  <td class="meta-th">PERÍODO EVALUADO:</td>
+                  <td class="meta-td">{{ datosPdfPreview()?.periodo_evaluado }}</td>
+                </tr>
+                <tr>
+                  <td class="meta-th">DENOMINACIÓN:</td>
+                  <td class="meta-td" colspan="3"><strong>{{ datosPdfPreview()?.titulo_oficial }}</strong></td>
+                </tr>
+                <tr>
+                  <td class="meta-th">DESTINATARIO:</td>
+                  <td class="meta-td">{{ datosPdfPreview()?.destinatario }}</td>
+                  <td class="meta-th">DICTAMEN COMITÉ:</td>
+                  <td class="meta-td"><span class="badge-acreditacion">{{ datosPdfPreview()?.resumen_ejecutivo?.estado_dictamen }}</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- TABLA PRINCIPAL DE DATOS CON ALTO CONTRASTE -->
+          <div class="pdf-data-section">
+            <div class="section-title">
+              <i class="bi bi-table"></i> DESGLOSE ANALÍTICO DE INDICADORES OPERATIVOS
+            </div>
+
+            <table class="pdf-official-table">
+              <thead>
+                <tr>
+                  <th>INFRAESTRUCTURA / SALA</th>
+                  <th>CAPACIDAD INSTALADA</th>
+                  <th>HORAS CÁTEDRA</th>
+                  <th>EFICIENCIA DE USO</th>
+                  <th>CALIFICACIÓN AUDITORÍA</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (fila of datosPdfPreview()?.filas_tabla; track fila.col1) {
+                  <tr>
+                    <td><strong>{{ fila.col1 }}</strong></td>
+                    <td>{{ fila.col2 }}</td>
+                    <td>{{ fila.col3 }}</td>
+                    <td><span class="pct-text">{{ fila.col4 }}</span></td>
+                    <td><span class="eval-pill">{{ fila.col5 }}</span></td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+
+          <!-- RESUMEN EJECUTIVO CONSOLIDADOR -->
+          <div class="pdf-summary-grid">
+            <div class="summary-box">
+              <span class="sum-label">TOTAL HORAS EVALUADAS</span>
+              <span class="sum-value">{{ datosPdfPreview()?.resumen_ejecutivo?.total_horas_evaluadas }} hrs</span>
+            </div>
+            <div class="summary-box">
+              <span class="sum-label">EFICIENCIA GLOBAL FCEE</span>
+              <span class="sum-value text-navy">{{ datosPdfPreview()?.resumen_ejecutivo?.eficiencia_global }}</span>
+            </div>
+            <div class="summary-box">
+              <span class="sum-label">SALAS DE CÓMPUTO MONITOREADAS</span>
+              <span class="sum-value">{{ datosPdfPreview()?.resumen_ejecutivo?.salas_analizadas }} laboratorios</span>
+            </div>
+            <div class="summary-box">
+              <span class="sum-label">ESTADO DE ACREDITACIÓN</span>
+              <span class="sum-value text-green">{{ datosPdfPreview()?.resumen_ejecutivo?.estado_dictamen }}</span>
+            </div>
+          </div>
+
+          <!-- FIRMAS DIGITALES DE AUTORIDADES FACULTATIVAS -->
+          <div class="pdf-signatures-section">
+            <div class="signatures-title">FIRMAS DE CONFORMIDAD Y AUDITORÍA INSTITUCIONAL</div>
+            <div class="signatures-grid">
+              @for (firmante of datosPdfPreview()?.firmantes; track firmante.cargo) {
+                <div class="signature-box">
+                  <div class="sig-stamp-box">
+                    <i class="bi bi-patch-check-fill sig-check-icon"></i>
+                    <span class="sig-seal-text">{{ firmante.sello }}</span>
+                  </div>
+                  <div class="sig-line"></div>
+                  <div class="sig-name">{{ firmante.nombre }}</div>
+                  <div class="sig-role">{{ firmante.cargo }}</div>
+                </div>
+              }
+            </div>
+          </div>
+
+          <!-- PIE DE PÁGINA INSTITUCIONAL CON HASH SHA-256 -->
+          <div class="pdf-footer-security">
+            <div class="footer-hash-line">
+              <i class="bi bi-fingerprint"></i>
+              <span><strong>HASH SHA-256 DE INTEGRIDAD TRANSACCIONAL:</strong> {{ datosPdfPreview()?.hash_integridad }}</span>
+            </div>
+            <div class="footer-sub-text">
+              Documento emitido por el Sistema de Información y Monitoreo de Laboratorios CITEF. Facultad de Ciencias Económicas y Empresariales - Universidad Autónoma Gabriel René Moreno. Santa Cruz de la Sierra, Bolivia.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+</div>
