@@ -1,3 +1,4 @@
+import { environment } from '../../../environments/environment';
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
@@ -196,7 +197,7 @@ export interface FiltroRamsDto {
 })
 export class SoporteService {
   private readonly http = inject(HttpClient);
-  private readonly apiUrl = 'http://localhost:3000/api/v1/soporte';
+  private readonly apiUrl = `${environment.apiUrl}/api/v1/soporte`;
   private readonly baseUrl = this.apiUrl;
 
   // Datos simulados de respaldo para resiliencia ante backend en arranque

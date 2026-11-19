@@ -1,3 +1,4 @@
+import { environment } from '../../../environments/environment';
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, Subject } from 'rxjs';
@@ -144,8 +145,8 @@ export interface ResultadoValidacionDisponibilidad {
 })
 export class ReservasService {
   private readonly http = inject(HttpClient);
-  private readonly apiUrl = 'http://localhost:3000/api/v1/reservas';
-  private readonly wsUrl = 'http://localhost:3000/ws/reservas';
+  private readonly apiUrl = `${environment.apiUrl}/api/v1/reservas`;
+  private readonly wsUrl = `${environment.wsUrl}/ws/reservas`;
   private socket: Socket | null = null;
   private reservasActualizadasSubject = new Subject<any>();
 

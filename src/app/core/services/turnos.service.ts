@@ -1,3 +1,4 @@
+import { environment } from '../../../environments/environment';
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
@@ -288,7 +289,7 @@ export interface AuxiliarParaRelevo {
 })
 export class TurnosService {
   private readonly http = inject(HttpClient);
-  private readonly apiUrl = 'http://localhost:3000/api/v1/turnos';
+  private readonly apiUrl = `${environment.apiUrl}/api/v1/turnos`;
 
   // ===================== CU21: TURNOS Y GUARDIAS =====================
 

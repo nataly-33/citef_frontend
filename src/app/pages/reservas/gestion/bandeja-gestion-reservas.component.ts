@@ -1,3 +1,4 @@
+import { environment } from '../../../../environments/environment';
 import {
   Component,
   OnInit,
@@ -35,7 +36,7 @@ export class BandejaGestionReservasComponent implements OnInit {
   private readonly reservasService = inject(ReservasService);
   readonly authService = inject(AuthService);
   private readonly http = inject(HttpClient);
-  private readonly apiUrl = 'http://localhost:3000/api/v1';
+  private readonly apiUrl = `${environment.apiUrl}/api/v1`;
 
   // Estados reactivos
   reservas = signal<ReservaSala[]>([]);

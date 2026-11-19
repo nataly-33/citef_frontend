@@ -1,3 +1,4 @@
+import { environment } from '../../../environments/environment';
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
@@ -143,7 +144,7 @@ export interface SimuladorColasResponse {
 })
 export class AnaliticaService {
   private readonly http = inject(HttpClient);
-  private readonly baseUrl = 'http://localhost:3000/api/v1/analitica';
+  private readonly baseUrl = `${environment.apiUrl}/api/v1/analitica`;
 
   // ==========================================
   // DASHBOARD EJECUTIVO (CU27)

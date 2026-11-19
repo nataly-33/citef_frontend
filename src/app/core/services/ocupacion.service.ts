@@ -1,3 +1,4 @@
+import { environment } from '../../../environments/environment';
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, Subject } from 'rxjs';
@@ -130,8 +131,8 @@ export interface FiltroAsistenciasDto {
   providedIn: 'root',
 })
 export class OcupacionService {
-  private readonly apiUrl = 'http://localhost:3000/api/v1/ocupacion';
-  private readonly wsUrl = 'http://localhost:3000/ws/ocupacion';
+  private readonly apiUrl = `${environment.apiUrl}/api/v1/ocupacion`;
+  private readonly wsUrl = `${environment.wsUrl}/ws/ocupacion`;
   private socket: Socket | null = null;
   private estadoSalaSubject = new Subject<SalaOcupacionEstado>();
   private socketConectadoSubject = new Subject<boolean>();

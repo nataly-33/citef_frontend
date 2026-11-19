@@ -2,6 +2,7 @@ import { Injectable, signal, computed } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
 import { Router } from '@angular/router';
+import { environment } from '../../../environments/environment';
 
 export interface UsuarioSession {
   id_usuario: number;
@@ -21,7 +22,7 @@ export interface LoginResponse {
   providedIn: 'root',
 })
 export class AuthService {
-  private readonly apiUrl = 'http://localhost:3000/api/v1/auth';
+  private readonly apiUrl = `${environment.apiUrl}/api/v1/auth`;
   private readonly TOKEN_KEY = 'citef_access_token';
   private readonly USER_KEY = 'citef_user_session';
 
